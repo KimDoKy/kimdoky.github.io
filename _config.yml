@@ -12,7 +12,7 @@ url: "https://panossakkos.github.io"
 #
 # NB! Without this *nothing* will work, because it's used in every path :)
 
-baseurl: /blog
+baseurl: 
 
 # Google tracking id
 
@@ -28,9 +28,9 @@ force-https: True
 # HTML Head #
 #############
 
-lang: "en"
-author: "John Smith"
-title: "{ John Smith }"
+lang: "ko"
+author: "DoKy"
+title: "{ DoKy's Blog }"
 description: "Blog and website of John Smith, blogging mainly for tech. Opinions expressed are mine."
 keywords: "smith, jones, personal, jekyll, theme"
 favicon: "/img/favicon.ico"
@@ -55,8 +55,8 @@ type-speed: 10
 start-delay: 200
 delete-delay: 5000
 lines: # You can add HTML Tags in the Text
-  - text: "The lower you fall, the higher you'll fly."
-  - text: "Where’s your will to be weird?"
+  - text: "test 한글은?."
+  - text: "공부하고 공부하자"
 
 me-img: "/img/jetpacktocat.png"
 
@@ -126,7 +126,7 @@ timeline-img: "/img/timeline/default.png"
 # Contact #
 ###########
 
-email: "your@email.here"
+email: "makingfunk0@gmail.com"
 
 ################
 # Author Blurb #
@@ -149,7 +149,7 @@ social:
   - title: "twitter"
     url: "https://twitter.com/"
   - title: "github"
-    url: "https://github.com/PanosSakkos/personal-jekyll-theme"
+    url: "https://github.com/KimDoKy"
   - title: "bitcoin"
     url: "https://blockchain.info/address/1LHuKC9Em3KA5yoZaf7nngnNdf9K7s2gSi"
   - title: "rss"
@@ -165,7 +165,7 @@ err-404-img: "/img/labtocat.png"
 # GPG on Keybase #
 ##################
 
-keybase-username: johnsmith
+keybase-username: KimDoKy
 keybase-in-social: True
 keybase-in-footer: True
 
