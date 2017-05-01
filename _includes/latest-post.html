@@ -19,7 +19,9 @@
         </h4>
 
         <section class="text-justify">
+          <center>
           {{ post.content | strip_html | markdownify | truncatewords: site.post-preview-words }}
+          </center>
         </section>
 
         <h4><a href="{{site.baseurl}}/blog/">Archive</a></h4>

@@ -123,7 +123,7 @@ events:
 
 # First image of the Timeline
 
-timeline-img: "/img/timeline/default.png"
+# timeline-img: "/img/timeline/default.png"
 
 ###########
 # Contact #
@@ -139,7 +139,7 @@ email: "makingfunk0@gmail.com"
 # This works best when your author blurb image has a transparent background, or matches your site background color.
 
 # if the author_blurb is not set, then this feature is skipped
-author_blurb: "이쁜 딸과 아름다운 아내와 행복하게 살기 위해 코딩하는 개발자입니다. Django와 Python을 주로 사용합니다."
+author_blurb: "이쁜 딸과 아름다운 아내와 알콩달콩 살기 위해 코딩하는 개발자입니다. Django와 Python을 주로 사용합니다."
 author_blurb_image: "/img/author.png"
 
 ##################
