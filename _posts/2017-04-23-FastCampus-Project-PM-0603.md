@@ -15,6 +15,9 @@ tags: [ 'project' ]
 <https://github.com/pm0603/backend2/>  
 
 
+[API Documentation](https://kimdoky.gitbooks.io/pm0603-project-api-document/)
+
+
 <iframe width="560" height="315" src="https://www.youtube.com/embed/dnJTiUT_WdE" frameborder="0" allowfullscreen></iframe>
 
 
@@ -77,6 +80,3 @@ tags: [ 'project' ]
 
 ### 댓글삭제  
 ![]({{ site.url }}/img/post/comment_del.png)
-
-
-[API Documentation](https://kimdoky.gitbooks.io/pm0603-project-api-document/)
