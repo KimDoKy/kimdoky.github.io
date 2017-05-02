@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: markdown 자잘한 tip
+title: MaxOs Sierra ` 입ᆨ입력 이슈 tip
 category: tip
 tags: [ 'tip' ]
 ---
