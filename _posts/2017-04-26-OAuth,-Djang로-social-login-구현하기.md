@@ -3,7 +3,7 @@ layout: post
 section-type: post
 title: OAuth, Djang로 social login 구현하기
 category: api
-tags: [ 'api' ]
+tags: [ 'project' ]
 ---
 
 ## OAuth는??
@@ -139,18 +139,22 @@ SOCIAL_AUTH_FACEBOOK_SECRET = 'Facebook App Secret Key'
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'  
 ```
-#### 3. urls.py
+
+#### 3. `urls.py`
 
 ```
 url(r'', include('social.apps.django_app.urls', namespace='social')),  
 ```
 위에서 지정한 social의 경우 탬플릿에서 아래처럼 사용할 수 있음.
-
+{% raw %}
 ```
 <a href="{% url 'social:begin' 'facebook' %}?next={{ request.path }}">Login with Facebook</a>
 ```
-	- in case of google
-		- `url 'social:begin' 'facebook'` 대신에 `'goole-oauth2'`를 입력
+{% endraw %}
+
+- in case of google
+- `url 'social:begin' 'facebook'` 대신에 `'goole-oauth2'`를 입력
+
 필요에 따라 아래처럼 Django에서 기본으로 제공하는 login/logout을 가져올 수 있음
 
 ```
@@ -158,10 +162,11 @@ url(r'', include('django.contrib.auth.urls', namespace='auth')),
 ```
 
 위에서 지정한 auth라는 이름은 후에 템플릿에서 아래처럼 사용할 수 있음
-
+{% raw %}
 ```
  <a href="{% url 'auth:logout' %}?next={{ request.path }}">Logout</a>
 ```
+{% endraw %}
 
 #### 4. Get Client IDs for the social sites
 
