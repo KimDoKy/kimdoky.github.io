@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: custom params
+title: custom params 해결
 category: diary
 tags: [ 'rest', 'diary' ]
 ---
