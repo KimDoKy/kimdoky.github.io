@@ -3,7 +3,7 @@ layout: post
 section-type: post
 title: OAuth, Djang로 social login 구현하기
 category: api
-tags: [ 'project' ]
+tags: [ 'api' ]
 ---
 
 ## OAuth는??
