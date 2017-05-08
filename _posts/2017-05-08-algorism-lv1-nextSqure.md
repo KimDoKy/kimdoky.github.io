@@ -1,61 +1,58 @@
 ---
 layout: post
 section-type: post
-title: level 1. 서울에서 김서방찾기
+title: level 1. 정수제곱근판별하기
 category: algorism
 tags: [ 'algorism' ]
 ---
 
-# [level 1] 서울에서 김서방찾기
+# [level 1] 정수제곱근판별하기
 
 ## 문제
-findKim 함수(메소드)는 String형 배열 seoul을 매개변수로 받습니다.  
+nextSqaure함수는 정수 n을 매개변수로 입력받습니다.  
+n이 임의의 정수 x의 제곱이라면 x+1의 제곱을 리턴하고, n이 임의의 정수 x의 제곱이 아니라면 'no'을 리턴하는 함수를 완성하세요.  
+예를들어 n이 121이라면 이는 정수 11의 제곱이므로 (11+1)의 제곱인 144를 리턴하고, 3이라면 'no'을 리턴하면 됩니다.
 
-seoul의 element중 "Kim"의 위치 x를 찾아, "김서방은 x에 있다"는 String을 반환하세요.  
-seoul에 "Kim"은 오직 한 번만 나타나며 잘못된 값이 입력되는 경우는 없습니다.  
 
 ## 내 답안
 
 ```python
-def findKim(seoul):
+import math
+
+def nextSqure(n):
     # 함수를 완성하세요
-    kimIdx = seoul.index("Kim")
-    return "김서방은 {}에 있다".format(kimIdx)
+    if int(math.sqrt(n)) == math.sqrt(n):
+        return pow(math.sqrt(n)+1,2)
+    else:
+        return 'no'
 
-
-# 실행을 위한 테스트코드입니다.
-print(findKim(["Queen", "Tod", "Kim"]))
+# 아래는 테스트로 출력해 보기 위한 코드입니다.
+print("결과 : {}".format(nextSqure(121)));
 ```
 
 #### 다른 사람의 답안
 
 ```python
-def findKim(seoul):
-    return "김서방은 {}에 있다".format(seoul.index('Kim'))
+def nextSqure(n):
+    sqrt = n ** (1/2)
 
-
-# 실행을 위한 테스트코드입니다.
-print(findKim(["Queen", "Tod", "Kim"]))
+    if sqrt % 1 == 0:
+        return (sqrt + 1) ** 2
+    return 'no'
 
 ---
 
-def findKim(seoul):
-    kimIdx = 0
-    # 함수를 완성하세요
-    for kimIdx in range(len(seoul)):
-        if(seoul[kimIdx] == "Kim"):
-            break
+def nextSqure(n):
+    sqrt = pow(n, 0.5)
+    return pow(sqrt + 1, 2) if sqrt == int(sqrt) else 'no'
 
-    return "김서방은 {}에 있다".format(kimIdx)
-
-
-# 실행을 위한 테스트코드입니다.
-print(findKim(["Queen", "Tod", "Kim"]))
+# 아래는 테스트로 출력해 보기 위한 코드입니다.
+print("결과 : {}".format(nextSqure(121)));
 ```
 
 ### 배울점, 느낀점
 
-- index와  find의 차이점.
+- 제곱근 라이브러리 math.sqrt()
 
 #### 출처
-> <http://tryhelloworld.co.kr/challenge_codes/105>
+> <http://tryhelloworld.co.kr/challenge_codes/119>
