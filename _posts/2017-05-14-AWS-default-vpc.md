@@ -62,7 +62,7 @@ AWS Console을 살펴볼 장소는 VPC 대시보드와 함께 사용되며 VPC �
 ### Subnet
 그런 다음 "Subnet"화면으로 이동하면 여러 기본 Subnet이 기본 VPC에 이미 할당되어 있는 것을 볼 수 있습니다. 하나의 서브넷은 한 region의 각 AZ에 대해 하나의 서브넷입니다.
 
-![]({{ site.url }}/img/post/screen-shot3.png)
+![]({{ site.url }}/img/post/screen-shot3pm.png)
 
 서브넷은 항상 단일 AZ와 연결되며 여러 AZ에 걸쳐있을 수 없습니다. 그러나 AZ는 여러 서브넷을 호스팅 할 수 있습니다. VPC의 각 서브넷은 해당 VPC의 /16 CIDR 블록의 하위 집합인 IPv4 CIDR 블록과 연결됩니다. 기본 VPC에서 각 기본 서브넷은 /20 CIDR 블록 주소 범위와 연결되며 4091개의 IP 주소에서 AWS가 항상 예약하는 5개의 주소를 뺀 값을 갖습니다. 2개의 서브넷은 중복되는 주소 범위를 가질 수 없습니다.  
 
