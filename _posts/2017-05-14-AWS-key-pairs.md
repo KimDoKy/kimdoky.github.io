@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: AWS EC2 nstances 생성, 그리고 VPC
+title: AWS EC2 instances 생성, 그리고 VPC
 category: deploy
 tags: [ 'deploy' ]
 ---
