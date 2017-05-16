@@ -102,9 +102,15 @@ pinterest-share: True
 pocket-share: True
 vkontakte-share: True
 
-disqus-shortname: "KimDoKy"
+disqus-shortname: "dokys-blog"
 
 syntax-highlight: True
+
+---
+layout: default
+comments: true
+# other options
+---
 
 ############
 # Timeline #
