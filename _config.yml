@@ -106,11 +106,8 @@ disqus-shortname: "dokys-blog"
 
 syntax-highlight: True
 
----
-layout: default
 comments: true
-# other options
----
+
 
 ############
 # Timeline #
