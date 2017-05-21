@@ -91,6 +91,9 @@ class NewVisitorTest(StaticLiveServerTestCase):
 
 우분투를 추천하는 이유는 파이썬 3.4를 기본으로 탑재하고 있기 때문이다. 또한 Ngnix 설정이 용이하다.
 
+
+[Ubuntu Linux Deploy](https://github.com/KimDoKy/FastCamp/blob/master/Deploy/01.Ubuntu%20Linux%20Deploy.md)
+
 ### 사용자 계정, SSH, 권한
 
 
