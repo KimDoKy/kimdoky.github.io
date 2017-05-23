@@ -2,7 +2,7 @@
 layout: post
 section-type: post
 title: TDD-Chapter 8. 스테이징 사이트를 이용한 배포 테스트
-category: tdd
+category: tdd, diary
 tags: [ 'tdd' ]
 ---
 
@@ -351,19 +351,12 @@ chromedriver 에서 계속 오류가 난다.
 
 [stackoverflow](https://stackoverflow.com/questions/44128139/tdd-djangodeploy-error-selenium-common-exceptions-webdriverexception-messag?noredirect=1#comment75275463_44128139){:target="_blank"}  
 
+책이 출판된지 꽤 오랜시간이 지났고 그 사이에 프로그램들의 버젼이 올라갔다.
 
+그에 따라 여러 오류들이 발생하였고, 파이썬 그룹, stackoverflow등 해결책을 찾아보았으나
 
+해결이 되는듯 하다가 결국 실패했다.
 
+TDD's blog에서는 처음부터 다시하는걸 추천했다. 다시 하는 것이라 금방 할 것이고, 실력에도 도움이 된다고...
 
-### migrate를 이용한 데이터베이스 생성
-
-## 운영 준비 배포 단계
-### Gunicorn으로 교체
-### Nginx를 통한 정적 파일 제공
-### 유닉스 소켓으로 교체하기
-### DEBUG를 False로 설정하고 ALLOWED_HOSTS 설정하기
-### Upstart를 이용한 부팅 시 Gunicorn 가동
-### 변경사항 저장: Gunicorn을 requirements.txt에 추가
-
-## 자동화
-### 작업한 것 보호하기
+다시 처음부터 해볼까...ㅠㅠ
