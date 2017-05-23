@@ -49,7 +49,7 @@ class NewVisitorTest(StaticLiveServerTestCase):
 
 스테이징 서버 URL에 대해 실행해본다. URL 하나 정도 구입해두자.
 
-`STAGING_SERVER=czarcie-staging.com python manage.py test functional_tests`
+`STAGING_SERVER=staging.czarcie.com python manage.py test functional_tests`
 
 두 테스트가 모두 실패하는 것을 볼 수 있다. 예상한 실패인데, 아직 스테이징 사이트를 구축하지 않았기 때문이다. 트레이스백을 보면 테스트가 도메인 제공자의 홈페이지에서 끝나는 것을 알 수 있다.
 
@@ -126,13 +126,13 @@ czarcie@ip-172-31-12-**:~$ sudo apt-get install nginx
 czarcie@ip-172-31-12-**:~$ sudo systemctl start nginx
 ```
 
-사이트 IP 주소에 접속해 보면 "We;come to nginx" 페이지를 볼 수 있다.
+사이트 IP 주소에 접속해 보면 "Welcome to nginx" 페이지를 볼 수 있다.
 
-![]({{ url.site }}/img/post/hellonginx.png)
+![]({{ url.site }}/img/post/tdd/hellonginx.png)
 
 페이지가 보이지 않는다면 방화벽이 포트 80을 막았기 때문일 수도 있다. AWS에선 "security group"을 설정해서 포드 80을 열어주어야 한다.
 
-![]({{ url.site }}/img/post/security80.png)
+![]({{ url.site }}/img/post/tdd/security80.png)
 
 루트 권한이 있는 상태에서 시스템에 필요한 필수 소프트웨어들(Python, Git, pip, Virtualenv)를 설치한다.
 
@@ -270,6 +270,7 @@ python: aliased to python3
 
 > TDD 책은 virtualenv를 모르는 상태로 진행하는 터라 가상환경을 다 만들고 진행을 따라온 나는 여기서 헤매게 되었다...만.. 거두절미하고 가상환경 모두 만들고 진행을 따라왔다면 파일 구조만 서버와 매칭시켜주면 된다.
 
+```
 $ git add requirements.txt
 $ git commit -m "Add requirements.txt for virtualenv"
 ```
@@ -333,7 +334,7 @@ sudo service nginx reload
 
 사이트가 제대로 동작하는지 접속해보자.
 
-![]({{ site.url }}/ing/post/tdd/server1st.png)
+![]({{ site.url }}/img/post/tdd/server1st.png)
 > 구입한 도메인으로 접속해야 하지만..
 > cloudflare는 너무 처리하는게 느리고 답답하다... SSL 외에는 득이 없는듯..
 > 그래서 다른 곳으로 네임서버를 옮겨서 캡쳐에는 적용되지 못하였다.
@@ -342,13 +343,13 @@ sudo service nginx reload
 
 .....
 
-chromedriver 에서 계속 오류가 난다
+chromedriver 에서 계속 오류가 난다.  
 
-path 설정을 하면 비정상 종료나 permission error가 발생한다.
+[Installing Selenium and ChromeDriver on Ubuntu](https://christopher.su/2015/selenium-chromedriver-ubuntu/){:target="_blank"} 을 참고해보자.
 
-https://christopher.su/2015/selenium-chromedriver-ubuntu/ 을 참고해보자.
+그 후에도 error 발생...
 
-일단 내 ec2를 되돌리기엔 너무 멀리온것 같으니 터미네이터...
+[stackoverflow](https://stackoverflow.com/questions/44128139/tdd-djangodeploy-error-selenium-common-exceptions-webdriverexception-messag?noredirect=1#comment75275463_44128139){:target="_blank"}  
 
 
 
