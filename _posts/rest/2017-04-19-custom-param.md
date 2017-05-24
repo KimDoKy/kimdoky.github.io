@@ -3,7 +3,7 @@ layout: post
 section-type: post
 title: custom params
 category: rest
-tags: [ 'rest', 'diary' ]
+tags: [ 'rest' ]
 ---
 
 REST search parameter 를 커스텀 해달라는 요청이 들어왔다.
