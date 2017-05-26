@@ -239,6 +239,8 @@ selenium.common.exceptions.NoSuchElementException: Message: Unable to locate
 element: [id="id_nothing"]
 ```
 
+코드를 원래대로 되돌려 놓고 마지막 테스트를 실행합니다.
+
 ```
 $ python manage.py test
 [...]
