@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: new TDD-Chapter 6. Improving Functional Tests: Ensuring Isolation and Removing Voodoo Sleeps
+title: new TDD. Chapter 6. Improving Functional Tests. Ensuring Isolation and Removing Voodoo Sleeps
 category: tdd
 tags: [ 'tdd' ]
 ---

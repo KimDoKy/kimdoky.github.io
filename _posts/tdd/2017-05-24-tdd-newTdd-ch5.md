@@ -46,7 +46,7 @@ lists/templates/home.html
 ```html
 <form method="POST">
     <input name="item_text" id="id_new_item" placeholder="Enter a to-do item" />
-    {% csrf_token %}
+    {% raw %}{% csrf_token %}{% endraw %}
 </form>
 ```
 
@@ -113,7 +113,7 @@ lists/templates/home.html
     <h1>Your To-Do list</h1>
     <form method="POST">
         <input name="item_text" id="id_new_item" placeholder="Enter a to-do item" />
-        {% csrf_token %}
+        {% raw %}{% csrf_token %}{% endraw %}
     </form>
 
     <table id="id_list_table">
