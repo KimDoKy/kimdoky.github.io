@@ -17,12 +17,12 @@ settings.py는 현재 `DEBUG = True`이며, 프로덕션 환경에 강력히 권
 Gunicorn은 "Green Unicorn"을 의미합니다. Django는 ORM, 다양한 미들웨어, 관리 사이트 등등 다양한 요소로 구성되어 있습니다. Django의 마스코트는 조랑말인데 조랑말을 이미 가지고 있다면 다음에 필요한 것은 유니콘입니다.
 
 ```
-elspeth@server:$ ../virtualenv/bin/pip install gunicorn
+doky@server:$ ../virtualenv/bin/pip install gunicorn
 ```
 Gunicorn은 application이라고 하는 함수를 가지고 있는 `WSGI` 서버 경로를 알고 있어야 합니다. Django는 wsgi.py 파일을 통해 이 함수를 제공합니다.
 
 ```
-elspeth@server:$ ../virtualenv/bin/gunicorn superlists.wsgi:application
+doky@server:$ ../virtualenv/bin/gunicorn superlists.wsgi:application
 2013-05-27 16:22:01 [10592] [INFO] Starting gunicorn 0.19.7.1
 2013-05-27 16:22:01 [10592] [INFO] Listening at: http://127.0.0.1:8000 (10592)
 [...]
@@ -47,8 +47,8 @@ CSS가 망가진 것은 Django 개발 서버가 정적 차일을 알아서 제�
 먼저 `collectstatic`을 실행해서 모든 정적 파일을 Nginx가 찾을 수 있는 폴더에 복사합니다.
 
 ```
-elspeth@server:$ ../virtualenv/bin/python manage.py collectstatic --noinput
-elspeth@server:$ ls ../static/
+doky@server:$ ../virtualenv/bin/python manage.py collectstatic --noinput
+doky@server:$ ls ../static/
 base.css  bootstrap
 ```
 이제 Nginx가 정적 파일을 제공할 수 있도록 설정해줍니다.
@@ -72,8 +72,8 @@ server {
 Nginx와 Gunicorn을 재시작합니다.
 
 ```
-elspeth@server:$ sudo systemctl reload nginx
-elspeth@server:$ ../virtualenv/bin/gunicorn superlists.wsgi:application
+doky@server:$ sudo systemctl reload nginx
+doky@server:$ ../virtualenv/bin/gunicorn superlists.wsgi:application
 ```
 다시 사이트에 접속해보면 훨씬 보기 좋아진 것을 알 수 있습니다. FT를 재실행해봅니다.
 
@@ -108,8 +108,8 @@ server: /etc/nginx/sites-available/staging.czarcie.com
 Gunicorn을 재시작해보면 기본 포트가 아닌 소켓을 사용하고 있는 것을 알 수 있습니다.
 
 ```
-elspeth@server:$ sudo systemctl reload nginx
-elspeth@server:$ ../virtualenv/bin/gunicorn --bind \
+doky@server:$ sudo systemctl reload nginx
+doky@server:$ ../virtualenv/bin/gunicorn --bind \
     unix:/tmp/staging.czarcie.com.socket superlists.wsgi:application
 ```
 FT를 실행해서 통과하는지 확인합니다.
@@ -153,8 +153,8 @@ Description=Gunicorn server for staging.czarcie.com
 [Service]
 Restart=on-failure  #1
 User=doky  #2
-WorkingDirectory=/home/elspeth/sites/staging.czarcie.com/source  #3
-ExecStart=/home/elspeth/sites/staging.czarcie.com/virtualenv/bin/gunicorn \
+WorkingDirectory=/home/doky/sites/staging.czarcie.com/source  #3
+ExecStart=/home/doky/sites/staging.czarcie.com/virtualenv/bin/gunicorn \
     --bind unix:/tmp/staging.czarcie.com.socket \
     superlists.wsgi:application  #4
 
@@ -175,11 +175,11 @@ Upstart는 설정이 쉽고(특히 init.d 스크립트를 편집해본 경험이
 
 ```
 # 이 명령은 새로운 설정 파일을 로드하도록 Systemd에게 알려줍니다.
-elspeth@server:$ sudo systemctl daemon-reload
+doky@server:$ sudo systemctl daemon-reload
 # 이 명령은 부팅시 항상 서비스를 로드하도록 Systemd에게 지시합니다.
-elspeth@server:$ sudo systemctl enable gunicorn-staging.czarcie.com
+doky@server:$ sudo systemctl enable gunicorn-staging.czarcie.com
 # 이 명령은 실제로 서비스를 시작합니다.
-elspeth@server:$ sudo systemctl start gunicorn-staging.czarcie.com
+doky@server:$ sudo systemctl start gunicorn-staging.czarcie.com
 ```
 (systemctl 명령이 서비스 이름을 포함하여 탭 완성에 응답함을 발견해야 합니다.)
 
@@ -242,7 +242,7 @@ server {
     server_name SITENAME;
 
     location /static {
-        alias /home/elspeth/sites/SITENAME/static;
+        alias /home/doky/sites/SITENAME/static;
     }
 
     location / {
@@ -260,9 +260,9 @@ Description=Gunicorn server for SITENAME
 
 [Service]
 Restart=on-failure
-User=elspeth
-WorkingDirectory=/home/elspeth/sites/SITENAME/source
-ExecStart=/home/elspeth/sites/SITENAME/virtualenv/bin/gunicorn \
+User=doky
+WorkingDirectory=/home/doky/sites/SITENAME/source
+ExecStart=/home/doky/sites/SITENAME/virtualenv/bin/gunicorn \
     --bind unix:/tmp/SITENAME.socket \
     superlists.wsgi:application
 
