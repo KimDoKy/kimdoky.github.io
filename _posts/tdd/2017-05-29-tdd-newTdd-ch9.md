@@ -198,8 +198,8 @@ Nginx 설치는 매우 간단하다. 명령어 실행 후 바로 "Hello World" �
 
 ```
 (먼저 apt-get update 나 apt-get upgrade 가 필요할 수 있습니다.)
-elspeth@server:$ sudo apt-get install nginx
-elspeth@server:$ sudo systemctl start nginx
+doky@server:$ sudo apt-get install nginx
+doky@server:$ sudo systemctl start nginx
 ```
 사이트 IP 주소에 접속하면 "Welcome to nginx" 페이지를 볼 수 있습니다.
 
@@ -212,10 +212,10 @@ elspeth@server:$ sudo systemctl start nginx
 루트 권한이 있는 상태에서 시스템에 필요한 필수 소프트웨어(Python, Git, pip, Virtualenv)를 설치합니다.
 
 ```
-elspeth@server:$ sudo add-apt-repository ppa:fkrull/deadsnakes
-elspeth@server:$ sudo apt-get update
-elspeth@server:$ sudo apt-get install python3.6 python3.6-venv
-elspeth@server:$ sudo apt-get install git
+doky@server:$ sudo add-apt-repository ppa:fkrull/deadsnakes
+doky@server:$ sudo apt-get update
+doky@server:$ sudo apt-get install python3.6 python3.6-venv
+doky@server:$ sudo apt-get install git
 ```
 
 ### Configuring Domains for Staging and Live
@@ -245,7 +245,7 @@ AssertionError: 'To-Do' not found in 'Welcome to nginx!'
 TDD 저자는 다음과 같이 사이트를 구축했습니다.
 
 ```
-/home/elspeth
+/home/doky
 ├── sites
 │   ├── www.live.my-website.com
 │   │    ├── database
@@ -313,12 +313,12 @@ $ git commit -am "move sqlite database outside of main source tree"
 다음과 같이 bash 명령을 이용해서 코드를 옮깁니다. 명령어 익숙하지 않은 사람들 위해 서명하자면, export 명령은 bash에서 "로컬 변수"를 설정하는 명령입니다.
 
 ```
-elspeth@server:$ export SITENAME=staging.czarcie.com
-elspeth@server:$ mkdir -p ~/sites/$SITENAME/database
-elspeth@server:$ mkdir -p ~/sites/$SITENAME/static
-elspeth@server:$ mkdir -p ~/sites/$SITENAME/virtualenv
+doky@server:$ export SITENAME=staging.czarcie.com
+doky@server:$ mkdir -p ~/sites/$SITENAME/database
+doky@server:$ mkdir -p ~/sites/$SITENAME/static
+doky@server:$ mkdir -p ~/sites/$SITENAME/virtualenv
 # 다음 줄에 있는 URL을 각자의 코드 리포지토리 URL으로 변경해야 합니다.
-elspeth@server:$ git clone https://github.com/KimDoKy/TDD.git \
+doky@server:$ git clone https://github.com/KimDoKy/TDD.git \
 ~/sites/$SITENAME/source
 Resolving deltas: 100% [...]
 ```
@@ -327,7 +327,7 @@ Resolving deltas: 100% [...]
 이제 사이트가 모두 설치되었습니다. 개발 서버를 실행해 봅니다.(이동한 모든 요소들이 제대로 연결됐는지 확인하기 위한 Smoke Test라 할 수 있습니다.)
 
 ```
-elspeth@server:$ $ cd ~/sites/$SITENAME/source
+doky@server:$ $ cd ~/sites/$SITENAME/source
 $ python manage.py runserver
 Traceback (most recent call last):
   File "manage.py", line 8, in <module>
@@ -352,15 +352,15 @@ $ git push
 그리고 업데이트 된 내용을 서버에 적용합니다.
 
 ```
-elspeth@server:$ git pull  # may ask you to do some git config first
+doky@server:$ git pull  # may ask you to do some git config first
 ```
 virtualenv를 "수동으로"생성하려면 (즉, virtualenvwraper없이) 표준 라이브러리 "venv"모듈을 사용하고 virtualenv가 들어갈 경로를 지정해야합니다.
 
 ```
-elspeth@server:$ pwd
+doky@server:$ pwd
 /home/espeth/sites/staging.superlists.com/source
-elspeth@server:$ python3.6 -m venv ../virtualenv
-elspeth@server:$ ls ../virtualenv/bin
+doky@server:$ python3.6 -m venv ../virtualenv
+doky@server:$ ls ../virtualenv/bin
 activate      activate.fish  easy_install-3.6  pip3    python
 activate.csh  easy_install   pip               pip3.6  python3
 ```
@@ -369,7 +369,7 @@ activate.csh  easy_install   pip               pip3.6  python3
 필수 소프트웨어를 virtualenv에 설치하기 위해 virtualenv pip를 사용합니다.
 
 ```
-elspeth@server:$ ../virtualenv/bin/pip install -r requirements.txt
+doky@server:$ ../virtualenv/bin/pip install -r requirements.txt
 Downloading/unpacking Django==1.11rc1 (from -r requirements.txt (line 1))
 [...]
 Successfully installed Django
@@ -377,7 +377,7 @@ Successfully installed Django
 그리고 virtualenv에서 파이썬을 실행하기 위해 virtualenv 파이썬 바이너리를 사용합니다.
 
 ```
-elspeth@server:$ ../virtualenv/bin/python manage.py runserver
+doky@server:$ ../virtualenv/bin/python manage.py runserver
 Validating models...
 0 errors found
 [...]
@@ -411,24 +411,24 @@ server {
 이 설정은 `/etc/nginx/sites-available` 폴더에 `staging.czarcie.com`라는 파일을 저장했습니다. 그리고 이것을 symlink를 이용해서 동작 사이트에 추가합니다.
 
 ```
-elspeth@server:$ echo $SITENAME # 변수가 아직 자신의 사이트를 가리키는지 확인
+doky@server:$ echo $SITENAME # 변수가 아직 자신의 사이트를 가리키는지 확인
 staging.czarcie.com
-elspeth@server:$ sudo ln -s ../sites-available/$SITENAME /etc/nginx/sites-enabled/$SITENAME
-elspeth@server:$ ls -l /etc/nginx/sites-enabled # symlink가 있는지 확인
+doky@server:$ sudo ln -s ../sites-available/$SITENAME /etc/nginx/sites-enabled/$SITENAME
+doky@server:$ ls -l /etc/nginx/sites-enabled # symlink가 있는지 확인
 ```
 진짜 설정 파일은 `sites-available`에 두고 `symlink`는 `sites-enabled`에 두는 것은 `Debian/Ubuntu`에서 자주 사용되는 Nginx 설정 저장 방법입니다. 이 구조는 사이트를 쉽게 시작하고 종료할 수 있도록 합니다.
 
 혼란을 막기 위해 기본 "Welcome to Ngnix" 설정은 삭제합니다.
 
 ```
-elspeth@server:$ sudo rm /etc/nginx/sites-enabled/default
+doky@server:$ sudo rm /etc/nginx/sites-enabled/default
 ```
 
 그리고 테스트 해봅니다.
 
 ```
-elspeth@server:$ sudo systemctl reload nginx
-elspeth@server:$ ../virtualenv/bin/python manage.py runserver
+doky@server:$ sudo systemctl reload nginx
+doky@server:$ ../virtualenv/bin/python manage.py runserver
 ```
 > 길이가 긴 도메인이 제대로 동작하도록 하려면 `/etc/nginx/ngnix.conf`파일의 `server_names_hash_bucket_size 64;`를 주석 처리해야 합니다. 도메인명이 길지 않다면 작업할 필요가 없습니다. 설정 파일을 다시 로딩할 때 문제가 있으면 Nginx가 경고를 줍니다.
 
@@ -457,12 +457,12 @@ AssertionError: 0.0 != 512 within 3 delta
 "확실해?"라고 묻는 프롬포트를 생략하기 위해 `--noinput` 옵션을 이용해서 `migrate`를 실행합니다.
 
 ```
-elspeth@server:$ ../virtualenv/bin/python manage.py migrate --noinput
+doky@server:$ ../virtualenv/bin/python manage.py migrate --noinput
 Creating tables ...
 [...]
-elspeth@server:$ ls ../database/
+doky@server:$ ls ../database/
 db.sqlite3
-elspeth@server:$ ../virtualenv/bin/python manage.py runserver
+doky@server:$ ../virtualenv/bin/python manage.py runserver
 ```
 FT를 다시 실행합니다.
 
