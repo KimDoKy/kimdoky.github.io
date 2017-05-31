@@ -5,7 +5,7 @@ title: new TDD-Chapter 10. Getting to a Production-Ready Deployment
 category: tdd
 tags: [ 'tdd' ]
 ---
-ㅎ해킹 된 배포의 문제점은 무엇입니까? 생산을 위해 Django 개발 서버를 사용할 수 없고, "실제" 로딩을 위해 설계되지 않았습니다. Django 코드를 실행하기 위해 Gunicorn이라는 것을 사용할 것이고, Nginx는 정적 파일을 제공할 것입니다.
+해킹 된 배포의 문제점은 무엇입니까? 생산을 위해 Django 개발 서버를 사용할 수 없고, "실제" 로딩을 위해 설계되지 않았습니다. Django 코드를 실행하기 위해 Gunicorn이라는 것을 사용할 것이고, Nginx는 정적 파일을 제공할 것입니다.
 
 settings.py는 현재 `DEBUG = True`이며, 프로덕션 환경에 강력히 권장됩니다 (예를 들어, 사이트 오류가 발생했을 때 사용자가 코드의 디버그 추적을 원하지 않는 경우). 또한 보안을 위해 `ALLOWED_HOSTS`를 설정해야합니다.
 
