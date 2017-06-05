@@ -342,17 +342,16 @@ TypeError: home_page() takes 0 positional arguments but 1 was given
 ### The Unit-Test/Code Cycle
 여기서부터  **TDD 단위 테스트-코드 주기** 에 대해 생각해야 합니다.
 
-1. 터미널에서 단위 테스트를 실행해서 어떻게 실해하는지 확인합니다.
+1. 터미널에서 단위 테스트를 실행해서 어떻게 실행하는지 확인합니다.
 2. 편집기상에서 현재 실패 테스트를 수정하기 위한 최소한의 코드를 변경합니다.
 
 그리고 이것을 반복합니다.
 
+코드 품질을 높이고 싶다면 코드 변경을 최소화해야 합니다. 또한 이렇게 최소화한 코드는 하나하나 테스트에 의해 검증되어야 합니다. 매우 고된 작업이라고 생각될 수 있지만, 한번 익숙해지기 시작하면 속도는 빨라집니다. 따라서 아무리 자신 있는 부분이라도 작은 다누이로 나누어 코드를 변경하도록 합니다.  
 
+얼마나 빨리 이 주기를 따라갈 수 있는지 봅시다.
 
-
-
-
-- Minimal code change:  
+- 최소한의 코드 변경:  
 lists/views.py
 
 ```
@@ -360,14 +359,14 @@ def home_page(request):
     pass
 ```
 
-- Tests
+- 테스트
 
 ```
 html = response.content.decode('utf8')
 AttributeError: 'NoneType' object has no attribute 'content'
 ```
 
-- Code—​we use django.http.HttpResponse, as predicted:
+- 코드 :  가정한 대로 `django.http.HttpResponse`를 사용합니다.
 
 lists/views.py
 
@@ -379,14 +378,14 @@ def home_page(request):
     return HttpResponse()
 ```
 
-- Tests again:
+- 다시 테스트:
 
 ```
 self.assertTrue(html.startswith('<html>'))
 AssertionError: False is not true
 ```
 
-- Code again:
+- 다시 코드:
 
 lists/views.py
 
@@ -395,13 +394,13 @@ def home_page(request):
     return HttpResponse('<html>')
 ```
 
-- Tests:
+- 테스트:
 
 ```
 AssertionError: '<title>To-Do lists</title>' not found in '<html>'
 ```
 
-- Code
+- 코드:
 
 lists/views.py
 
@@ -410,14 +409,14 @@ def home_page(request):
     return HttpResponse('<html><title>To-Do lists</title>')
 ```
 
-- Tests—​almost there?
+- 테스트 - 거의 다 했습니다.
 
 ```
 self.assertTrue(html.endswith('</html>'))
 AssertionError: False is not true
 ```
 
-- Come on, one last effort:
+- 드디어 마지막!
 
 lists/views.py
 
@@ -426,7 +425,7 @@ def home_page(request):
     return HttpResponse('<html><title>To-Do lists</title></html>')
 ```
 
-- Surely?
+- 확실합니까?
 
 ```
 $ python manage.py test
@@ -439,6 +438,7 @@ OK
 System check identified no issues (0 silenced).
 Destroying test database for alias 'default'...
 ```
+이제 FT를 실행해봅시다. 개발 서버를 가동하는 것을 잊지 마세요. 정말 끝낼 수 있을까요?
 
 ```
 $ python functional_tests.py
@@ -457,11 +457,15 @@ Ran 1 test in 1.609s
 
 FAILED (failures=1)
 ```
+실패? 여기서 실패는 작업 완료 메시지를 출력하기 위해 심어둔 `AssertionError` 때문입니다. 성공한 것입니다. 드디어 웹 페이지를 갖게 되었습니다.  
+
+커밋합니다.
 
 ```
 $ git diff  # should show our new test in tests.py, and the view in views.py
 $ git commit -am "Basic view now returns minimal HTML"
 ```
+꽤 많은 작업을 하였습니다. `git log --oneline`을 실행해서 지금까지 작업한 것을 확인합니다.
 
 ```
 $ git log --oneline
@@ -470,22 +474,28 @@ a6e6cc9 Basic view now returns minimal HTML
 ea2b037 Add app for lists, with deliberately failing unit test
 [...]
 ```
+지금까지 다룬 것을 정리해 보면 다음과 같습니다.
 
+- Django 앱 실행
+- Django 단위 테스트 실행자
+- FT 와 UT 의 차이
+- Django URL 해석 및 urls.py
+- Django 뷰 함수 및 요청, 응답 객체
+- 기본 HTML 반환
 
 ### Useful Commands and Concepts
-#### Running the Django dev server
+>
+#### Django 개발 서버 실행
 python manage.py runserver
-
-#### Running the functional tests
+>
+#### functional tests 실행
 python functional_tests.py
-
-#### Running the unit tests
+>
+#### unit tests 실행
 python manage.py test
-
-#### The unit-test/code cycle
-
-1. Run the unit tests in the terminal.
-
-2. Make a minimal code change in the editor.
-
-3. Repeat!
+>
+#### 단위 테스트-코드 주기
+>
+1. 터미널에서 UT 실행
+2. 편집기에서 최소 코드 수정
+3. 반복
