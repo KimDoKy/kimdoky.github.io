@@ -353,7 +353,7 @@ Django Test Client에는 단점도 있습니다. [뒤](https://www.obeythetestin
 
 > 리팩터링 할 때에는 코드나 테스트 중 하나만 작업해야 합니다.
 
-리팩터링 시에는 몇 가지 처리를 수정하기 위해 단계를 건너뛰는 경향이 있습니다. 하지만 반 이상의 파일을 수정하기 시작하면서 자신이 무엇을 수정했는지 모르게 되고 결국 아무것도 동작하지 않게 됩니다. 리팩터링 캣처럼 되고 싶지 않다면 작은 단계로 나누어 착실히 작업하도록 합니다. 참고로 리책터링과 기능 변경은 전혀 다른 개념인 것에 유의헤야 합니다.
+리팩터링 시에는 몇 가지 처리를 수정하기 위해 단계를 건너뛰는 경향이 있습니다. 하지만 반 이상의 파일을 수정하기 시작하면서 자신이 무엇을 수정했는지 모르게 되고 결국 아무것도 동작하지 않게 됩니다. 리팩터링 캣처럼 되고 싶지 않다면 작은 단계로 나누어 착실히 작업하도록 합니다. 참고로 리팩터링과 기능 변경은 전혀 다른 개념인 것에 유의헤야 합니다.
 
 ![]({{ site.url }}/img/post/tdd/4_2.gif)
 
@@ -368,6 +368,28 @@ $ git commit -m "Refactor home page view to use a template"
 
 ## 4.5. A Little More of Our Front Page
 
+아직까지 기능 테스트가 실패하고 있는 상태입니다. 테스트를 통과하도록 코드를 수정해봅니다. HTML이 이젠 템플릿 형태이기 때문에 추가적인 단위 테스트 없이 바로 수정할 수 있습니다. 현재 필요한 것은 '<h1>'입니다.
+
+lists/templates/home.html
+
+```html
+<html>
+    <head>
+        <title>To-Do lists</title>
+    </head>
+    <body>
+        <h1>Your To-Do list</h1>
+    </body>
+</html>
+```
+FT가 이 방식을 좋아하는지 확인합니다.
+
+```
+selenium.common.exceptions.NoSuchElementException: Message: Unable to locate
+element: [id="id_new_item"]
+```
+OK...
+
 lists/templates/home.html
 
 ```
@@ -377,23 +399,25 @@ lists/templates/home.html
 </body>
 [...]
 ```
-
-FT
+이번엔 괜찮을까요?
 
 ```
 AssertionError: '' != 'Enter a to-do item'
 ```
+placeholder를 추가합니다.
 
 lists/templates/home.html
 
 ```
 <input id="id_new_item" placeholder="Enter a to-do item" />
 ```
+다음과 같은 결과를 확인할 수 있습니다.
 
 ```
 selenium.common.exceptions.NoSuchElementException: Message: Unable to locate
 element: [id="id_list_table"]
 ```
+이제 페이지에 테이블을 추가 할 수 있습니다. 현재는 테이블이 비어있습니다.
 
 lists/templates/home.html
 
@@ -403,6 +427,7 @@ lists/templates/home.html
 </table>
 </body>
 ```
+다시 FT를 실행합니다.
 
 ```
 File "functional_tests.py", line 43, in
@@ -410,6 +435,7 @@ test_can_start_a_list_and_retrieve_it_later
   any(row.text == '1: Buy peacock feathers' for row in rows)
 AssertionError: False is not true
 ```
+원인이 분명치 않습니다. 문제를 찾기 위해 코드 넘버를 따라가보니 기능 테스트에 사용한 함수에 문제가 있다는 것을 알았습니다. 정확히는 `assertTrue`라는 함수로, 현재 자세한 실패 메시지를 출력하고 있지 않습니다. 대부분의 `assertX` 함수는 사용자 정의 메시지를 인수로 지정할 수 있습니다.
 
 functional_tests.py
 
@@ -419,14 +445,45 @@ self.assertTrue(
     "New to-do item did not appear in table"
 )
 ```
+다시 FT를 실행하면 다음고 같은 메시지를 확인할 수 있습니다.
 
 ```
 AssertionError: False is not true : New to-do item did not appear in table
 ```
+이 문제를 해결하려면 사용자 폼(form) 제출 처리를 구현해야 하는데, 이것은 다음 섹션의 주제입니다.  
+
+일단 커밋합니다.
 
 ```
 $ git diff
 $ git commit -am "Front page HTML now generated from a template"
 ```
+리팩터링으로 인해 템플릿을 렌더링하기 위한 뷰 설정을 완료했고, 상수를 더 이상 테스트하지 않아도 됩니다. 또한 사용자 입력 처리를 위한 준비가 완료되었습니다.
 
 ## 4.6. Recap: The TDD Process
+TDD 프로세스의 주요 내용을 모두 살펴보았습니다.  
+
+- Functional tests
+- Unit tests
+- 단위 테스트-코드 주기(The unit-test/code cycle)
+- Refactoring
+
+흐름도를 이용해서 TDD 프로세스를 정리해봅니다. 흐름도를 이용하면 반복 처리나 재귀 처리를 표현하고 이해하기 수월합니다.
+
+![]({{ site.url }}/img/post/tdd/4_3.png)
+
+테스트를 작성하고 실행해서 그것이 실패하는 것을 확인합니다. 그리고 문제를 해결하기 위해 최소 코드를 작성합니다. 테스트를 통과할 때가지 이 과정을 반복합니다 필요에 따라선 코드를 리팩터링합니다. 리팩터링 후에는 다시 테스트 과정을 반복해야 합니다.  
+
+기능 테스트와 단위 테스트를 둘 다 해야 할 때는 어떻게 적용할까요? 기능 테스트를 상위 테스트 관점으로 생각하면 됩니다. "최소 코드 작성" 부분이 단위 테스트를 이용하는 작은 TDD 주기가 되는 것입니다.  
+
+![]({{ site.url }}/img/post/tdd/4_4.png)
+
+먼저 기능 테스트를 작성하고 실패하는지 확인합니다. "최소 코드 작성" 프로세스에선 작은 TDD 주기를 통해 테스트가 통과하도록 만듭니다. 이때 하나 또는 그 이상의 단위 테스트를 작성하고 이를 단위 테스트-코드 주기에 넣어서 통과할 때까지 주기를 반복합니다. 통과하면 다시 FT를 돌아가서 애플리케이션 코드를 수정합니다.(리팩터링) 수정 후에는 다시 단위 테스트를 실시합니다.  
+
+기능 테스트 관점의 리팩터링은 어떻게 해야 할까요? 이것은 애플리케이션 동작을 확인하기 위해 기능 테스트를 사용하지만, 단위 테스트를 변경, 추가, 제거 할 수 있음을 의미합니다. 또한 단위 테스트 주기를 이용해서 실제 구현한 것을 변경합니다.  
+
+기능 테스트는 애플리케이션이 동작하는지 아닌지를 판단하기 위한 궁극의 수단입니다. 반면, 단위 테스트는 이 판단을 돕기 위한 툴이라 할 수 있습니다.  
+
+이런 식으로 TDD 를 표현한 것을 "이중 반복 TDD(Double-Loop TDD)"라고 부르는 경우도 있습니다.  
+
+이 후 섹션에서는 이 처리 흐름의 각 요소에 대해 자세히 다룹니다.
