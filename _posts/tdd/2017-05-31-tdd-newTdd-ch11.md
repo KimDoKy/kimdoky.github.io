@@ -165,7 +165,7 @@ def _update_database(source_folder):
 
 `--noinput`은 패브릭이 처리하기 어려운 커맨드라인의 예/아니오 확인을 제거합니다.  
 
-이 스크립트는 신규 사이트뿐만 아니라 기존 사이트에서도 동작합니다. 라친어 어원을 가진 단어를 좋아한다면, 이것을 idenpotent(멱등성:몇 번을 실행해도 같은 결과를 같는다.)라고 표현할 수 있을 것입니다.
+이 스크립트는 신규 사이트뿐만 아니라 기존 사이트에서도 동작합니다. 라틴어 어원을 가진 단어를 좋아한다면, 이것을 idenpotent(멱등성:몇 번을 실행해도 같은 결과를 같는다.)라고 표현할 수 있을 것입니다.
 
 ## 11.2. Trying It Out
 스테이징 사이트에서 이 스크립트를 실행해봅시다.
@@ -176,6 +176,7 @@ $ fab deploy:host=doky@staging.czarcie.com
 ```
 
 ....
+
 ---
 
 ```
@@ -189,38 +190,170 @@ $ fab deploy:host=doky@staging.czarcie.com
 할 수록 멘붕......  
 TDD 끝낼 수 있을까.. 배포에 오면서부터 한 단계 한 단계....  
 일단 SSH를 먼저 공부하고 이어가야 할 듯....
+
+> 삽질 끝에 해결하였습니다.
+[ssh 패스워드 없이 접속하기 삽질기](https://kimdoky.github.io/deploy/2017/06/06/ssh-nonpass-connect.html){:target="_blank"}
+
+```
+~/Git/Study/TDD/superlists/NewVersiondTdd/superlists/deploy_tools(master*) » fab deploy:host=doky@staging.czarcie.com
+[doky@staging.czarcie.com] Executing task 'deploy'
+...
+Done.
+Disconnecting from doky@staging.czarcie.com... done.
+```
+메시지를 잘 보면 우리가 정의한 작업을 진행하고 있는 것을 알 수 있습니다. `mkdir -p` 명령은 디렉터리가 이미 존재함에도 불구하고 에러 없이 잘 동작합니다. 다름은 `git`이 앞서 커밋한 처리를 다운로드합니다. `sed`와 `echo >>`는 settings.py를 수정합니다. 그리고 `pip3 install -r requirements.txt`가 완료됩니다. 기존 `virtualenv`가 필요한 패키지를 이미 보유하고 있는 것에 주목해야합니다. `collectstatic` 또한 정적 파일이 이미 존재한다고 인식하며, 마지막으로 `migrate`가 완료됩니다.
+
+> **패브릭 설정**  
+SSH 키를 사용해서 로그인한다면, SSH 키가 기본 위에 있고 서버와 동일 사용자명을 사용하는 한 페브릭이 정상 동작해야 합니다. 그렇지 않으면 `fab` 명령이 제대로 실행되도록 몇가지 사항을 확인해야 합니다. 보통은 사용자명, SSH 키 위치, 패스워드 등이 문제가 됩니다.  
+>
+이 값들을 인수로 해서 페브릭을 커맨드라인상에서 실행할 수 있습니다.  
+>
+```
+$ fab --help
+```
+또는 페브릭 문서를 참고합니다. <http://docs.fabfile.org/en/1.13/>  
+(본인도 오류를 만나서 위에 문제 해결내용을 기술하였습니다.)
+
+### Deploying to Live
+실제 운영 서버에 적용해봅니다. (스테이징이 아닌 메인용 서버가 하나 더 필요합니다. 서브 도메인과 하나의 ec2로 독립적인 사이트를 운영할 수 있는지 먼저 테스트를 진행하였습니다.)
+
+```
+~/Git/Study/TDD/superlists/NewVersiondTdd/superlists/deploy_tools(master*) » fab deploy:host=doky@deploy.czarcie.com  
+[doky@deploy.czarcie.com] Executing task 'deploy'
+[doky@deploy.czarcie.com] run: mkdir -p /home/doky/sites/deploy.czarcie.com/database
+[doky@deploy.czarcie.com] run: mkdir -p /home/doky/sites/deploy.czarcie.com/static
+[doky@deploy.czarcie.com] run: mkdir -p /home/doky/sites/deploy.czarcie.com/virtualenv
+[doky@deploy.czarcie.com] run: mkdir -p /home/doky/sites/deploy.czarcie.com/source
+[doky@deploy.czarcie.com] run: git clone https://github.com/KimDoKy/TDD.git /home/doky/sites/deploy.czarcie.com/source
+[doky@deploy.czarcie.com] out: Cloning into '/home/doky/sites/deploy.czarcie.com/source'...
+[doky@deploy.czarcie.com] out: remote: Counting objects: 321, done.
+[doky@deploy.czarcie.com] out: Receiving objects:   0% (1/321)   
+...
+[doky@deploy.czarcie.com] out: Resolving deltas: 100% (156/156), done.
+[doky@deploy.czarcie.com] out: Checking connectivity... done.
+[doky@deploy.czarcie.com] out:
+
+[localhost] local: git log -n 1 --format=%H
+[doky@deploy.czarcie.com] run: cd /home/doky/sites/deploy.czarcie.com/source && git reset --hard 863028f87f44ba1a73fb2720a03ef48c6e1af79e
+[doky@deploy.czarcie.com] out: HEAD is now at 863028f Notes and template config files for provisioning
+[doky@deploy.czarcie.com] out:
+
+[doky@deploy.czarcie.com] run: sed -i.bak -r -e 's/DEBUG = True/DEBUG = False/g' "$(echo /home/doky/sites/deploy.czarcie.com/source/superlists/settings.py)"
+[doky@deploy.czarcie.com] run: sed -i.bak -r -e 's/ALLOWED_HOSTS =.+$/ALLOWED_HOSTS = ["deploy.czarcie.com"]/g' "$(echo /home/doky/sites/deploy.czarcie.com/source/superlists/settings.py)"
+[doky@deploy.czarcie.com] run: echo 'SECRET_KEY = "go$y$f9!-2%3v#(2v*l0*&t21%$^#u(p)m=8_&ad#qs"' >> "$(echo /home/doky/sites/deploy.czarcie.com/source/superlists/secret_key.py)"
+[doky@deploy.czarcie.com] run: echo '
+from .secret_key import SECRET_KEY' >> "$(echo /home/doky/sites/deploy.czarcie.com/source/superlists/settings.py)"
+[doky@deploy.czarcie.com] run: python3.6 -m venv /home/doky/sites/deploy.czarcie.com/source/../virtualenv
+[doky@deploy.czarcie.com] run: /home/doky/sites/deploy.czarcie.com/source/../virtualenv/bin/pip install -r /home/doky/sites/deploy.czarcie.com/source/requirements.txt
+[doky@deploy.czarcie.com] out: Collecting django==1.11rc1 (from -r /home/doky/sites/deploy.czarcie.com/source/requirements.txt (line 1))
+...
+[doky@deploy.czarcie.com] out: Successfully installed django-1.11rc1 gunicorn-19.7.1 pytz-2017.2
+[doky@deploy.czarcie.com] out:
+
+[doky@deploy.czarcie.com] run: cd /home/doky/sites/deploy.czarcie.com/source && ../virtualenv/bin/python manage.py collectstatic --noinput
+[doky@deploy.czarcie.com] out: Copying '/home/doky/sites/deploy.czarcie.com/source/lists/static/base.css'
+...
+[doky@deploy.czarcie.com] out: 15 static files copied to '/home/doky/sites/deploy.czarcie.com/static'.
+[doky@deploy.czarcie.com] out:
+
+[doky@deploy.czarcie.com] run: cd /home/doky/sites/deploy.czarcie.com/source && ../virtualenv/bin/python manage.py migrate --noinput
+...
+[doky@deploy.czarcie.com] out:   Applying sessions.0001_initial... OK
+[doky@deploy.czarcie.com] out:
+
+
+Done.
+Disconnecting from doky@deploy.czarcie.com... done.
+```
+
+스크립트가 약간 다른 경로를 따라가고 있는 것을 볼 수 있습니다. `git pull` 대신에  `git clone`을 이용해서 신규 리포지토리를 다운로드하고 있기 때문입니다. 또한 `pip`와 `Django` 설치를 포함한 신규 `virtualenv`를 생성하고 있습니다. `collectstatic`은 이번에는 새 파일을 생성하고 있으며 `migrate`가 정상적으로 처리되었습니다.
+
+### Nginx and Gunicorn Config Using sed
+운영 서버 배포를 위해 남은 작업은 무엇이 있을까요? 프로비저닝 설정사항을 메모해둔 것을 보면, 템플릿 파일을 이용해서 Nginx 가상 호스트와 Upstart 스크립트를 생성해야 된다는 것을 알 수 있습니다. 유닉스의 커맨드라인에서 마법의 명령어를 실행해주면 이 문제가 해결됩니다.
+
+(/home/doky/sites/deploy.czarcie.com 에서 실행)
+
+```
+doky@server:$ sed "s/SITENAME/deploy.czarcie.com/g" \
+    source/deploy_tools/nginx.template.conf \
+    | sudo tee /etc/nginx/sites-available/deploy.czarcie.com
+```
+`sed("stream editor")`는 문자열을 스트림해서 편집합니다. 페브릭의 문자열 대체 명령이 같은 이름을 가지고 있는 것은 우연이 아닙니다. 여기서는 `SITENAME`을 사이트 주소로 변경하고 있습니다. `s/나를 교체해/이걸로/g` 형식으로 사용합니다. 또한 파이프문자(|)를 이용해서 이 결과를 루트 사용자 처리(sudo)에 건넵니다. `sudo`는 이 결과를 받아서 Nginx의 sites-available 가상 호스트 설정 파일로 저장합니다.
+
+이제 이 설정 파일을 활성화할 수 있습니다.
+
+```
+doky@server:$ sudo ln -s ../sites-available/deploy.czarcie.com \
+    /etc/nginx/sites-enabled/deploy.czarcie.com
+```
+다음은 Upstart 스크립트 파일을 작성합니다.
+
+```
+doky@server: sed "s/SITENAME/deploy.czarcie.com/g" \
+    source/deploy_tools/gunicorn-systemd.template.service \
+    | sudo tee /etc/systemd/system/gunicorn-deploy.czarcie.com
+```
+마지막으로 두 서비스를 가동합니다.
+
+```
+doky@server:$ sudo systemctl daemon-reload
+doky@server:$ sudo systemctl reload nginx
+doky@server:$ sudo systemctl enable gunicorn-deploy.czarcie.com
+doky@server:$ sudo systemctl start gunicorn-deploy.czarcie.com
+```
+이제 사이트가 동작하는지 확인해 봅니다.
+
 ---
+
+>
+현재 여기서 막힘 (복수의 gunicorn이 설정 가능한지.)  
+해결 중입니다... 능력자님들 도와주세요.
+---
+
+fabfile을 리포지토리에 등록합니다.
+
+```
+$ git add deploy_tools/fabfile.py
+$ git commit -m "Add a fabfile for automated deploys"
+
+```
+
 ## 11.3. Git Tag the Release
+마지막으로 관리 목적의 작업이 남았습니다. 현재 운영 서버에서 동작하고 있는 코드 상태를 저장하기 위해 `Git tag`를 실행해줍니다.
+
+```
+$ git tag LIVE
+$ export TAG=$(date +DEPLOYED-%F/%H%M)  # 타임스탬프 생성
+$ echo $TAG # "DEPLOYED-" + 타임스탬프(시간정보)를 보여준다
+$ git tag $TAG
+$ git push origin LIVE $TAG # 태그를 푸쉬한다
+```
+이것으로 운영 서버의 코드와 현재 코드 상태를 쉽게 비교할 수 있습니다. 이 기능은 특히 뒤에서 다룰 데이터베이스 마이그레이션 시에 유용합니다. tag 기록을 살펴봅시다.
+
+```
+$ git log --graph --oneline --decorate
+[...]
+```
+이제 인터넷상에 공개된 웹 사이트를 가지게 되었습니다.
+
 ## 11.4. Further Reading
+배포에는 "이것이 정답"이라고 하는 것은 없습니다. 배포에는 다양한 방법이 존재합니다. 다음은 TDD 필자가 참고한 자료들입니다.
 
+- [Solid Python Deployments for Everybody](https://hynek.me/talks/python-deployments/){:target="_blank"} by Hynek Schlawack
+- [Git-based fabric deployments are awesome](http://dan.bravender.net/2012/5/11/git-based_fabric_deploys_are_awesome.html){:target="_blank"} by Dan Bravender
+- The deployment chapter of [Two Scoops of Django](https://www.obeythetestinggoat.com/book/bibliography.html#twoscoops){:target="_blank"} by Dan Greenfeld and Audrey Roy
+- [The 12-factor App](https://12factor.net/){:target="_blank"} by the Heroku team
 
+프로비저닝 자동화와, 페브릭을 대체할 수 있는 Ansible에 대해서는 [appendix3](https://www.obeythetestinggoat.com/book/appendix_III_provisioning_with_ansible.html){:target="_blank"}에서 설명하고 있으니 참고하면 됩니다.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-.
+## 배포 자동화
+### Fabric
+페브릭은 파이썬 스크립트를 이용해서 서버상에서 명령어를 실행하게 해줍니다. 서버 관리 자동화를 위한 훌륭한 툴입니다.
+### 멱등성(Idempotency)
+기존 서버에 배포 스크립트를 실행한다면, 스크립트 설계 시 두 가지 측면을 고려해야 합니다. 서버에 신규로 설치하는 경우와 이미 설치 버전이 있는 경우입니다.
+### 설정 파일 버전 관리
+설정 파일이 서버에만 존재하는 일은 없어야 합니다. 애플리케이션 핵심 파일이기 때문에 다른 코드와 같이 버전 관리해야 합니다.
+### 프로비저닝 자동화
+신규 서버 가동과 필요 소프트웨어 설치까지 모두 자동화돼야 합니다. 또한 호스팅 제공자의 API 연계성도 확인해야 합니다.
+### 관리 툴 설정
+페브릭은 매우 유연한 툴이긴 하지만 그 로직이 스크립트에 기반하고 있습니다. "선언적인" 작성이 가능해서 작업을 더 쉽게 해주는 툴들도 있습니다. Ansible과 Vagrant가 그것으로 참고할 가치가 있습니다. 이외에도 많은 툴이 있습니다.(Chef, Puppet, Salt, juju ...)
