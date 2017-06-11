@@ -8,7 +8,7 @@ tags: [ 'front' ]
 
 # JS Where To
 
-## The <script> Tag
+## The `<script>` Tag
 HTML에서는 `<script>`와 `</script>` 태그 사이에 JavaScript 코드를 삽입해야합니다.  
 
 ```JavaScript
