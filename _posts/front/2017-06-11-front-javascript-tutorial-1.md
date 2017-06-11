@@ -44,7 +44,7 @@ document.getElementById("demo").innerHTML = "Hello JavaScript";
 <img id="myImage" src="{{ site.url }}/img/post/front/javascript/pic_bulboff.gif" style="width:100px">
 
 
-```
+```html
 <button onclick="document.getElementById('myImage').src='pic_bulbon.gif'">Turn on the light</button>
 
 <button onclick="document.getElementById('myImage').src='pic_bulboff.gif'">Turn off the light</button>
