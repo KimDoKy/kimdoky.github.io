@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: JavaScript Tutorial - 2
+title: JavaScript Tutorial - 2. Where To
 category: front
 tags: [ 'front' ]
 ---
