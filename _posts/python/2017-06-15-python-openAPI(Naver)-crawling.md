@@ -9,7 +9,10 @@ tags: [ 'python' ]
 
 Naver의 Open API 기능을 사용하려면 먼저 네이버에 가입되어 있어야 하고 두 번째로 네이버에서 Open API 키를 발급받아야 합니다.
 
-a. 네이버 개발자센터 홈으로 들어갑니다. <https://developers.naver.com/main/>  
+### 네이버 API Key 발급받기
+
+네이버 개발자 홈에 접속합니다.  
+<https://developers.naver.com/main/>  
 
 ![]({{ site.url }}/img/post/python/naver_api.png)
 하단에 API를 누릅니다.  
@@ -23,6 +26,8 @@ a. 네이버 개발자센터 홈으로 들어갑니다. <https://developers.nave
 ![]({{ site.url }}/img/post/python/naver_api2.png)  
 
 성공하면 Client ID를 발급받게 됩니다. Client ID를 복사해서 소스코드의 API_Key 부분에 붙여넣기만 하면 됩니다.  
+
+### 크롤링 코드 작성하기
 
 ```python
 import urllib.request
