@@ -66,20 +66,35 @@ beautifulsoup4, lxml, pandas
 ```python
 >>> from urllib.request import urlopen
 >>> from bs4 import BeautifulSoup
+>>> import pandas as pd
+>>>
 >>> url = 'http://www.cgv.co.kr/movies/?ft=0'
 >>> html = urlopen(url)
 >>> soup = BeautifulSoup(html, 'lxml')
+>>>
 >>> rank = soup.find_all('strong','rank')
 >>> title = soup.find_all('strong','title')
+>>> open_ticket = soup.find_all('span','txt-info')
+>>> rank_list = []
+>>> title_list = []
+>>> open_list = []
+>>>
 >>> for i in range(len(rank)):
-...     print(rank[i].text + ' - ' + title[i].text)
+...     rank_list.append(rank[i].text)
+...     title_list.append(title[i].text)
+...     open_list.append(open_ticket[i].text.strip()[:10])
 ...
-No.1 - 박열
-No.2 - 스파이더맨: 홈커밍
-No.3 - 트랜스포머: 최후의 기사
-No.4 - 리얼
-No.5 - 지랄발광 17세
-No.6 - 헤드윅
-No.7 - 하루
+>>>
+>>> data = {'Rank':rank_list, 'Title':title_list, 'Ticket open':open_list}
+>>> df = pd.DataFrame(data)
+>>> df.head(7)
+   Rank Ticket open          Title
+0  No.1  2017.07.05     스파이더맨: 홈커밍
+1  No.2  2017.06.28             박열
+2  No.3  2017.06.21  트랜스포머: 최후의 기사
+3  No.4  2017.06.28             리얼
+4  No.5  2017.06.28       지랄발광 17세
+5  No.6  2017.06.22           언더더씨
+6  No.7  2017.06.28            헤드윅
 >>>
 ```
