@@ -88,14 +88,14 @@ bsObj.tagName을 호출해서 페이지에 처음 나타난 태그를 찾아냈�
 `.get_text()`는 현재 문서에서 모든 태그를 제거하고 텍스트만 들어 있는 문자열을 반환합니다. 예를 들어 하이퍼링크, 문단, 기타 태그가 여럿 들어 있는 텍스트 블록에 사용하면 태그 없는 텍스트만 남습니다.  
 텍스트 블록보다는 BeautifulSoup 객체를 사용하는게 원하는 결과를 얻기가 훨씬 쉽습니다. `.get_text()`는 항상 마지막, 즉 최종 데이터를 출력하거나 저장, 조직하기 직전에만 써야 합니다. 일반적으로는 문서의 태그 구조를 가능한 유지해야 합니다.
 
-### 2.2.1 `find()`와 `findAll()`
+### 2.2.1 `find()`와 `find_all()`
 
-`find()`와 `findAll()`은 BeautifulSoup에서 가장 자주 쓰는 함수입니다. 이 함수를 쓰면 HTML 페이지에서 원하는 태그를 다양한 속성에 따라 쉽게 필터링할 수 있습니다.  
+`find()`와 `find_all()`은 BeautifulSoup에서 가장 자주 쓰는 함수입니다. 이 함수를 쓰면 HTML 페이지에서 원하는 태그를 다양한 속성에 따라 쉽게 필터링할 수 있습니다.  
 
 두 함수는 거의 비슷한데, BeautifulSoup 문서의 함수 정의만 봐도 알 수 있습니다.
 
 ```python
-findAll(tag, attributes, recusive, text, limit, keywords)
+find_all(tag, attributes, recusive, text, limit, keywords)
 find(tag, attributes, text, keywords)
 ```
 실제로 이 함수를 쓸 때는 거의 항상 처음 두 매개변수인 tag와 attributes만 쓰게 될 것입니다.  
@@ -293,7 +293,7 @@ HTML 페이지의 구조를 보면
 3. 2에서 선택한 <td>의 `previous_sibling`(이 경우 제품 가격이 들어있는 <td> 태그)를 선택합니다.
 4. 태그에 들어있는 텍스트인 %15.00를 선택합니다.
 
-### 2.3 정규 표현식
+## 2.3 정규 표현식
 
 [정규표현식 (REGULAR EXPRESSIONS)]({{site.url}}/tech/2017/06/11/regular-2.html)  
 
@@ -373,7 +373,7 @@ c 짝수 개에 관한 규칙을 충족하려면 c 두 개를 괄호 안에 쓰�
 
 > 정규 표현식은 언어마다 다릅니다.
 
-### 2.4 정규 표현식과 BeautifulSoup
+## 2.4 정규 표현식과 BeautifulSoup
 
 웹 스크레이핑에서도 BeautifulSoup와 정규 표현식을 함께 쓸 수 있습니다. 사실 문자열 매개변수를 받는 대부분의 함수(예를 들면 `find(id="aTagIdHere")`는 정규 표현식도 매개변수로 받을 수 있습니다.
 
@@ -408,3 +408,43 @@ import re 로 정규 표현식을 임포트했습니다. 이 코드틑 `../img/g
 ../img/gifts/img6.jpg
 ```
 정규 표현식은 BeautifulSoup 표현식 어디에든 매개변수로 삽입할 수 있어서, 매우 유연하게 원하는 요소를 찾을 수 있습니다.
+
+## 2.5 속성에 접근하기
+
+웹 스크레이핑을 하다 보면 태그의 콘텐츠가 아니라 그 속성에 관심이 있을 때가 매우 잦습니다. 특히 태그가 가리키는 URL이 href 속성에 들어 있는 <a> 태그, 타겟 이미지가 src 속성에 들어 있는 <img> 태그의 경우, 해당 속성에만 관심이 있기 마련입니다.  
+다음과 같이 태그 객체에서 속성 목록에 접근할 수 있습니다.
+
+> myTag.attrs
+
+결과는 전형적인 파이썬 딕셔너리 객체이므로 이들 속성을 가져오거나 조작하기는 매우 쉽습니다. 예를 들어 이미지의 소스 위치는 다음과 같이 찾을 수 있습니다.
+
+> myImgTag.attrs['src']
+
+## 2.6 람다 표현식
+
+람다 표현식은 간단히 말해 다른 함수에 변수로 전달되는 함수입니다. 다시 말해, 함수를 f(x,y) 처럼 정의하지 않고 f(g(x),y), 또는 f(g(x), h(x)) 같은 형태로도 정의할 수 있다는 뜻입니다.  
+
+BeautifulSoup에서는 특정 타입의 함수를 `find_all` 함수에 매개변수로 넘길 수 있습니다. 이들 함수는 반드시 태그 객체를 매개변수로 받아야 하고, boolean만 반환할 수 있다는 제약만 있습니다. BeautifulSoup는 모든 태그 객체를 이 함수에서 평가하고, true로 평가된 태그는 반환하며 그렇지 않은 태그는 버립니다.
+
+다음 코드는 속성이 정확히 두 개인 태그를 모두 가져옵니다.
+
+`soup.find_all(lambda tag: len(tag.attrs) == 2)`
+
+그 결과로 다음과 같이 속성이 두 개인 태그를 찾아냅니다.
+
+```html
+<div class="body" id="content"></div>
+<span style="color:red" class="title"></span>
+```
+
+BeautifulSoup에서 람다 함수를 쓰면 약간의 코드로 정규 표현식을 대체하는 선택자를 만들 수 있습니다.
+
+## 2.7 BeautifulSoup를 넘어
+
+BeautifulSoup는 파이썬에서 가장 널리 쓰이는 HTML 라이브러리이지만, BeautifulSoup만으로 필요한 일을 할 수 없다면 널리 쓰이는 다른 라이브러리도 있습니다.
+
+- lxml
+lxml 라이브러리(http://lxml.de/)는 HTML과 XML 문서를 모두 파싱할 수 있으며, 거의 C 언어로 만들어진 매우 저수준 라이브러리입니다. 배우는 데 시간이 좀 걸리지만, 대부분의 HTML 문서를 매우 빠르게 분석할 수 있습니다.
+
+- HTML 파서
+이 라이브러리는 파이썬에 내장 된 라이브러리입니다.
