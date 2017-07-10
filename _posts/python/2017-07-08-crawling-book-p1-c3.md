@@ -346,3 +346,149 @@ getAllExternalLinks(domain)
 서버 쪽 리다이렉트에 대해서는 보통 신경 쓸 일이 없습니다. 파이썬 3.x애서 제공하는 urllib 라이브러리가 리다이렉트를 자동으로 처리해줍니다. 그저 이따금 크롤링하는 페이지 URL이 입력한 URL과 정확히 일치하지 않을 수 있다는 것만 기억하면 됩니다.
 
 ## 3.4 스크래파이를 사용한 크롤링
+
+웹 크롤러를 만들다 보면 같은 일을 자주 반복하게 됩니다. 페이지의 링크를 모두 찾고, 내부 링크와 외부 링크의 차이점을 알아보고, 새 페이지로 이동하는 일 같은 것 말입니다. 물론 이런 기본 패턴을 알고 있어야 하고 처음부터 작성할 수도 있지만, 반복 작업을 줄여주는 라이브러리도 존재합니다.  
+
+[스크래파이(scrapy)](https://scrapy.org/){:target="`_`blank"}는 웹사이트의 링크를 찾아서 분석하고, 도메인이나 도메인 목록 크롤링 작업을 쉽게 해주는 파이썬 라이브러리입니다.  
+
+`pip install scrapy`  
+
+스크래파이로 크롤러를 만드는 것은 비교적 쉽지만, 크롤러를 만들기 전에 할 일이 있습니다. 현재 디렉터리에서 스크래파이 프로젝트를 시작하려면 명령중에서 다음을 실행하세요.
+
+```
+$ scrapy startproject wikiSpider
+```
+
+wikiSpider는 새 프로젝트 이름입니다. 이 명령은 프로젝트를 시작한 디렉터리 안에 wikiSpider라는 새 디렉터리를 만듭니다. 이 디렉터리에는 다음과 같은 구조로 파일이 만들어집니다.
+
+```
+└── wikiSpider
+    ├── scrapy.cfg
+    └── wikiSpider
+        ├── __init__.py
+        ├── __pycache__
+        ├── items.py
+        ├── middlewares.py
+        ├── pipelines.py
+        ├── settings.py
+        └── spiders
+            ├── __init__.py
+            └── __pycache__
+```
+크롤러를 만들려면 `wikiSpider/wikiSpider/spiders/`안에 새 파일 `articleSpider.py`를 추가해야 합니다. 또한 `items.py` 파일 안에 새 항목 `Article`을 정의해야 합니다.
+
+`items.py` 파일은 다음과 같은 형태로 편집해야 합니다. 스크래파이가 생성한 주석을 그대로 남겨두었는데, 이 주석은 원한다면 제거해도 됩니다.
+
+```
+# -*- coding: utf-8 -*-
+
+# Define here the models for your scraped items
+#
+# See documentation in:
+# http://doc.scrapy.org/en/latest/topics/items.html
+
+from scrapy import Item, Field
+
+class Article(Item):
+    title = Field()
+```
+
+스크래파이 Item 객체 하나가 웹사이트의 페이지 하나에 대응합니다. 물론 필드를 원하는 만큼(url, content, header image 등) 만들 수 있지만, 지금은 단순히 각 페이지에서 title 필드만 수집합니다.  
+
+새로 만든 `articleSpider.py` 파일을 수정합니다.
+
+```python
+2017-07-09 15:55:17 [scrapy.core.engine] DEBUG: Crawled (200) <GET https://en.wikipedia.org/wiki/Python_%28programming_language%29> (referer: None)
+
+
+from scrapy.selector import Selector
+from scrapy import Spider
+from wikiSpider.items import Article
+
+class ArticleSpider(Spider):
+    name = "article"
+    allowed_domains = ["en.wikipedia.org"]
+    start_urls = ["http://en.wikipedia.org/wiki/Main_Page", "http://en.wikipedia.org/wiki/Python_%28programming_language%29"]
+
+    def parse(self, response):
+        item = Article()
+        title = response.xpath('//h1/text()')[0].extract()
+        print("Title is: "+ title)
+        item['title'] = title
+        return item
+```
+
+이 객체의 이름 ArticleSpider을 디렉터리 이름 wikiSpider와 다르게 정한 이유는 이 클래스가 위키스파이더라는 더 넓은 카테고리 아래에서 항목 페이지만 수집하는 목적임을 나타내려는 것입니다. 다양한 컨텐츠를 가진 큰 사이트에서 스크래파이 프로젝트를 실행할 때는 각 타입(블로그 포스트, 뉴스, 글, 기타)에 스크래파이 아이템을 하나씩 두고 그 하나마다 필드를 다르게 쓰면서 이들이 모두 하나의 스크래파이 프로젝트 아래에서 동작하게 할 수 있습니다.
+
+wikiSpider 디렉터리 안에서 다음 명령으로 ArticleSpider를 실행 할 수 있습니다.  
+
+```
+$ scrapy crawl article
+```
+이 명령은 항목 이름인 article로 스크레이퍼를 호출합니다.(클래스나 파일 이름이 아니라, ArticleSpider 안에 name="article" 행에 정의된 이름입니다.)
+
+명령을 실행하면 몇 가지 디버깅 정보와 함께 다음 행이 출력됩니다.
+
+```
+Title is: Main Page
+2017-07-09 15:55:16 [scrapy.core.scraper] DEBUG: Scraped from <200 https://en.wikipedia.org/wiki/Main
+
+...
+
+Title is: Python (programming language)
+...
+```
+스크레이퍼는 `start_urls`에 있는 두 페이지로 이동해 정보를 수집한 후 종료합니다. 크롤러만큼 많은 일을 하지는 않지만, 스크랩할 URL 목록이 있다면 이런 방식이 유용합니다. 이것을 완전한 크롤러로 확장하려면 스크래이퍼가 만나는 각 페이지에서 새 URL을 검색하는 규칙을 정의해야 합니다.
+
+```Python
+from scrapy.contrib.spiders import CrawlSpider, Rule
+from wikiSpider.items import Article
+from scrapy.linkextractors import LinkExtractor
+
+class ArticleSpider(CrawlSpider):
+    name = "article"
+    allowed_domains = ["en.wikipedia.org"]
+    start_urls = ["http://en.wikipedia.org/wiki/Main_Page", "http://en.wikipedia.org/wiki/Python_%28programming_language%29"]
+    rules = [Rule(LinkExtractor(allow=('(/wiki/)((?!:).)*$'),), callback="parse_item", follow=True)]
+
+    def parse_item(self, response):
+        item = Article()
+        title = response.xpath('//h1/text()')[0].extract()
+        print("Title is: "+ title)
+        item['title'] = title
+        return item
+```
+
+이 크롤러는 앞에서처럼 명령줄에서 실행되지만, 강제로 종료하지 않는 이상 오랫동안 지속됩니다.
+
+> ### 스크래파이 로그  
+스크래파이가 생성하는 디버그 정보는 유용하긴 하지만 부담스러울 정도로 많습니다. 스크래파이 프로젝트의 `settings.py` 파일에 다음 행을 추가하면 쉽게 로그 수준을 조절할 수 있습니다.
+```
+LOG_LEVEL = 'ERROR'
+```
+다음은 스크래파이의 다섯 가지 로그 수준을 나열한 것입니다.
+- CRITICAL
+- ERROR
+- WARNING
+- DEBUG
+- INFO
+>
+로그 수준을 ERROR로 정하면 CRITICAL과 ERROR에 해당하는 로그만 표시되고, INFO로 정하면 모든 로그가 표시되는 식입니다.  
+로그를 터미널로 출력하지 않고 파일로 따로 저장하고 싶다면 명령을 내릴 때 다음과 같이 파일을 정해주면 됩니다.  
+```
+$ scrapy crawl article -s LOG_FILE=wiki.log
+```
+이 명령은 현재 디렉터리에 로그 파일이 존재하지 않으면 새로 만들고, 로그와 print 문의 출력 결과를 모두 거기에 기록합니다.
+
+스크래파이는 방문한 페이지에서 어떤 정보를 저장할지 Item 객테를 근거로 판단합니다. 이 정보는 CSV, JSON, XML 파일 등 다양한 방법으로 저장할 수 있으며 다음과 같은 명령어를 사용하면됩니다.
+
+```
+$ scrapy cralw article -o article.csv -t csv
+$ scrapy cralw article -o article.json -t json
+$ scrapy cralw article -o article.xml -t xml
+```
+물론 Item 객체를 직접 만들어 파일이나 데이터베이스에 원하는 대로 저장할 수 있으며, 크롤러의 파싱 함수에 적절한 코드를 추가하기만 하면 됩니다.  
+스크래파이는 웹 크롤링에 관련된 여러 문제를 처리할 수 있는 강력한 도구입니다. 모든 URL을 자동으로 수집해 미리 정의된 규칙과 비교하고, URL의 중복을 방지하고, 필요하다면 상대 URL을 절대 URL로 바꾸고, 재귀적으로 더 깊은 페이지에 들어가는 등 다양한 일을 할 수 있습니다.  
+
+스크래파이는 대단히 방대하고 빠르게 발전 중인 라이브러리입니다. 공식 문서를 꼭 읽어봅시다.  
+[스크래파이(scrapy) 문서](https://doc.scrapy.org/){:target="`_`blank"}
