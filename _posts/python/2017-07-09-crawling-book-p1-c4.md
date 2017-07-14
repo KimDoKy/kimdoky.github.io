@@ -66,15 +66,73 @@ HTTP 명세에는 다른 HTTP 메서드도 많이 정의되어 있지만, 위 4 
 
 ### 4.2.2 인증
 
+인증을 전혀 사용하지 않는, 즉 애플리케이션에 등록하지 않고도 자유롭게 호출할 수 있는 API도 있지만 최신 API는 어떤 형태로든 인증을 해야 사용할 수 있습니다.
+
+호출 횟수에 따라 비용을 청구하기 위해 인증을 요구하는 API도 있고, 월간 구독 개념으로 서비스를 제공하는 API도 있습니다. 초당, 시간당, 하루당 몇 회로 호출 숫자를 제한하기 위해 인증을 사용하는 곳도 있고, 사용자에 따라 특정 정보에의 접근을 제한하거나 API 호출 타입을 제한하기 위해 인증을 사용하는 곳도 있습니다. 제한 목적이 아니라 마케팅 목적으로 사용자가 무엇을 호출하는지 기록하려고 인증을 요구하는 곳도 있습니다.  
+
+API 인증은 일반적으로 일종의 토큰을 사용하며 API를 호출할 때마다 이 토큰이 웹 서버에 전송됩니다. 사용자가 등록할 때 토큰을 제공하고 영구적으로 쓰는 곳도 있고(보통 높은 수준의 보안이 필요하지 않은 곳), 자주 바뀌며 사용자 이름과 비밀번호 조합에 따라 서버에서 받아오게 하는 곳도 있습니다.  
+
+예를 들어 에코 네스트(Echo Nest) API에 건스 앤 로지스의 노래 목록을 오청하려면 다음과 같이 합니다.
+
+`http://developer/echonest.com/api/v4/artist/songs?api_key=[your api key]&name=guns%20n%27%20reses&format=json&start=0&results=10`
+
+이 요청은 API에 등록할 때 받은 `api_key` 값을 서버에 보내서 서버가 요청자를 라이언 미첼이라고 인식하고, json 데이터를 요청자에게 보냅니다.  
+
+토큰은 요청 자체의 URL에 넣어서 보낼 수도 있고, 요청 헤더에서 쿠키를 통해 보낼 수고 있습니다. 이전에 다룬 urllib 패키지를 통해 보낼 수도 있습니다.
+
+```python
+token = "[your api key]"
+webRequest = urllib.request.Request("http://myapi.com", headers={"token":token})
+html = urlopen(webRequest)
+```
+
 ## 4.3 응답
+
+API에서 중요한 부분은 그 응답이 정형화되어 있다는 겁니다. 가장 널리 쓰이는 응답 타입은  **XML(Extensible Markup Language)** 과 **JSOM(JavaScript Object Notations)** 입니다.
+
+몇 가지 중요한 이유로 최근에는 JSON 이 XML 보다 더 널리 쓰입니다. 먼저, JSON 파일은 일반적으로 디자인된 XML 파일보다 작습니다.
+
+XML 데이터로   `<user><firstname>Ryan</firstname><lastname>Mitchell</lastname><username>Kludgist</username></user>`
+
+98 글자인데, 같은 데이터를 JSON으로 나타내면 다음과 같습니다,
+
+`{"user":{"firstname":"Ryan","lastname":"Mitchell","username":"Kludgist"}}`
+
+73 글자이고, XML에 비해 36%만큼 작습니다.
+
+물론 XML으로도 JSON과 같은 형식으로 만들 수도 있습니다.
+
+`<user firstname="ryan" lastname="Mitchell" username="Kludgist"></user>`  
+
+하지만 이런 형식은 중첩된 데이터를 깊숙이 탐색할 수 없으므로 나쁜 형식입니다. 그리고 JSON과 글자 수 차이도 많이 나지 않습니다.  
+
+JSON이 빠르게 퍼진 이유에는 웹 기술의 발전도 있습니다. 과거에는 API를 받는 쪽에서도 PHP나 .NET 같은 서버쪽 스크립트를 쓰는 경우가 많았습니다. 요즘은 앵귤러나 백본 같은 프레임워크가 API 호출을 주고 받습니다. 서버 쪽 기술은 받는 데이터 형식에 다소 완고한 편입니다. 반면 백본 같은 자바스크립 라이브러리는 JSON을 더 선호합니다.  
 
 ### 4.3.1 API 호출
 
+API 호출 문법은 API에 따라 크게 다르지만, 몇 가지 표준적이 부분도 존재합니다. GET 요청으로 데이터를 가져올 때, URL 경로는 데이터에 어떻게 찾아가는지를 나타내고 쿼리 매개변수는 일종의 필터 또는 검색에 사용할 추가 요청 구실을 합니다.
+
+예를 들어 가상의 API에, ID가 1234인 사용자가 2014년 8월 한 달 동안 작성한 글을 요청한다면 다음과 비슷한 URL을 사용할 겁니다.  
+
+`http://socialmediasite.com/user/1234/posts?from=08012014&to=08312014`
+
+URL 경로에 API 버전, 원하는 데이터 형식, 기타 속성을 사용하는 API도 있습니다. 예를 들어 위 요청에 추가로 API 버전 4를 사용해서 JSON 형식으로 데이터를 요청한다고 합시다.
+
+`http://socialmediasite.com/api/v4/json/user/1234/posts?from=08012014&to=08312014`  
+
+API 버전과 데이터 형식을 매개변수로 받는 곳도 있습니다.
+
+`http://socialmediasite.com/user/1234/posts?format=json&from=08012014&to=08312014`
+
 ## 4.4 에코 네스트
 
-### 4.4.1 몇 가지 예제
+에코 네스트는 웹 스크레이퍼를 기반으로 움직이는 회사의 좋은 예입니다. 판도라처럼 음악으로 수익을 올리는 회사들은 음악을 분류하고 설명을 첨부하는 작업에 사람의 손이 필요하지만, 에코 네스트는 인공지능으로 블로그와 뉴스에서 스크랩한 정보를 음악가, 음악, 앨범으로 분류합니다.  
+
+더 좋은 점은, 비상업적 용도로는 이 API를 무료로 사용할 수 있습니다. 물론 API 키는 필요하지만, 에코 네스트의 계정 생성 페이지(https://developer.echonest.com/account/register)에서 이름과 이메일 주소, 사용자 이름만 등록하면 키를 받을 수 있습니다.
+> 현재는 대한민국은 지원하지 않습니다. 그래서 예제는 넘어갑니다.
 
 ## 4.5 트위터
+
 
 ### 4.5.1 시작하기
 
