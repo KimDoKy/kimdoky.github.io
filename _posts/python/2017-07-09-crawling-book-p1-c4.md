@@ -133,10 +133,78 @@ API 버전과 데이터 형식을 매개변수로 받는 곳도 있습니다.
 
 ## 4.5 트위터
 
+트위터는 까다로운 API으로 악명 높지만, 실제 사용자 수는 2억 3천만 명이 넘고 매월 일억 달러 이상의 수익을 올리고 있기 때문에 API로 데이터를 원할 때는 조심스러운 것이 당연합니다.  
+
+트위터의 사용 제한은 두 가지입니다. 15분 사이에 15번 호출, 또는 15분 사이에 180번 호출이며 이 구분은 호출 타입에 따라 다릅니다. 예를 들어 트위터 사용자의 기본 정보를 가져오는건 1분에 12번씩 할 수 있지만, 해당 유저를 팔로잉하는 사람 목록은 1분에 한 번밖에 요청할 수 없습니다.
 
 ### 4.5.1 시작하기
 
+사용 제한에 더해, 트위터는 API 키를 받는 것부터 그 키를 사용하는 것까지 다른 API보다 복잡한 승인 시스템을 사용하고 있습니다. API 키를 받으려면 물론 트위터 계정이 필요합니다. 또한 트위터 개발자 사이트(https://apps.twitter.com/app/new)에 '애플리케이션'을 등록해야 합니다.  
+
+등록을 마치면 애플리케이션 기본 정보가 있는 페이지로 이동하는데, 사용자 키도 이 페이지에 있습니다.
+
+![]({{site.url}}/img/post/python/crawling/twitter_developer.png)
+> 트위터의 애플리케이션 설정 페이지에는 새 애플리케이션에 대한 기본 정보가 들어 있습니다.
+
+'keys and access tokens'를 누르면 더 많은 정보가 나옵니다.
+
+![]({{site.url}}/img/post/python/crawling/twitter_developer_2.png)
+> 트위터 API를 사용하려면 시크릿 키가 필요합니다.
+
+이 페이지에는 어떤 이유로든 시크릿 키가 노출 됐을 때, 자동으로 키를 재 설정하는 버튼도 있습니다.
+
 ### 4.5.2 몇 가지 예제
+
+트위터는 OAuth를 기반으로 한 인증 시스템을 사용하는데, 대단히 복잡합니다. 직접 하는 것보다는 이미 나와 있는 라이브러리를 사용하는 것이 좋습니다. 트위터 API를 '손으로' 다루는 건 상당히 복잡하므로, 이 섹션의 샘플은 파이썬 코드를 통해 API에 연결하는데 중점을 둡니다.  
+
+파이썬 트위터 도구 페이지(http://mike.verdone.ca/twitter/#downloads)에서 내려 받거나 pip 등으로 설치하면 됩니다.
+
+> ### 트위터 증명 권한
+기본적으로 애플리케이션 접근 토큰에는 읽기 전용 권한이 주어집니다. 이 권한으로도 필요한 일은 대부분 할 수 있지만, 실제 트윗을 작성하는 애플리케이션은 만들 수 없습니다.  
+토큰에 읽기/쓰기 권한을 주려면 트위터 애플리케이션 관리 패널의 '권한' 탭으로 이동합니다. 권한 업데이트가 적용되려면 토큰을 재생성해야 합니다.  
+마찬가지로, 애플리케이션에서 필요하다면 트위터 계정에 들어오는 다이렉트 메시지에 접근할 수 있도록 토큰 권한을 업데이트할 수 있습니다. 하지만 토큰에는 정말 꼭 필요한 권한만 부여해야 합니다. 일반적으로 여러 애플리케이션에 사용할 토큰을 여러 세트 만들어 사용하는 것이 좋습니다. 지나치게 강력한 토큰을 만들어 그런 권한이 필요하지 않은 애플리케이션에 사용하는 것은 좋지 않습니다.
+
+첫 번째 연습문제로 특정 트윗을 검색해봅니다. 다음 코드는 트위터 API에 연결해서 해시 태그 #python이 들어있는 트윗 목록을 JSON으로 출력합니다. OAuth가 들어 있는 행의 문자열을 실제 키로 교체합니다.
+
+```python
+from twitter import *
+
+t = Twitter(aouth=OAuth('Access Token','Access Token Secret','Consumer Key','Consumer Secret'))
+pythonTweets = t.search.tweets(q = "#python")
+print(pythonTweets)
+```
+이 스크립트의 출력 결과가 좀 과해 보이는 건 트윗이 생성된 날짜와 시간, 리트윗이나 좋아요에 대한 세부사항, 사용자 계정, 프로필 이미지 등 트윗 한 개당 가져오는 정보가 많아서 그렇습니다. 이 데이터 중 일부만 필요하겠지만, 트위터 API는 API를 통해 가져온 트윗을 자신의 웹사이트에 쓰려는 웹 개발자를 위해 디자인됐으므로 부가 정보가 많이 들어 있습니다.
+
+API를 통해 트윗 하나를 보내고 결과를 봅니다.
+
+```python
+from twitter import *
+
+t = Twitter(aouth=OAuth('Access Token','Access Token Secret','Consumer Key','Consumer Secret'))
+statusUpdate = t.statuses.update(status='Hello, world!')
+print(statusUpdate)
+```
+> `{'message': 'Status is a duplicate.', 'code': 187}` 에러가 발생한다면, 메시지를 변경해서 다시 해보면 된다. 메시지가 중복되어서 발생하는 에러이다.
+
+![]({{site.url}}/img/post/python/crawling/twitter_developer_3.jpeg)
+> 트위터에 입력한 내용으로 트윗 된 것을 확인 할 수 있다.
+
+다음은 결과 JSON입니다.
+
+```
+~/Git/Study/crawling/web_scraping/chap4(master*) » python part1_chap4_twitter_2.py
+{'favorited': False, 'in_reply_to_screen_name': None, 'id': 885915670877057024, 'lang': 'en', 'created_at': 'Fri Jul 14 17:35:30 +0000 2017', 'truncated': False, 'text': 'Twitter Test', 'place': None, 'in_reply_to_status_id_str': None, 'id_str': '885915670877057024', 'entities': {'symbols': [], 'user_mentions': [], 'urls': [], 'hashtags': []}, 'coordinates': None, 'source': '<a href="http://czarcie.com" rel="nofollow">czarcie scraper</a>', 'is_quote_status': False, 'in_reply_to_status_id': None, 'user': {'followers_count': 25, 'contributors_enabled': False, 'profile_image_url': 'http://pbs.twimg.com/profile_images/1096219848/harpydevil_38_normal.jpg', 'profile_background_image_url_https': 'https://abs.twimg.com/images/themes/theme1/bg.png', 'time_zone': None, 'lang': 'en', 'following': False, 'created_at': 'Thu Aug 05 15:36:30 +0000 2010', 'url': 'http://t.co/y1bdxvIKtm', 'profile_sidebar_border_color': 'C0DEED', 'profile_sidebar_fill_color': 'DDEEF6', 'favourites_count': 5, 'profile_image_url_https': 'https://pbs.twimg.com/profile_images/1096219848/harpydevil_38_normal.jpg', 'profile_link_color': '1DA1F2', 'geo_enabled': False, 'profile_text_color': '333333', 'is_translation_enabled': False, 'profile_background_color': 'C0DEED', 'listed_count': 2, 'location': 'Corea. rep', 'is_translator': False, 'translator_type': 'none', 'utc_offset': None, 'profile_background_image_url': 'http://abs.twimg.com/images/themes/theme1/bg.png', 'statuses_count': 149, 'screen_name': 'Makingfunk', 'notifications': False, 'profile_background_tile': False, 'id_str': '175075821', 'entities': {'url': {'urls': [{'display_url': 'cyworld.co.kr/makingfunk', 'url': 'http://t.co/y1bdxvIKtm', 'expanded_url': 'http://www.cyworld.co.kr/makingfunk', 'indices': [0, 22]}]}, 'description': {'urls': []}}, 'default_profile_image': False, 'profile_use_background_image': True, 'id': 175075821, 'friends_count': 43, 'default_profile': True, 'protected': False, 'has_extended_profile': False, 'follow_request_sent': False, 'verified': False, 'description': 'aLMOND wAFFLEs', 'name': 'Kim Do Kyung'}, 'contributors': None, 'geo': None, 'retweeted': False, 'favorite_count': 0, 'in_reply_to_user_id': None, 'retweet_count': 0, 'in_reply_to_user_id_str': None}
+```
+트윗 하나를 보낸 결과입니다. 트위터에서 API 접근을 제한하는 이유가 모든 요청에 응답하는데 필요한 대역폭 때문이 아닌가 싶을 정도입니다.  
+
+트윗 목록을 요청할 때는 가져올 숫자를 정할 수도 있습니다.
+```python
+pythonStatuses = t.statuses.user_timeline(screen_name="montypython", count=5)
+print(pythonStatuses)
+```
+여기서는 @mantypython의 타임라인에 있는 마지막 다섯 트윗(리트윗 포함)을 요청했습니다.
+
+대부분의 사람들이 이 세 가지 예제(트윗 검색, 특정 사용자의 트윗 요청, 트윗 만들기) 정도라면 트위터 API로 하고자 한 일을 충족하겠지만, 트위터 파이썬 라이브러리의 기능은 훨씬 다양합니다 트윗 목록을 검색하거나 조작하고, 다른 사용자를 팔로우하거나 팔로우를 끊거나, 다른 사용자의 프로필 정보를 찾아보는 등 많은 기능이 있습니다. 라이브러리 문서는 깃허브(https://github.com/sixohsix/twitter)를 참고하세요.
 
 ## 4.6 구글 API
 
