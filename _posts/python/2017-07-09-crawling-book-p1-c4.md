@@ -350,7 +350,52 @@ https://maps.googleapis.com/maps/api/elevation/json?locations=42.3677994,-71.070
 
 ## 4.7 JSON 파싱
 
+`http://freegeoip.net/json/50.78.253.58`  
 
+IP 주소를 실제 주소로 변환하는 예제입니다.
+
+이 요청의 응답을 파이썬의 JSON 파싱 함수에 넘겨 분석할 수 있습니다.
+
+```python
+import json
+from urllib.request import urlopen
+
+def getCountry(ipAddress):
+    response = urlopen("http://freegeoip.net/json/" + ipAddress).read().decode('utf-8')
+    responseJson = json.loads(response)
+    return responseJson.get("country_code")
+
+print(getCountry("50.78.253.58"))
+```
+
+이 코드는 IP 주소 50.78.253.58의 국가 코드를 출력합니다.
+
+JSON 파싱 라이브러리는 파이썬의 핵심 라이브러리 일부분입니다. JSON을 분석해서 JSON 객체나 JSON 노드로 변환하는 언어가 많지만, 파이썬은 더 유연한 접근법을 채택해서 JSON 객체는 딕셔너리로, JSON 배열은 리스트로, JSON 문자열은 문자열로 변환합니다. 이런 방식 덕분에 JSON에 저장된 값에 접근하고 조작하기가 대단히 쉽습니다.  
+
+다음 코드를 보면 파이썬의 JSON 라이브러리가 JSON 문자열에 포함된 다양한 값을 어떻게 처리하는지 알 수 있습니다.
+
+```python
+import json
+
+jsonString = '{"arrayofNums":[{"number":0},{"number":1},{"number":2}],"arrayofFruits":[{"fruit":"apple"},{"fruit":"banana"},{"fruit":"pear"}]}'
+jsonObj = json.loads(jsonString)
+
+print(jsonObj.get("arrayofNums"))
+print(jsonObj.get("arrayofNums")[1])
+print(jsonObj.get("arrayofNums")[1].get("number")+jsonObj.get("arrayofNums")[2].get("number"))
+print(jsonObj.get("arrayofFruits")[2].get("fruit"))
+```
+
+출력 결과입니다.
+
+```
+[{'number': 0}, {'number': 1}, {'number': 2}]
+{'number': 1}
+3
+pear
+```
+
+1행은 딕셔너리 객체 리스트, 2행은 딕셔너리 객체, 3행은 정수(딕셔너리에서 접근한 정수들의 합), 4행은 문자열입니다.
 
 ## 4.8 모든 것을 하나로
 
