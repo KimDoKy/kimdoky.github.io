@@ -399,4 +399,112 @@ pear
 
 ## 4.8 모든 것을 하나로
 
+둘 이상의 데이터 소스를 새로운 방법으로 결합하거나 API를 스크랩한 데이터를 새로운 관점으로 보는 도구로 사용합니다.
+
+API에서 얻은 데이터오 웹 스크레이핑을 결합하는 예입니다. 세계 어느 지역에서 위키백과에 가장 많이 이바지했는지 알아봅니다.  
+
+위키백과는 항목의 최근 편집 내역이 들어있는 개정 내역 페이지가 있습니다. 사용자가 로그인한 상태에서 위키백과를 편집했다면 그 사용자 이름이 표시됩니다. 로그인하지 않았다면 IP주소가 기록됩니다.
+
+![]({{site.url}}/img/post/python/crawling/wiki_history.png)
+> 파이썬 항목의 개정 내역 페이지에 익명 수정자의 IP 주소가 나타나 있습니다.
+
+개정 내역 페이지의 사각형 안에 있는 IP 주소는 221.132.65.163 입니다. freegeoip.net API에 해당 IP 주소를 문의한 결과 서울의 누군가... 입니다. (당연한 결과겠지만요)
+
+위키백과 개정 내역 페이지를 크롤링하고 IP 주소를 찾아내는 스크립트는 어렵지 않게 만들 수 있습니다.
+
+```python
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+import datetime
+import random
+import re
+
+random.seed(datetime.datetime.now())
+def getLinks(articleUrl):
+    html = urlopen("http://en.wikipedia.org" + articleUrl)
+    bsObj = BeautifulSoup(html, "html.parser")
+    return bsObj.find("div", {"id":"bodyContent"}).findAll("a",href=re.compile("^(/wiki/)((?!:).)*$"))
+
+def getHistoryIPs(pageUrl):
+    # 개정 내역 페이지 URL은 다음과 같은 형식입니다.
+    # http://en.wikipedia.org/w/index.php?title=Title_in_URL&action=history
+    pageUrl = pageUrl.replace("/wiki/", "")
+    historyUrl = "http://en.wikipedia.org/w/index.php?title=" + pageUrl + "&action=history"
+    print("history url is: " + historyUrl)
+    html = urlopen(historyUrl)
+    bsObj = BeautifulSoup(html)
+    # 사용자명 대신 IP 주소가 담긴, 클래스가 mw-anonuserlink인 링크만 찾습니다.
+    ipAddresses = bsObj.findAll("a", {"class":"mw-anonuserlink"})
+    addressList = set()
+    for ipAddress in ipAddresses:
+        addressList.add(ipAddress.get_text())
+    return addressList
+
+links = getLinks("/wiki/Python_(programming_language)")
+
+while(len(links) > 0):
+    for link in links:
+        print("--------------")
+        historyIPs = getHistoryIPs(link.attrs["href"])
+        for historyIP in historyIPs:
+            print(historyIP)
+
+        newLink = links[random.randint(0, len(links)-1)].attrs["href"]
+        links = getLinks(newLink)
+```
+
+이 프로그램에는 메인 함수가 두 개 있습니다. getLinks는 이전에도 사용했던 함수이고, 새 함수인 getHistoryIPs는 클래스가 mw-anonuserlink(사용자 이름이 아니라 익명 사용자의 IP 주소임을 나타내는 클래스)인 모든 링크 콘텐츠를 검색해서 파이선 세트로 반환합니다.
+
+> ### 세트에 대해서..  
+파이썬 세트에는 순서가 없습니다. 따라서 세트의 특정 위치를 찾아 원하는 값을 얻을 수는 없습니다. 세트에 데이터를 추가한 순서대로 꺼낼 수 있는건 아닙니다. 이 코드에서 세트를 쓴 이유는 같은 항목이 중복되지 않는다는 장점 때문입니다. 세트에 이미 존재하는 문자열을 추가해도 중복되지 않습니다. 이런 방식으로 같은 사용자가 여러 번 편집한 것은 무시하면서 개정 내역 페이지에서 중복 없는 IP 주소를 빠르게 얻을 수 있습니다.  
+나중에 확장해야 할 코드를 작성하면서 세트와 리스트 중 하나를 정할 때 고려할 것이 있습니다. 리스트를 순회할 때 세트보다 조금 더 빠르고, 세트는 검색(원하는 객체가 세트 안에 존재하는지 판단)할 때 조금 더 빠릅니다.
+
+이 코드는 약간 인위적인 검색 패턴을 써서 글 개정 내역을 가져 올 항목을 찾습니다. 먼저 시작 페이지에 연결된 모든 위키백과 항목의 개정 내역을 가져옵니다. 그리고 무작위로 새 시작 페이지를 선택한 다음, 그 페이지에 연결된 항목의 개정 내역을 가져옵니다. 링크가 없는 페이지를 만날 때까지 이 작업을 반복합니다.  
+
+이제 IP 주소를 문자열로 가져오는 코드를 만들었으니, 이 코드와 이전 섹션의 getCountry 함수를 결함해 이들 IP 주소를 국가로 변환할 겁니다. 여기서는 잘못된 IP 주소 때문에 404 에러가 생기지 않도록 getCountry 함수를 약간 수정합니다.
+
+```python
+def getCountry(ipAddress):
+    try:
+        response = urlopen("http://freegeoip.net/json/" + ipAddress).read().decode('utf-8')
+    except HTTPError:
+        return None
+    responseJson = json.loads(response)
+    return responseJson.get("country_code")
+
+links = getLinks("/wiki/Python_(programming_language)")
+
+while(len(links) > 0):
+    for link in links:
+        print("------------")
+        historyIPs = getHistoryIPs(link.attrs["href"])
+        for historyIP in historyIPs:
+            country = getCountry(historyIP)
+            if country is not None:
+                print(historyIP + " is from " + country)
+
+    newLink = links[random.randint(0, len(links)-1)].attrs["href"]
+    links = getLinks(newLink)
+```
+다음은 출력 결과 일부입니다.
+
+```
+------------
+history url is: http://en.wikipedia.org/w/index.php?title=Object-oriented_programming&action=history
+45.116.233.53 is from PK
+203.192.249.10 is from IN
+2405:205:a000:9aed:4a52:61e9:6358:800e is from IN
+89.233.168.1 is from CZ
+82.22.39.157 is from GB
+2405:204:3184:6ebb::26:c8ac is from IN
+186.26.115.185 is from CR
+2405:205:120c:1cd::283:10ac is from IN
+```
+
 ## 4.9 마치며
+
+최신 API으로 웹의 데이터에 접근하는 방법, 특히 웹 스크레이핑에 유용하게 쓰일만한 방법들을 몇 가지 알아봤습니다. 하지만 '본질에서 다른 소프트웨어와 데이터를 공유하는 소프트웨어'라는 광대한 의미를 충족했다고 볼 수는 없습니다.  
+
+레오나르드 리차드슨, 마이크 애먼스, 샘 루비가 쓴 'RESTful Web API'(인사이트, 2015)는 웹 API의 이론과 사례를 충분히 설명합니다. 또한 마이크 애먼스의 비디오 시리즈 'Designing APIs for the Web'(http://oreil.ly/1GOXNhE)에는 API를 직접 만드는 법, 스크랩한 데이터를 간편한 형식으로 공개하고 싶을 때 알아야 할 것들이 들어 있습니다.  
+
+웹 스크레이핑과 웹 API는 언뜻 보기엔 서로 다른 주제로 보일 수 있습니다. 하지만 두 기술은 테이터 컬렉션의 연장선으로 서로 보완하는 존재입니다. 웹 스크레이퍼의 목적은 원격 웹 서버에서 데이터를 수집하고 쓸모 있는 형식으로 파싱하는 스크립트를 만드는 것입니다.
