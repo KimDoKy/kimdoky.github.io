@@ -92,7 +92,9 @@ API에서 중요한 부분은 그 응답이 정형화되어 있다는 겁니다.
 
 몇 가지 중요한 이유로 최근에는 JSON 이 XML 보다 더 널리 쓰입니다. 먼저, JSON 파일은 일반적으로 디자인된 XML 파일보다 작습니다.
 
-XML 데이터로   `<user><firstname>Ryan</firstname><lastname>Mitchell</lastname><username>Kludgist</username></user>`
+XML 데이터로  
+
+`<user><firstname>Ryan</firstname><lastname>Mitchell</lastname><username>Kludgist</username></user>`
 
 98 글자인데, 같은 데이터를 JSON으로 나타내면 다음과 같습니다,
 
@@ -208,11 +210,147 @@ print(pythonStatuses)
 
 ## 4.6 구글 API
 
+최근 웹에서 가장 상세하고 쓰기 쉬운 API 컬렉션을 갖춘 곳은 구글입니다. 구글에는 번역, 지오로케이션, 달력 같은 기본적인 것부터 유전학에 관한 API도 있습니다. G메일, 유투브, 블로거 같은 인기 있는 앱의 API도 있습니다.  
+
+구글 API에는 레퍼런스 페이지가 두 개 있습니다. 하나는 제품 페이지(https://developers.google.com/products/)입니다. 이 페이지는 API와 소프트웨어 개발 도구, 기타 소프트웨어 개발자들이 흥미 있어 할 프로젝트의 저장소 구실을 합니다. 다른 하나는 API 콘솔(https://code.google.com/apis/console/)입니다. 이 페이지는 API를 켜거나 끄고, 사용 제한과 사용량을 일목요연하게 정리된 간편한 인터페이스를 제공하며, 원한다면 구글이 제공하는 클라우드 컴퓨팅 인스턴스도 이용할 수 있습니다.  
+
+구글 API는 대부분 무료지만 검색 API 같은 일부 API는 사용료를 지불해야 합니다. 무료 API의 사용 제한은 매우 낮은 편이어서 기본 계정으로도 하루 250번에서 2백만 번까지 요청을 보낼 수 있는 API도 있습니다. 일부 API는 신용카드를 통해 신원 증명을 하면(무료) 제한이 완화되기도 합니다. 예를 들어 구글 플레이스(Places) API의 기본 사용 제한은 하루 1천 번이지만, 신원 증명을 하면 15만 번으로 늘어납니다. [사용 제한과 요금 페이지](https://developers.google.com/places/webservice/usage){:target="`_`blank"}를 참고하세요.
+
 ### 4.6.1 시작하기
+
+구글 계정이 있으면 [개발자 콘솔](https://console.developers.google.com/project/){:target="`_`blank"}에서 사용 가능한 API 목록을 확인하고 키를 받을 수 있습니다.  
+로그인하거나 계정을 만들면 [API 콘솔 페이지](https://code.google.com/apis/console/){:target="`_`blank"}에서 API 키를 포함한 계정 증명을 볼 수 있습니다. 왼쪽 메뉴에서 '사용자 인증 정보'를 클릭하면 보입니다.
+
+![]({{site.url}}/img/post/python/crawling/google_developer.png)
+> 구글의 사용자 인증 정보 페이지
+
+사용자 인증 정보 페이지에서 사용자 인증 정보 만들기 버튼을 클릭해서 API 키를 만들 때 해당 키를 특정 IP 주소나 URL에서만 사용할 수 있게 제한할 수 있습니다. API 키를 제한 없이 쓸 수 있게 만들려면 '제한' 버튼을 누르지 않은 채 API 키를 생성하면 됩니다. 하지만 이렇게 IP 주소를 제한하지 않을 때는 키를 잘 보관해야 합니다. API 키를 사용해서 요청 할 때마다 허용된 사용량이 차감되며, 요청의 인증이 실패해도 사용량이 차감됩니다.  
+
+API 키는 여러 개 만들 수 있습니다. 예를 들어 각 프로젝트에 따라 API 키를 따로 쓰거나 소유한 도메인마다 API 키를 따로 쓸 수 있습니다. 하지만 구글의 API 제한은 계정에 걸리는 것이지 키에 걸리는 것이 아닙니다. API 키를 여러 개 만들면 API 권한을 좀 더 체계적으로 관리할 수 있겠지만, 제한이 완화되지는 않습니다.
 
 ### 4.6.2 몇 가지 예제
 
+구글의 가장 유명한 API는 구글 지도 API입니다. 여러 웹사이트에서 구글 지도를 쓰고 있기 때문에 이 기능은 친숙하게 느껴질겁니다. 하지만 구글 지도 API는 단순히 사이트에 지도를 가져다 쓰는 것에 그치지 않습니다. 거리 주소를 위도/경도로 바꾸고, 어느 곳이든 고도를 구하고, 다양한 위치 기반 시각화를 만들고, 임의의 위치에 관한 타임존 정보를 얻는 등 여러 가지 작업을 할 수 있습니다.  
+이들 예제를 직접 해보려면 먼저 구글 API 콘솔에서 필요한 API를 활성화해야 합니다. 구글은 어떤 API가 얼마나 활성화되었는지를 근거로 API 사용자 통계를 내고 있으므로 API를 사용하기 전에 명시적으로 활성화해야 합니다.  
+
+구글의 지오코드 API를 사용하면 브라우저에서 단순한 GET 요청을 보내 거리 주소(예제에선 보스턴 과학 박물관 주소)를 위도와 경도로 변환할 수 있습니다.
+
+```json
+https://maps.googleapis.com/maps/api/geocode/json?address=1+Science+Park+Boston+MA+02114&key=[API Key]
+
+{
+   "results" : [
+      {
+         "address_components" : [
+            {
+               "long_name" : "Museum Of Science Driveway",
+               "short_name" : "Museum Of Science Driveway",
+               "types" : [ "route" ]
+            },
+            {
+               "long_name" : "Boston",
+               "short_name" : "Boston",
+               "types" : [ "locality", "political" ]
+            },
+            {
+               "long_name" : "Massachusetts",
+               "short_name" : "MA",
+               "types" : [ "administrative_area_level_1", "political" ]
+            },
+            {
+               "long_name" : "미국",
+               "short_name" : "US",
+               "types" : [ "country", "political" ]
+            },
+            {
+               "long_name" : "02114",
+               "short_name" : "02114",
+               "types" : [ "postal_code" ]
+            }
+         ],
+         "formatted_address" : "Museum Of Science Driveway, Boston, MA 02114 미국",
+         "geometry" : {
+            "bounds" : {
+               "northeast" : {
+                  "lat" : 42.3687854,
+                  "lng" : -71.06963
+               },
+               "southwest" : {
+                  "lat" : 42.3666775,
+                  "lng" : -71.07326490000001
+               }
+            },
+            "location" : {
+               "lat" : 42.3679381,
+               "lng" : -71.07111019999999
+            },
+            "location_type" : "GEOMETRIC_CENTER",
+            "viewport" : {
+               "northeast" : {
+                  "lat" : 42.3690804302915,
+                  "lng" : -71.06963
+               },
+               "southwest" : {
+                  "lat" : 42.3663824697085,
+                  "lng" : -71.07326490000001
+               }
+            }
+         },
+         "place_id" : "ChIJ3YE7YpZw44kRQKJTFGx_8V0",
+         "types" : [ "route" ]
+      }
+   ],
+   "status" : "OK"
+}
+```
+
+API에 보내는 주소에 특별히 요구되는 형식이 있지는 않습니다. 구글은 구글이라, 지오코드 API는 우편번호 또는 주(미시건 주 등) 정보가 빠져 있거나, 설령 주소에 오타가 있더라도 정확한 주소를 추론해서 사용합니다. 예를 들어 요청 매개변수에 1+Skience+Park+Bostton+MA 처럼 오타를 내거나 우편번호를 쓰지 않아도 같은 결과를 반환합니다.  
+
+위에서 찾은 위도와 경도를 타임존 API에 보내면 타임존 정보를 알 수 있습니다.
+
+```
+https://maps.googleapis.com/maps/api/timezone/json?location=42.3677994,-71.0708078&timestamp=1412649030&key=[Api Key]
+```
+
+응답은 다음과 같습니다.
+
+```json
+{
+   "dstOffset" : 3600,
+   "rawOffset" : -18000,
+   "status" : "OK",
+   "timeZoneId" : "America/New_York",
+   "timeZoneName" : "Eastern Daylight Time"
+}
+```
+타임존 API에 요청을 보낼 때는 유닉스 타임스탬프(Unix timestamp)가 필요합니다. 구글은 타임스탬프 정보를 이용해 타임존을 서머타임에 맞게 수정해서 제공합니다. 서머타임을 적용하지 않는 지역이라도 타임스탬프가 있어야 API에 요청을 보낼 수 있습니다.  
+
+구글 지도 API는 더 쉽습니다. 위도와 경도를 가지고 고도를 읽어옵니다.
+
+```
+https://maps.googleapis.com/maps/api/elevation/json?locations=42.3677994,-71.0708078&key=[Api Key]
+```
+이 요청은 지정한 위치가 해발 몇 미터인지 반환합니다. '해상도(resolution)'를 함께 알려주는데, 이것은 이 고도를 보간할 때 사용한 데이터 포인트 중 가장 먼 것이 몇 미터 떨어졌는지 나타냅니다. 해상도가 낮을수록 고도가 정확한 겁니다.
+
+```json
+{
+   "results" : [
+      {
+         "elevation" : 5.127755641937256,
+         "location" : {
+            "lat" : 42.3677994,
+            "lng" : -71.0708078
+         },
+         "resolution" : 9.543951988220215
+      }
+   ],
+   "status" : "OK"
+}
+```
+
 ## 4.7 JSON 파싱
+
+
 
 ## 4.8 모든 것을 하나로
 
