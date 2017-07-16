@@ -219,16 +219,135 @@ $ sudo apt-get install mysql-server
 $ brew install mysql
 ```
 
+> ### MAC에서 MySQL 삭제
+```
+sudo rm /usr/local/mysql
+sudo rm -rf /usr/local/mysql*
+sudo rm -rf /Library/StartupItems/MySQLCOM
+sudo rm -rf /Library/PreferencePanes/My*
+rm -rf ~/Library/PreferencePanes/My*
+sudo rm -rf /Library/Receipts/mysql*
+sudo rm -rf /Library/Receipts/MySQL*
+sudo rm -rf /var/db/receipts/com.mysql.*
+sudo vi /etc/hostconfig
+```
+
 홈브류는 훌륭한 오픈 소스 프로젝트이며 파이썬 패키지와 매우 잘 어울립니다.  
 
 맥 OS X에 MySQL을 설치했으면 다음 명령으로 서버를 시작할 수 있습니다.
 
 ```
-$ cd /usr/local/mysql
-$ sudo ./bin/mysqld_safe
+$ mysql.server start
+$ mysql -u root
 ```
 
+>
+... ERROR! The server quit without updating PID file (/usr/local/var/mysql/DoKyungui-MacBook-Pro.local.pid)  에러가 발생한다면  
+>
+해결책 $ ps aux | grep mysql
+이미 실행중인 mysql 의 pid를 확인하여 사살 $ kill (mysql_pid)
+mysql 재실행 $ mysql.server restart
+
 ### 5.3.2 기본 명령어
+
+MySQL 서버가 시작되면 여러 가지 방법으로 데이터베이스를 조작할 수 있습니다. MySQL 명령어를 직접 사용하지 않고, 최소한으로 줄여주는 인터페이스 소프트웨어가 많이 있습니다. phpMyAdmin과 MySQL 워크벤치 같은 도구를 쓰면 더 쉽고 빠르게 데이터를 보고, 정렬하고, 삽입할 수 있습니다. 하지만 명령어 사용 방법은 알고 있어야 합니다.  
+
+변수 이름을 제외하면, MySQL은 대소문자를 구분하지 않습니다. 예를 들어 SELECT는 sELEcT 는 같습니다. MySQL 문을 쓸 때 키워드를 모두 대문자로 쓰는 표기법이 널리 쓰입니다. 반대로 테이블과 데이터베이스 이름에는 소문자로 쓰는 개발자들이 많습니다.  
+
+MySQL에 처음 로그인하면 데이터를 추가할 데이터베이스가 없으니 만들어야 합니다.
+
+```SQL
+> CREATE DATABASE scraping;
+```
+
+MySQL 서버 인스턴스 하나에 데이터베이스가 여러 개 있을 수 있으므로, 먼저 어떤 데이터베이스를 조작하려 하는지 명시해야 합니다.
+
+```SQL
+> USE scraping;
+```
+여기서부터(최소한 MySQL 연결을 끊거나 다른 데이터베이스로 전환하기 전까지) 입력하는 모든 명령어는 방금 만든 scraping 데이터베이스를 대상으로 실행됩니다.  
+
+스크랩한 웹 페이지를 저장할 테이블을 만듭니다.
+```SQL
+> CREATE TABLE pages;
+```
+여기서 에러가 발생합니다.
+```
+ERROR 1113 (42000): A table must have at least 1 column
+```
+데이터베이스는 테이블이 없어도 전재할 수 있지만, 테이블은 열 없이 존재할 수 없습니다. MySQL에서 열을 정의하려면 `CREATE TABLE <tablename>`문 다음에 괄호를 쓰고 그 안에 쉼표로 구분된 목록을 씁니다.
+
+```
+> CREATE TABLE pages (id BIGINT(7) NOT NULL AUTO_INCREMENT, title VARCHAR(200), content VARCHAR(10000), created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(id));
+```
+각 열의 정의는 세 부분으로 나뉩니다.
+
+- 이름(id, title, created 등)
+- 변수 타입(BIGINT(7), VARCHAR, TIMESTAMP)
+- 옵션으로, 추가 속성(NOT NULL, AUTO_INCREMENT)
+
+열 목록 마지막에는 반드시 테이블의 키를 정의해야 합니다. MySQL은 키를 사용해서 테이블 콘텐츠를 빨리 검색할 수 있도록 준비합니다. 키를 활용해서 데이터베이스를 더 빠르게 이용할 수 있지만, 지금은 테이블의 id 열을 키로 사용하는 일반적인 방법을 사용합니다.  
+
+쿼리를 실행하고 나면 언제든 DESCRIBE 명령으로 테이블 구조를 확인할 수 있습니다.
+
+```
+mysql> DESCRIBE pages;
++---------+----------------+------+-----+-------------------+----------------+
+| Field   | Type           | Null | Key | Default           | Extra          |
++---------+----------------+------+-----+-------------------+----------------+
+| id      | bigint(7)      | NO   | PRI | NULL              | auto_increment |
+| title   | varchar(200)   | YES  |     | NULL              |                |
+| content | varchar(10000) | YES  |     | NULL              |                |
+| created | timestamp      | NO   |     | CURRENT_TIMESTAMP |                |
++---------+----------------+------+-----+-------------------+----------------+
+4 rows in set (0.01 sec)
+```
+
+물론 여전히 빈 테이블입니다. 다음 명령으로 pages 테이블에 테스트 데이터를 삽입해봅니다.
+
+```
+> INSERT INTO pages (title, content) VALUES ("Test page title", "This is some test page content. It can be up to 10,000 characters long.");
+```
+테이블에는 열이 네 개(id, title, content, created)가 있지만, title과 content 두 열만 지정해도 데이터를 삽입할 수 있습니다. id 열은 자동 증가(`AUTO_INCREMENT`) 열이므로 새 행을 삽입할 때마다 MySQL에서 자동으로 1씩 늘리며, 일반적으로 더 신경 쓸 필요 없습니다. 또한 timestamp 열에는 기본값으로 현재 시간이 들어갑니다.
+
+물론 이들 기본값을 오버라이드 할 수도 있습니다.
+
+```
+> INSERT INTO pages (id, title, content, created) VALUES (3, "Test page title", "This is some test page content. It can be up to 10,000 characters long", "2014-09-21 10:25:32");
+```
+
+id 열에 이미 데이터베이스에 존재하지 않는 정수를 입력하기만 하면 이 문은 잘 동작합니다. 하지만 일반적으로 좋은 방법이 아닙니다. 반드시 그래야만 하는 이유가 있지 않다면, id와 timestamp 열은 MySQL이 처리하는게 가장 좋습니다.
+
+이제 테이블에 데이터가 좀 생겼으니 이 데이터를 다양한 방법으로 선택할 수 있습니다. 다음은 몇 가지 SELECT 문 예제입니다.
+
+```
+> SELECT * FROM pages WHERE id = 2;
+```
+이 문은 'pages에서 id가 2인 것을 모두 선택하라'는 의미입니다. 에스터리스크(`*`)는 와일드카드이며 where 절을 충족하는 (id가 2인) 행을 모두 반환합니다. 따라서 이 명령은 테이블의 두 번째 행을 반환하거나, id가 2인 행이 없으면 아무것도 반환하지 않습니다. 다음 쿼리는 title 필드에 test가 들어 있는 모든 행을 반환합니다.(% 기호는 MySQL 문자열의 와일드카드입니다.)
+
+```
+> SELECT * FROM pages WHERE title LIKE "%test%";
+```
+테이블에 열이 여러 개 있고 그중 일부만 보려면 어떻게 해야 할까요? 와일드카드를 쓰지 않고 열 이름을 명시적으로 쓰면 됩니다.
+
+```
+> SELECT id, title FROM pages WHERE content LIKE "%page content%";
+```
+이 쿼리는 content에 page content가 들어 있는 열에서 id와 title만 반환합니다.
+
+DELETE 문도 SELECT 문과 비슷한 문법을 사용합니다.
+
+```
+> DELETE FROM pages WHERE id = 1;
+```
+두 문의 문법이 비슷하므로, DELETE 문을 쓰기 전에 SELECT 문을 먼저 써서(여기서는 `SELECT * FROM pages WHERE id = 1`) 삭제하려는 데이터만 반환되는지 확인한 다음, `SELECT *`를 `DELETE`로 바꿔서 다시 명령하는 게 좋습니다. 특히, 쉽게 복구할 수 없는 중요한 테이블이라면 반드시 이렇게 해야 합니다. 많은 프로그래머들이 DELETE 문을 잘못 코딩하거나 심지어 바쁠때 그걸 알아차리지도 못해서 고객의 데이터를 잃어버린 악몽 같은 경험을 갖고 있습니다.  
+
+마찬가지로 UPDATE 문을 쓸 때도 주의해야 합니다.
+
+```
+> UPDATE pages SET title="A new title", content="some new content" WHERE id=2;
+```
+여기서는 단순한 MySQL 문만 사용해서 기본적인 선택과 삽입, 업데이트만 합니다.
 
 ### 5.3.3 파이썬과의 통합
 
