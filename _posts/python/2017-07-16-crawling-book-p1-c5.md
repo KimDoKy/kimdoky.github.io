@@ -248,6 +248,15 @@ $ mysql -u root
 이미 실행중인 mysql 의 pid를 확인하여 사살 $ kill (mysql_pid)
 mysql 재실행 $ mysql.server restart
 
+> #### MySQL root passwd 분실시 재설정 방법
+```
+$ mysql -u root
+mysql> USE mysql;
+mysql> UPDATE user SET authentication_string=PASSWORD("NEWPASSWORD") WHERE User='root';
+mysql> FLUSH PRIVILEGES;
+mysql> quit
+```
+
 ### 5.3.2 기본 명령어
 
 MySQL 서버가 시작되면 여러 가지 방법으로 데이터베이스를 조작할 수 있습니다. MySQL 명령어를 직접 사용하지 않고, 최소한으로 줄여주는 인터페이스 소프트웨어가 많이 있습니다. phpMyAdmin과 MySQL 워크벤치 같은 도구를 쓰면 더 쉽고 빠르게 데이터를 보고, 정렬하고, 삽입할 수 있습니다. 하지만 명령어 사용 방법은 알고 있어야 합니다.  
@@ -351,7 +360,130 @@ DELETE 문도 SELECT 문과 비슷한 문법을 사용합니다.
 
 ### 5.3.3 파이썬과의 통합
 
+파이썬은 MySQL 지원을 내장하고 있지 않습니다. [`PyMySQL`](http://www.pymysql.org/){:target="`_`blank"}라는 라이브러리를 이용해서 MySQL을 사용할 수 있습니다.
+
+pip를 이용해서 설치합니다.
+
+```
+pip install PyMySQL
+```
+
+설치하고 나면 자동으로 PyMySQL 패키지에 접근할 수 있습니다. 그리고 로컬에서 MySQL 서버가 실행되는 동안에는 다음 스크립트가 성공적으로 실행되어야 합니다.(루트 비밀번호 부분을 설정한 비밀번호로 바꾸세요.)
+
+```python
+import pymysql
+conn = pymysql.connect(host='127.0.0.1', user='root', passwd='None', db='mysql')
+
+cur = conn.cursor()
+cur.execute("USE scraping")
+cur.execute("SELECT * FROM pages WHERE id=1")
+print(cur.fetchone())
+cur.close()
+conn.close()
+```
+
+이 예는 새로운 객체 타입이 두 개 있습니다. 하나는 연결 객체(conn)이고, 다른 하나는 커서 객체(cur)입니다.
+
+연결/커서 모델은 데이터베이스 프로그래밍에 널리 쓰이는 개념입니다. 연결 객체는 물론 데이터베이스 연결에 관여하지만, 그 외에도 데이터베이스에 정보를 보내고, 롤백(쿼리를 취소하고 데이터베이스를 이전 상태로 되돌리는 것)을 처리하고 새 커서 객체를 만드는 역할도 합니다.  
+
+연결 하나에 커서 여러 개가 있을 수 있습니다. 커서는 어떤 데이터베이스를 사용 중인지 같은 **상태** 정보를 추적합니다. 데이터베이스가 여럿 있고 이들 전체에 정보를 저장해야 한다면 커서도 여러개 필요합니다. 커서는 또 마지막에 실행한 쿼리 결과도 가지고 있습니다. `cur.fetchone()`과 같이 커서에서 함수를 호출하여 이 정보에 접근할 수 있습니다.  
+
+커서와 연결 사용을 마치면 이들을 닫아야 합니다. 이들을 닫는 걸 게을리 하면 **연결 누수(connection leaks)** 현상이 발생할 수 있습니다.(더는 사용하지 않는 연결인데도 소프트웨어 입장에서는 닫아도 된다는 확신이 없어서 닫히지 않은 연결이 쌓이는 현상) 연결 누수가 심해지면 데이터베이스가 다운될 수 있으니 항상 연결을 닫도록 합니다.  
+
+지금 가장 먼저 하려는 것은 스크레이핑 결과를 데이터베이스에 저장하는 것입니다.
+
+웹 스크레이핑을 하면서 유니코드 텍스트를 다루는 일이 좀 어려울 수 있습니댜. MySQL은 기본적으로 유니코드를 처리하지 않습니다. 다행히 이 기능을 켤 수는 있습니다(크기가 조금 커지는 부작용이 있습니다.). 위키백과를 돌아다니다 보면 여러 가지 문자를 만날테니, 이제 데이터베이스에 유니코드에 대비하라고 알려줄 때입니다.
+
+```
+> ALTER DATABASE scraping CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+> ALTER TABLE pages CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+> ALTER TABLE pages CHANGE title title VARCHAR(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+> ALTER TABLE pages CHANGE content content VARCHAR(10000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+> #### `ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: NO)` 에러가 발생한다면??  
+```
+> mysql -u root -p databasename
+```
+
+위 4 행은 데이터베이스와 테이블, 두 열의 기본 문자셋을 utf8mb4(일단 유니코드이긴 하지만 지원이 형평없기로 악명 높습니다)에서 `utf8mb4_unicode_ci`으로 바꿉니다.  
+
+움라우트나 한자를 title과 content 필드에 삽입해도 에러가 없다면 위 명령은 제대로 실행된 겁니다.  
+
+이제 데이터베이스는 위키백과에서 쏟아낼 다양한 것들을 받을 준비가 됐으니 다음 코드를 실행해도 됩니다.
+
+```python
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+import datetime
+import random
+import pymysql
+import re
+
+conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd=None, db='mysql', charset='utf8')
+cur = conn.cursor()
+cur.execute("USE scraping")
+
+random.seed(datetime.datetime.now())
+
+def store(title, content):
+    cur.execute("INSERT INTO pages (title, content) VALUES (\"%s\", \"%s\")", (title,content))
+    cur.connection.commit()
+
+def getLinks(articleUrl):
+    html = urlopen("http://en.wikipedia.org"+articleUrl)
+    bsObj = BeautifulSoup(html, "html.parser")
+    title = bsObj.find("h1").get_text()
+    content = bsObj.find("div", {"id":"mw-content-text"}).find("p").get_text()
+    store(title, content)
+    return bsObj.find("div", {"id":"bodyContent"}).find_all("a", href=re.compile("^(/wiki/)((?!:).)*$"))
+
+links = getLinks("/wiki/Kevin_Bacon")
+try:
+    while len(links) > 0:
+        newArticle = links[random.randint(0, len(links)-1)].attrs["href"]
+        print(newArticle)
+        links = getLinks(newArticle)
+finally:
+    cur.close()
+    conn.close()
+```
+> import re를 추가하고 find("span")를 삭제하였습니다.
+
+연결 문자열에 "charset='utf8'"이 추가되었습니다. 이 부분은 연결에서 데이터베이스에 정보를 보낼 때 모두 UTF-8로 보내야 한다는 뜻입니다.  
+
+store 함수가 추가되었습니다. 이 함수는 문자열 변수 title과 content를 받고, 이 변수를 INSERT 문에 추가합니다. 커서는 INSERT 문을 실행하고, 자신의 연결을 통해 데이터베이스에 보냅니다. 이 함수는 커서와 연결이 어떻게 구분되는지 잘 보여줍니다. 커서는 데이터베이스와 자신의 컨텍스트에 관한 정보를 갖고 있지만, 정보를 데이터베이스에 보내고 삽입하려면 연결을 통해야 합니다.  
+마디막으로, 코드 마지막 부분에서 finally 문을 프로그램의 메인 루프에 추가했습니다. finally 문은 프로그램이 어떻게든 방해를 받거나, 실행 중 예외가 발생하더라도(물론, 웹은 항상 예외가 발생합니다) 프로그램을 종료하기 전에 반드시 커서와 연결을 닫기 위해 사용했습니다. 데이터베이스 연결을 열어둔 채 스크래이핑을 할 때는 항상 `try...finally` 문을 쓰는게 좋습니다.  
+PyMySQL는 그리 크지 않은 패키지이지만, 유용한 함수가 너무 많기 때문에 [파이썬 문서](http://bit.ly/1KHzoga){:target="`_`blank"}를 참고하세요.
+
 ### 5.3.4 데이터베이스 테크닉과 모범 사례
+
+데이터베이스를 빨리 배워두면 대부분의 애플리케이션을 감당할 수 있고 또 충분히 빨리 동작하게 하는 요령이 있습니다.  
+
+먼저, 극히 일부인 예외를 제외하면, 테이블에는 항상 id 열을 추가합니다. MySQL의 테이블에는 반드시 정렬 기준이 되는 프라이머리 키가 최소한 하나 있어야 하는데, 무엇을 키로 정할지 프로그램에서 판단하기는 어렵습니다. 인위적으로 만든 id 열이 프라이머리 키로 쓰기에 더 좋은지, 아니면 username 같은 고유한 열이 더 좋은지는 데이터 과학자와 소프트웨어 엔지니어들이 몇 년째 토론하고 있는 문제입니다. 어떤 방법을 택할지는 복잡한 문제이지만, 기업에서 사용할 시스템이 아닌 이상 항상 자동 증가하는 id 열을 프라이머리 키로 써야 합니다.  
+
+둘째, 인덱스 관리를 잘 해야합니다. 사전은 알파벳 순으로 나열한 단어 목록입니다. 단어 순서가 정해져 있으니, 철자만 알고 있다면 단어를 빠르게 찾을 수 있습니다. 그런데 어떤 사전이 단어의 철자가 아니라 그 정의의 철자 순으로 만들져있다고 가정해봅니다. 이런 사전은 단어의 정의를 듣고 어떤 단어인지 맞히는 게임을 하지 않는 한 쓸모가 없을 것입니다. 하지만 데이터베이스 검색의 세계에는 이런 일이 발생합니다. 예를 들어 데이터베이스에 쿼리 대상으로 자주 사용하는 필드가 있다고 가정합니다.
+
+![]({{site.url}}/img/post/python/crawling/p1c5_1.png)
+
+id 열이 아마 있겠지만, definition 열의 검색을 빠르게 하기 위해 테이블에 키를 추가하고 싶을 겁니다. 하지만 인덱스를 추가하면 그만큼 공간을 더 차지하고, 새 행을 삽입할 때마다 처리 시간이 조금씩 더 소요됩니다. MySQL이 이 열의 처음 몇 글자만 인덱스로 만들게 하면 그 문제는 완화됩니다. 다음 명령은 definition 필드의 처음 16글자에 인덱스를 만듭니다.
+
+```
+> CREATE INDEX definition ON dictionary (id, definition(16));
+```
+이 인덱스는 단어의 정의 전체를 써서 검색할 때 훨씬 빨리 답을 찾고, 공간도 적게 소모하며 이후 테이블에 행을 삽입할 때 걸리는 시간도 별로 늘어나지 않습니다.  
+
+쿼리 시간 vs 데이터베이스 크기 문제는 데이터베이스 공학에서 기본적인 균형 작업의 하나인데, 이와 관련해서 자주 저지르는 실수가 있습니다. 특히 웹 스크레이핑을 통해 자연어 텍스트를 아주 많이 저장할 때 자주 일어나는데, 중복된 데이터를 아무 많이 저장하는 문제입니다. 예를 들어 여러 웹사이트에서 공통적으로 나타나는 구절이 있는지, 있다면 몇 회나 되는지 알아보고 싶다고 합시다. 이런 구절은 이미 만들어진 목록을 쓸 수도 있고, 일종의 텍스트 분석 알고리즘에서 자동으로 생성할 수도 있습니다. 아마 데이터를 다음과 같은 형식으로 저장하고 싶을 겁니다.
+
+![]({{site.url}}/img/post/python/crawling/p1c5_2.png)
+
+이렇게 하면 사이트에서 구절을 찾을 때마다 그 구절과 URL로 데이터베이스에 한 행을 추가합니다. 하지만 데이터를 테이블 세 개로 분리하면 데이터 크기를 어마어마하게 줄일 수 있습니다.
+
+![]({{site.url}}/img/post/python/crawling/p1c5_3.png)
+
+테이블 정의가 더 커지긴 했지만, 열 대부분은 정수만 저장하는 id 필드입니다. 이런 필드는 공간을 적게 차지합니다. 또한 각 URL과 구절의 전체 텍스트는 정확히 한 번씩만 저장됩니다.  
+
+그런 용도의 패키지를 따로 설치하거나 로그를 꼼꼼하게 관리하지 않으면 데이터가 언제 추가됐고, 언제 업데이트됐고, 언제 제거됐는지 알 수 없습니다. 데이터에 쓸 수 있는 공간, 변경 빈도, 그리고 변경이 언제 일어났는지 알아야 할 필요성 등을 고려해보고, 'created', 'updated', 'deleted' 같은 타임스탬프를 만드는 것도 한 방법입니다.
+
 
 ### 5.3.5 여섯 다리와 MySQL
 
