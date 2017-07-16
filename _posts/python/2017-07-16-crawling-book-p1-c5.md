@@ -487,4 +487,82 @@ id 열이 아마 있겠지만, definition 열의 검색을 빠르게 하기 위�
 
 ### 5.3.5 여섯 다리와 MySQL
 
+'위키백과의 여섯 다리'문제를 해결하려면 사이트를 크롤링하는 봇을 만드는 것으로 충분하지 않고, 나중에 데이터를 분석하기 쉬운 구조로 정보를 저장해야 합니다.  
+
+자동 증가하는 id 열, 타임스탬프, 다중 테이블 등 모두 사용 됩니다. 이 정보를 저장하는 가장 좋은 방법을 생각해내려면 추상적으로 생각해야 합니다. 링크는 페이지 A를 페이지 B로 연결하는 어떤 것입니다. 페이지 B를 페이지 A로 연결하는 것도 쉽지만, 그러려면 다른 링크가 필요합니다. '페이지 A에는 페이지 B로 연결되는 링크가 있다'고 말하면 어떤 링크를 유일하게 식별할 수 있습니다. 즉, `INSERT INTO links (fromPageId, toPageId) VALUES (A, B);` 명령이면 됩니다.(여기서 A와 B는 각 페이지의 고유 ID 입니다.)  
+테이블 두 개를 사용해서 페이지와 링크, 생성 날짜와 고유한 ID를 저장하는 시스템을 다음과 같이 만들 수 있습니다.  
+
+```sql
+> CREATE TABLE 'wikipedia'.'pages' (
+  'id' INT NOT NULL AUTO_INCREMENT,
+  'url' VARCHAR(255) NOT NULL,
+  'created' TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY ('id'));
+
+> CREATE TABLE 'wikipedia'.'links' (
+  'id' INT NOT NULL AUTO_INCREMENT,
+  'fromPageId' INT NULL,
+  'toPageId' INT NULL,
+  'created' TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY ('id'));
+```
+> 실습 진행 중인 데이터베이스 버젼의 문법과 차이가 나는 이유로 추정되는 오류가 발생중입니다. 점검이 필요합니다.
+
+페이지 타이틀을 출력하던 이전 크롤러와 달리, 이번에는 페이지 타이틀을 테이블에 저장하지도 않고 있습니다. 페이지 타이틀을 기록하려면 실제록 그 페이지를 방문해야 합니다. 이 테이블들을 효율적으로 채워나가는 웹 크롤러를 만들기 위해서는 페이지에 방문하지 않고도 그 페이지와 페이지를 가리키는 링크들을 저장할 수 있어야 합니다.  
+
+물론 이런 방식을 모든 사이트에 적용할 수는 없습니다. 위키백과 링크와 페이지 타이틀은 간단한 조작을 통해 서로 변환할 수 있으므로 이런 방식이 가능합니다. 예를 들어 링크 주소 http://en.wikipedia.org/wiki/Monty_Python 만 봐도 그 페이지 타이틀이 '몬티 파이튼'임을 알 수 있습니다.  
+
+다음 코드는 '베이컨 넘버'(케빈 베이컨까지의 링크 숫자)가 6 이하인 페이지 위키백과 페이지를 모두 저장합니다.
+
+```python
+from bs4 import BeautifulSoup
+import re
+import pymysql
+from urllib.request import urlopen
+
+conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd=None, db='mysql', charset='utf8')
+
+cur = conn.cursor()
+cur.execute("USE wikipedia")
+
+def insertPageIfNotExists(url):
+    cur.execute("SELECT * FROM pages WHERE url = %s", (url))
+    if cur.rowcount == 0:
+        cur.execute("INSERT INTO pages (url) VALUES (%s)", (url))
+        conn.commit()
+        return cur.lastrowid
+    else:
+        return cur.fetchone()[0]
+
+def insertLink(fromPageId, toPageId):
+    cur.execute("SELECT * FROM links WHERE fromPageId = %s AND toPageId = %s", (int(fromPageId), int(toPageId)))
+    if cur.rowcount == 0:
+        cur.execute("INSERT INTO links (fromPageId, toPageId) VALUES (%s, %s)", (int(fromPageId), int(toPageId)))
+        conn.commit()
+
+pages = set()
+def getLinks(pageUrl, recursionLevel):
+    global pages
+    if recursionLevel > 4:
+        return;
+    pageId = insertPageIfNotExists(pageUrl)
+    html = urlopen("http://en.wikipedia.org"+pageUrl)
+    bsObj = BeautifulSoup(html, "html.parser")
+    for link in bsObj.find_all("a", href=re.compile("^(/wiki/)((?!:).)*$")):
+        insertLink(pageId, insertPageIfNotExists(link.attrs['href']))
+        if link.attrs['href'] not in pages:
+            # 새 페이지를 만났으니 추가하고 링크를 검색합니다.
+            newPage = link.attrs['href']
+            pages.add(newPage)
+            getLinks(newPage, recursionLevel+1)
+getLinks("/wiki/Kevin_Bacon", 0)
+cur.close()
+conn.close()
+```
+> 데이터베이스 버젼으로 인한 신택스 오류로 해당 테이블이 생성되지 않았기 때문에 위 코드는 실행해 보지 못했습니다. DB 버전 차이에 의한 문법 오류가 해결되고 코드를 점검할 예정입니다.
+
+오랫동안 실행되는 코드에서 재귀를 사용할 때는 항상 주의해야 합니다. 여기서는 recursionLevel 변수를 getLinks 함수에 넘겼습니다. 이 함수는 호출될 때마다 recursionLevel을 1씩 늘려서 몇 번째 재귀인지 셉니다. recursionLevel이 5가 되면 이 함수는 자동으로 검색을 멈춥니다. 이렇게 제한을 두면 스택 오버플로는 절대 생기지 않습니다.  
+
+이 프로그램은 며칠 동안 계속 실행될 수도 있습니다. 물론 데이터베이스에는 베이컨 넘버가 6 이하인 위키백과 페이지 일부가 들어있습니다. 하지만 이 정도로도 연결된 위키백과 항목 사이의 경로를 분석하는 데는 충분합니다.
+
 ## 5.4 이메일
