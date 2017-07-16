@@ -566,3 +566,66 @@ conn.close()
 이 프로그램은 며칠 동안 계속 실행될 수도 있습니다. 물론 데이터베이스에는 베이컨 넘버가 6 이하인 위키백과 페이지 일부가 들어있습니다. 하지만 이 정도로도 연결된 위키백과 항목 사이의 경로를 분석하는 데는 충분합니다.
 
 ## 5.4 이메일
+
+웹 페이지가 HTTP를 통해 전송되는 것과 마찬가지로, 이메일은 SMTP를 통해 전송됩니다. 그리고 웹 서버 프로그램이 웹 페이지를 HTTP를 통해 보내는 것과 마찬가지로, sendmail, postfix, mailman 등 이메일을 주고 받는 프로그램이 많이 있습니다.  
+
+파이썬으로 이메일을 보내는 건 비교적 쉽긴 하지만, SMTP를 실행하는 서버에 접근할 수 있어야 합니다. SMTP 클라이언트를 직접 설치하는건 어렵지만, 이 작업을 도와주는 훌륭한 자료가 많이 있고, 특히 리눅스나 맥 OS X를 사용한다면 더 쉽게 찾을 수 있습니다.  
+
+다음 예는 SMTP 서버를 로컬에서 실행한다고 가정합니다. 이 코드를 원격 SMTP 서버에 접속할 때 사용한다면 localhost를 원격 서버 주소로 바꾸기만 하면 됩니다.  
+
+파이썬으로 이메일을 보내는 코드는 아홉 줄이면 충분합니다.
+> 구글을 통해 이메일을 보내려 한다면 [스택오버플로](http://bit.ly/2fbytIs){:target="`_`blank"}에 바로 따라 할 수 있는 쉬운 예제가 있습니다. David Okwii, radtek 두 사용자의 답변을 참고하면 간단한 메일을 보내는 게는 큰 문제가 없을 것입니다.
+
+```python
+import smtplib
+from email.mime.text import MIMEText
+
+msg = MIMEText("The body of the email is here")
+
+msg['Subject'] = "An Email Alert"
+msg['From'] = "makingfunk0@gmail.com"
+msg['To'] = "makingfunk@naver.com"
+
+s = smtplib.SMTP('localhost')
+s.send_message(msg)
+s.quit()
+```
+> 코드 점검 필요합니다.
+
+파이썬에는 이메일과 관련된 중요한 패키지는 smtplib과 email 두 가지입니다.  
+
+파이썬의 이메일 모듈에는 이메일 패킷을 만들 때 유용한 함수가 들어 있습니다. 여기서 사용한 MIMEText 객체는 저수준 MIME 프로토콜로 전송할 수 있는 빈 이메일 형식을 만듭니다. SMTP 연결은 MIME 프로토콜 위에서 동작합니다. MIMEText 객체인 msg에는 수신/발신자의 이메일 주소와 본문, 헤더가 들어 있습니다. 파이썬은 이 객체를 정확한 형식의 이메일로 바꿉니다.  
+
+smtplib 패키지에는 서버로의 연결을 처리하는 정보가 들어 있습니다. MySQL 서버에 연결할 때와 마찬가지로 이 연결은 사용을 마칠 때마다 끊어서 서버 연결이 너무 늘어나지 않게 해야 합니다.  
+
+이 기본적인 이메일 기능을 함수에 넣어서 더 유용하게 확장할 수 있습니다.
+
+```python
+import smtplib
+from email.mime.text import MIMEText
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
+import times
+
+def sendMail(subject, body):
+    msg = MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = "makingfunk0@gmail.com"
+    msg['To'] = "makingfunk@naver.com"
+
+s =smtplib.SMTP('localhost')
+s.send_message(msg)
+s.quit()
+
+bsObj = BeautifulSoup(urlopen("http://isitchristmas.com/"))
+while(bsObj.find("a", {"id":"answer"}).attrs['title'] == "NO"):
+    print("It is not Christmas yet.")
+    time.sleep(3600)
+bsObj = BeautifulSoup(urlopen("https://isitchristmas.com"))
+sendMail("It's Christmas!", "According to http://isitchristmas.com, it is Christmas!")
+```
+> 코드 점검 필요합니다.
+
+이 스크립트는 한 시간에 한 번씩 https://isitchristmas.com 웹사이트(날짜에 따라 커다란 YES 또는 NO를 표시하는)를 체크합니다. NO 외에 다른 것이 보이면 크리스마스가 되었다는 메일이 올 겁니다.  
+
+물론 이 프로그램이 달력보다 유용하진 않지만, 조금만 수정하면 훨씬 쓸모 있을 겁니다. 예를 들어 사이트가 정전되거나, 테스트가 실패하거나, 심지어 아마존에서 기다리던 품절 상품이 재입고됐을 때도 이메일을 받을 수 있습니다.
