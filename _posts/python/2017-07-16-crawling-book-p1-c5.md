@@ -90,7 +90,7 @@ def getDownloadPath(baseUrl, absoluteUrl, downloadDirectory):
     return path
 
 html = urlopen("http://www.pythonscraping.com")
-bsObj = BeautifulSoup(html)
+bsObj = BeautifulSoup(html, "html.parser")
 downloadList = bsObj.find_all(src=True)
 
 for download in downloadList:
@@ -122,6 +122,72 @@ http://pythonscraping.com/img/lrg%20(1).jpg
 파이썬 os 모듈은 각 파일이 저장될 디렉터리가 있는지 확인하고 없으면 만들기 위해 사용했습니다. os 모듈은 파이썬과 운영체제 사이의 인터페이스 구실을 합니다. 파일 경로를 조작하고, 디렉터리를 만들고, 실행 중인 프로세스와 환경 변수에 관한 정보를 얻고, 그 외에도 여러가지 유용한 일을 할 수 있습니다.
 
 ## 5.2 데이터를 CSV로 저장
+
+**CSV(comma-separated values)** 는 스프레드시트 데이터를 저장할 때 가장 널리 쓰이는 파일 형식입니다. 이 파일은 매우 단순하므로 마이크로소프트 엑셀을 비롯해 여러 애플리케이션에서 지원합니다. 다음은 유효한 CSV 파일 예제입니다.
+
+```
+fruit,cost
+apple,1,00
+banana,0.30
+pear,1.25
+```
+
+파이썬과 마찬가지로 CSV에서도 공백이 중요합니다. 각 행은 줄바꿈 문자로 구분하고, 각 열은 (이름대로) 쉼표로 구분합니다. 탭이나 기타 문자로 행을 구분하는 CSV 파일도 있지만, 이런 형식은 널리 쓰이지 않고 지원하는 프로그램도 많지 않습니다.  
+웹에서 CSV 파일을 내려받아, 파싱하거나 수정하지 않고 그대로 저장만 할 것이라면 다른 파일과 마찬가지로 내려받아 CSV 파일로 저장하면 됩니다.  
+
+파이썬 csv 라이브러리를 사용하면 CSV 파일을 쉽게 수정하거나 만들 수 있습니다.
+
+```python
+import csv
+
+csvFile = open("./files/test.csv", 'wt')
+try:
+    writer = csv.writer(csvFile)
+    writer.writerow(('number', 'number plus 2', 'number times 2'))
+    for i in range(10):
+        writer.writerow((i, i+2, i*2))
+finally:
+    csvFile.close()
+```
+먼저 염두에 두고 조심할 것이 있습니다. 파이썬을 파일을 만들 때 에러를 거의 일으키지 않습니다. `./files/test.csv`가 존재하지 않으면 파이썬이 파일을 자동으로 만듭니다.(디렉터리를 자동으로 만듭니다.) 파일이 이미 존재하면 파이썬은 test.csv 를 경고 없이 새 데이터로 덮어씁니다.
+
+코드를 실행하면 다음과 같은 CSV 파일이 생깁니다.
+
+```csv
+number,number plus 2,number times 2
+0,2,0
+1,3,2
+2,4,4
+...
+```
+웹 스크레이핑에서 자주 하는 일 중 하나는 HTML 테이블을 가져와서 CSV 파일을 만드는 겁니다. 위키백과의 텍스트 에디터 비교(https://en.wikipedia.org/wiki/Comparison_of_text_editors) 항목에는 매우 복잡한 HTML 테이블이 있습니다. 이 테이블에는 색깔도 들어있고, 링크와 정렬 기능, 기타 HTML 코드들이 있는데 CSV 파일로 만들기 전에 이것들을 제거해야 합니다. `BeautifulSoup`와 `get_text()` 함수를 써서 20줄도 안되는 코드로 그 일을 할 수 있습니다.
+
+```python
+import csv
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+
+html = urlopen("http://en.wikipedia.org/wiki/Comparison_of_text_editors")
+bsObj = BeautifulSoup(html, "html.parser")
+# 비교 테이블은 현재 태이블은 현재 페이지의 첫 번째 테이블입니다.
+table = bsObj.find_all("table", {"class":"wikitable"})[0]
+rows = table.find_all("tr")
+
+csvFile = open("./files/editors.csv", 'wt')
+writer = csv.writer(csvFile)
+try:
+    for row in rows:
+        csvRow = []
+        for cell in row.find_all(['td', 'th']):
+            csvRow.append(cell.get_text())
+            writer.writerow(csvRow)
+finally:
+    csvFile.close()
+```
+> ### 실무에 쓰기 전에, 잠깐  
+HTML 테이블을 CSV 파일로 바꿔야 하는 일이 자주 있다면 이 스크립트를 스크레이퍼에 통합하는 것이 좋습니다. 하지만 딱 한 번만 바꾼다면 더 좋은 방법이 있습니다. 복사해서 붙여 넣기만 하면 됩니다. HTML 테이블의 콘텐츠를 선택해서 복사하고 엑셀에 붙여 넣으면 스크립트를 실행하지 않아도 CSV 파일을 얻을 수 있습니다.
+
+코드를 실행하면 잘 정리된 CSV 파일 `./files/editors.csv`가 만들어 집니다.
 
 ## 5.3 MySQL
 
