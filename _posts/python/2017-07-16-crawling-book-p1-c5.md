@@ -493,20 +493,21 @@ id 열이 아마 있겠지만, definition 열의 검색을 빠르게 하기 위�
 테이블 두 개를 사용해서 페이지와 링크, 생성 날짜와 고유한 ID를 저장하는 시스템을 다음과 같이 만들 수 있습니다.  
 
 ```sql
-> CREATE TABLE 'wikipedia'.'pages' (
-  'id' INT NOT NULL AUTO_INCREMENT,
-  'url' VARCHAR(255) NOT NULL,
-  'created' TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY ('id'));
+> CREATE TABLE wikipedia.pages(
+  id INT NOT NULL AUTO_INCREMENT,
+  url VARCHAR(255) NOT NULL,
+  created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id));
 
-> CREATE TABLE 'wikipedia'.'links' (
-  'id' INT NOT NULL AUTO_INCREMENT,
-  'fromPageId' INT NULL,
-  'toPageId' INT NULL,
-  'created' TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY ('id'));
+> CREATE TABLE wikipedia.links(
+  id INT NOT NULL AUTO_INCREMENT,
+  fromPageId INT NULL,
+  toPageId INT NULL,
+  created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id));
 ```
-> 실습 진행 중인 데이터베이스 버젼의 문법과 차이가 나는 이유로 추정되는 오류가 발생중입니다. 점검이 필요합니다.
+> wikipedia는 DBname이고, pages, links 는 TableName이다.  
+
 
 페이지 타이틀을 출력하던 이전 크롤러와 달리, 이번에는 페이지 타이틀을 테이블에 저장하지도 않고 있습니다. 페이지 타이틀을 기록하려면 실제록 그 페이지를 방문해야 합니다. 이 테이블들을 효율적으로 채워나가는 웹 크롤러를 만들기 위해서는 페이지에 방문하지 않고도 그 페이지와 페이지를 가리키는 링크들을 저장할 수 있어야 합니다.  
 
