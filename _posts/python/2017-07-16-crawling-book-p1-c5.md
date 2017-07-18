@@ -540,8 +540,8 @@ def insertLink(fromPageId, toPageId):
 pages = set()
 def getLinks(pageUrl, recursionLevel):
     global pages
-    if recursionLevel > 4:
-        return;
+    if recursionLevel == 4:
+        return
     pageId = insertPageIfNotExists(pageUrl)
     html = urlopen("http://en.wikipedia.org"+pageUrl)
     bsObj = BeautifulSoup(html, "html.parser")
@@ -552,11 +552,12 @@ def getLinks(pageUrl, recursionLevel):
             newPage = link.attrs['href']
             pages.add(newPage)
             getLinks(newPage, recursionLevel+1)
+        else:
+            print("Skipping: " + str(link.attrs['href'])+" found on "+pageUrl)
 getLinks("/wiki/Kevin_Bacon", 0)
 cur.close()
 conn.close()
 ```
-> 데이터베이스 버젼으로 인한 신택스 오류로 해당 테이블이 생성되지 않았기 때문에 위 코드는 실행해 보지 못했습니다. DB 버전 차이에 의한 문법 오류가 해결되고 코드를 점검할 예정입니다.
 
 오랫동안 실행되는 코드에서 재귀를 사용할 때는 항상 주의해야 합니다. 여기서는 recursionLevel 변수를 getLinks 함수에 넘겼습니다. 이 함수는 호출될 때마다 recursionLevel을 1씩 늘려서 몇 번째 재귀인지 셉니다. recursionLevel이 5가 되면 이 함수는 자동으로 검색을 멈춥니다. 이렇게 제한을 두면 스택 오버플로는 절대 생기지 않습니다.  
 
@@ -581,13 +582,13 @@ msg = MIMEText("The body of the email is here")
 
 msg['Subject'] = "An Email Alert"
 msg['From'] = "makingfunk0@gmail.com"
-msg['To'] = "makingfunk@naver.com"
+msg['To'] = "abmu333@hanmail.net"
 
 s = smtplib.SMTP('localhost')
 s.send_message(msg)
 s.quit()
 ```
-> 코드 점검 필요합니다.
+> 코드 점검 필요합니다. (실습 전입니다.)
 
 파이썬에는 이메일과 관련된 중요한 패키지는 smtplib과 email 두 가지입니다.  
 
@@ -608,7 +609,7 @@ def sendMail(subject, body):
     msg = MIMEText(body)
     msg['Subject'] = subject
     msg['From'] = "makingfunk0@gmail.com"
-    msg['To'] = "makingfunk@naver.com"
+    msg['To'] = "abmu333@hanmail.net"
 
 s =smtplib.SMTP('localhost')
 s.send_message(msg)
@@ -621,7 +622,7 @@ while(bsObj.find("a", {"id":"answer"}).attrs['title'] == "NO"):
 bsObj = BeautifulSoup(urlopen("https://isitchristmas.com"))
 sendMail("It's Christmas!", "According to http://isitchristmas.com, it is Christmas!")
 ```
-> 코드 점검 필요합니다.
+> 코드 점검 필요합니다. (실습 전입니다.)
 
 이 스크립트는 한 시간에 한 번씩 https://isitchristmas.com 웹사이트(날짜에 따라 커다란 YES 또는 NO를 표시하는)를 체크합니다. NO 외에 다른 것이 보이면 크리스마스가 되었다는 메일이 올 겁니다.  
 
