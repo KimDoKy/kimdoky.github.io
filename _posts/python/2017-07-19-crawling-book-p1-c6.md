@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: crawling - P1.스크레이퍼 제작 _ cahp 5. 문서 읽기
+title: crawling - P1.스크레이퍼 제작 _ cahp 6. 문서 읽기
 category: python
 tags: [ 'python' ]
 ---
@@ -126,7 +126,6 @@ ECMA 인터내셔널 웹사이트(http://www.ecma-international.org/)에는 이�
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 ```
 웹 스크레이핑을 많이 할 계획이고 특히 국제적 사이트에 관심이 있다면, 이 메타 태그를 찾아보고 이 태그에서 지정한 인코딩 방법을 써서 페이지 콘텐츠를 읽는게 좋습니다.
-
 
 ## 6.3 CSV
 
