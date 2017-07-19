@@ -78,6 +78,56 @@ ISO 인코딩을 사용하는 문서는 최근 줄어들고 있지만, 웹사이
 
 ### 인코딩 예제
 
+이전 섹션에서 urlopen의 기본 설정을 이용해서 텍스트 문서를 열었습니다. 이 방법은 대부분의 영어 텍스트에서는 잘 동작하지만, 러시아어나 아라비아어 등을 만나는 순간 문제가 발생합니다.  
+
+```python
+from urllib.request import urlopen
+textPage = urlopen("http://pythonscraping.com/pages/warandpeace/chapter1-ru.txt")
+print(textPage.read())
+```
+
+이 코드는 러시아어와 프랑스어로 쓰인 <전쟁과 평화> 원문의 1장을 읽어 화면에 출력합니다.
+
+```
+b"\xd0\xa7\xd0\x90\xd0\xa1\xd0\xa2\xd0\xac \xd0\x9f\xd0\x95\xd0\xa0\xd0\x92\xd0\x90\xd0\xaf\n\nI\n\n\xe2\x80\x94 Eh bien, mon prince.
+```
+또한 대부분의 브라우저에서 이 페이지를 방문하면 이상항 화면이 보입니다.
+
+![]({{site.url}}/img/post/python/crawling/p1c6_2.png)
+
+러시아어를 모국어로 사용하는 사람조차 이해하기 힘들 겁니다. 문제는 파이썬이 이 문서를 ASCII 문서로 읽으려 했고, 브라우저는 ISO-8859-1 문서로 읽으려 했습니다. 둘 중 어느 하나도 이것을 UTF-8 문서로 인식하지 못했습니다.  
+
+이 문자열이 UTF-8이라고 명시적으로 지정하면 저확히 키릴 문자를 출력할 수 있습니다.
+
+```python
+from urllib.request import urlopen
+textPage = urlopen("http://www.pythonscraping.com/pages/warandpeace/chapter1-ru.txt")
+print(str(textPage.read(), 'utf-8'))
+```
+이 개념을 BeautifulSoup와 파이썬 3.x에 적용된 코드는 다음과 같습니다.
+
+```python
+html = urlopen("http://en.wikipedia.org/wiki/Python_(programming_language)")
+bsObj = BeautifulSoup(html, "html.parser")
+content = bsObj.find("div", {"id":"mw-content-text"}).get_text()
+content = bytes(content, "UTF-8")
+content = content.decode("UTF-8")
+```
+
+앞으로 모든 웹 스크레이퍼에서 UTF-8 인코딩을 사용하고 싶어질 겁니다. UTF-8은 ASCII 글자도 문제없이 처리하기 때문입니다. 하지만 웹사이트의 9%가 ISO 버전 중 일부로 인코딩되어 있음을 기억해야 합니다. 텍스트 문서가 어떤 인코딩을 가졌는지 정확하게 판단하는건 불가능합니다. '특수한 문자'나 단어가 아닐 것이다 라는 로직을 써서 문서를 검사하고 인코딩을 짐작하는 라이브러리가 몇 가지 있지만 틀릴 때가 많습니다.  
+
+다행히 HTML 페이지의 인코딩은 보통 <head> 내부의 태그에 들어 있습니다. 대부분의 사이트, 특히 영어로 된 사이트에는 다음과 같은 태그가 들어 있습니다.
+
+```html
+<meta charset="utf-8">
+```
+ECMA 인터내셔널 웹사이트(http://www.ecma-international.org/)에는 이런 태그가 있습니다.
+```html
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+```
+웹 스크레이핑을 많이 할 계획이고 특히 국제적 사이트에 관심이 있다면, 이 메타 태그를 찾아보고 이 태그에서 지정한 인코딩 방법을 써서 페이지 콘텐츠를 읽는게 좋습니다.
+
+
 ## 6.3 CSV
 
 ### 6.3.1 CSV 파일 읽기
