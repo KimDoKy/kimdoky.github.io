@@ -129,11 +129,116 @@ ECMA 인터내셔널 웹사이트(http://www.ecma-international.org/)에는 이�
 
 ## 6.3 CSV
 
-
+웹 스크레이핑을 하다 보면 CSV 파일을 만날 때도 많고, 이 형식을 선호하는 동료를 만날 때도 많습니다. 다행히 파이썬엔 CSV 파일을 완벽히 다루는 라이브러리가 있습니다. 이 라이브러리는 CSV의 여러가지 변형도 처리할 수 있습니다. 변형된 CSV를 처리할 일이 생긴다면 [문서](https://docs.python.org/3.4/library/csv.html)를 읽어보세요. 여기서는 표준 형식만 다룹니다.
 
 ### 6.3.1 CSV 파일 읽기
 
+파이썬의 csv 라이브러리는 주로 로컬 파일을 가정하고 만들어졌습니다. 하지만 파일이 항상 로컬에 있는 건 아니고, 특히 웹 스크래핑을 할때 그렇습니다. 우회할 방법은 여러 가지가 있습니다.
 
+- 원하는 파일을 직접 내려받은 후 파이썬에 그 파일을 위치를 알려주는 방법
+- 파일을 내려받는 파이썬 스크립트를 작성해서 읽고, (원한다면) 삭제하는 방법
+- 파일을 문자열 형식으로 읽은 후 StringIO 객체로 바꿔서 파일처럼 다루는 방법
+
+첫 번째와 두 번째 방법도 가능하지만, 쉽게 메모리에서 처리할 수 있는데도 하드 디스크에 파일을 저장하는 것은 좋지 않은 습관입니다. 파일을 문자열로 읽고 객체로 바꿔서 파이썬이 파일처럼 다루게 하는 방법이 더 좋습니다. 다음 스크립트는 인터넷에서 CSV 파일(http://pythonscraping.com/files/MontyPythonAlbums.csv)을 가져와서 터미널에 행 단위로 출력합니다.
+
+```python
+from urllib.request import urlopen
+from io import StringIO
+import csv
+
+data =  urlopen("http://pythonscraping.com/files/MontyPythonAlbums.csv").read().decode('ascii', 'ignore')
+dataFile = StringIO(data)
+csvReader = csv.reader(dataFile)
+
+for row in csvReader:
+    print(row)
+```
+출력 결과입니다.
+
+```
+['Name', 'Year']
+["Monty Python's Flying Circus", '1970']
+['Another Monty Python Record', '1971']
+["Monty Python's Previous Record", '1972']
+['The Monty Python Matching Tie and Handkerchief', '1973']
+['Monty Python Live at Drury Lane', '1974']
+['An Album of the Soundtrack of the Trailer of the Film of Monty Python and the Holy Grail', '1975']
+['Monty Python Live at City Center', '1977']
+['The Monty Python Instant Record Collection', '1977']
+["Monty Python's Life of Brian", '1979']
+["Monty Python's Cotractual Obligation Album", '1980']
+["Monty Python's The Meaning of Life", '1983']
+['The Final Rip Off', '1987']
+['Monty Python Sings', '1989']
+['The Ultimate Monty Python Rip Off', '1994']
+['Monty Python Sings Again', '2014']
+```
+
+코드 샘플에서 csv.reader가 반환하는 reader 객체는 순환체(iterable)이며 파이썬 리스트 객체로 구성되어 있습니다. 따라서 csvReader 객체의 각 행은 다음 방법으로 접근 할 수 있습니다.
+
+```python
+for row in csvReader:
+    print("The album \"" + row[0] + "\" was released in " + str(row[1]))
+```
+출력 결과입니다.
+
+```
+The album "Name" was released in Year
+The album "Monty Python's Flying Circus" was released in 1970
+The album "Another Monty Python Record" was released in 1971
+The album "Monty Python's Previous Record" was released in 1972
+The album "The Monty Python Matching Tie and Handkerchief" was released in 1973
+The album "Monty Python Live at Drury Lane" was released in 1974
+The album "An Album of the Soundtrack of the Trailer of the Film of Monty Python and the Holy Grail" was released in 1975
+The album "Monty Python Live at City Center" was released in 1977
+The album "The Monty Python Instant Record Collection" was released in 1977
+The album "Monty Python's Life of Brian" was released in 1979
+The album "Monty Python's Cotractual Obligation Album" was released in 1980
+The album "Monty Python's The Meaning of Life" was released in 1983
+The album "The Final Rip Off" was released in 1987
+The album "Monty Python Sings" was released in 1989
+The album "The Ultimate Monty Python Rip Off" was released in 1994
+The album "Monty Python Sings Again" was released in 2014
+```
+
+첫 번째 행 The album "Name" was released in Year 에 문제가 있습니다. 예제 코드라면 왜 일어났는지 알고 있기 때문에 상관없지만, 실무에서 데이터에 이런 것이 포함되면 안됩니다. 경험이 적은 프로그래머라면 단순히 첫 번째 행을 무시하거나 이런 줄을 처리할 코드를 삽입할 겁니다. 다행히 csv.reader 함수 대신 이 문제를 해결해줄 대안이 있습니다. DictReader 를 사용하면 됩니다.
+
+```python
+from urllib.request import urlopen
+from io import StringIO
+import csv
+
+data =  urlopen("http://pythonscraping.com/files/MontyPythonAlbums.csv").read().decode('ascii', 'ignore')
+dataFile = StringIO(data)
+dictReader = csv.DictReader(dataFile)
+
+print(dictReader.fieldnames)
+
+for row in dictReader:
+    print(row)
+```
+
+csv.DictReader는 CSV 파일의 각 행을 리스트 객체가 아니라 딕셔너리 객체로 반환하며, 필드 이름은 변수 dictReader.field에 저장되고 각 딕셔너리 객체의 키로도 저장됩니다.
+
+```
+['Name', 'Year']
+{'Year': '1970', 'Name': "Monty Python's Flying Circus"}
+{'Year': '1971', 'Name': 'Another Monty Python Record'}
+{'Year': '1972', 'Name': "Monty Python's Previous Record"}
+{'Year': '1973', 'Name': 'The Monty Python Matching Tie and Handkerchief'}
+{'Year': '1974', 'Name': 'Monty Python Live at Drury Lane'}
+{'Year': '1975', 'Name': 'An Album of the Soundtrack of the Trailer of the Film of Monty Python and the Holy Grail'}
+{'Year': '1977', 'Name': 'Monty Python Live at City Center'}
+{'Year': '1977', 'Name': 'The Monty Python Instant Record Collection'}
+{'Year': '1979', 'Name': "Monty Python's Life of Brian"}
+{'Year': '1980', 'Name': "Monty Python's Cotractual Obligation Album"}
+{'Year': '1983', 'Name': "Monty Python's The Meaning of Life"}
+{'Year': '1987', 'Name': 'The Final Rip Off'}
+{'Year': '1989', 'Name': 'Monty Python Sings'}
+{'Year': '1994', 'Name': 'The Ultimate Monty Python Rip Off'}
+{'Year': '2014', 'Name': 'Monty Python Sings Again'}
+```
+물론 단점도 있습니다. DictReader는 csvReader에 비해 생성하고, 처리하고, 출력하는데 조금 더 오래 걸립니다. 하지만 매우 간편하고 사용하기 쉬우므로 이 정도 성능 부담은 감수할 만합니다.
 
 ## 6.4 PDF
 
