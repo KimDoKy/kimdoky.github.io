@@ -242,26 +242,68 @@ csv.DictReader는 CSV 파일의 각 행을 리스트 객체가 아니라 딕셔�
 
 ## 6.4 PDF
 
+어도비가 1993년에 PDF 문서 형식을 만든 건, 어떤 의미로는 혁명적이라고 해도 좋을 겁니다. PDF는 사용자의 운영체계가 무엇이든 상관없이 이미지와 텍스트 문서를 똑같이 보여주기 때문입니다.  
 
+웹에서 PDF를 사용하는 건 어울리지 않지만(HTML이 있고, 그에 비해 PDF는 더 느리고 정적인 형식이라 사용할 이유가 없습니다) PDF는 아주 널리 사용되고, 특히 공식 서식에 많이 쓰입니다.  
 
+불행히도 파이썬 2.x 용으로 설계된 PDF 파싱 라이브러리들은 대부분 파이썬 3.x 용으로 업그레이드되지 않았습니다. 하지만 PDF는 비교적 단순한 오픈 소스 문서 형식이므로 파이썬 3.x에서 쓸 수 있는 라이브러리도 많이 나와 있습니다.  
 
+PDFMiner3K도 그런 비교적 쉬운 라이브러리 중 하나입니다. 이 라이브러리는 매우 유연해서 명령줄에서 사용할 수도 있고, 기존 코드에 통합할 수도 있습니다. 또 다양한 언어 인코딩을 처리할 수 있습니다. 웹에는 그런 능력이 필요합니다.
 
+```
+pip install pdfminer3k
+```
 
+다음은 임이의 PDF를 로컬 파일 객체로 바꿔서 문자열로 읽는 기본적인 프로그램입니다.  
 
+```python
+from urllib.request import urlopen
+from pdfminer.pdfinterp import PDFResourceManager, process_pdf
+from pdfminer.converter import TextConverter
+from pdfminer.layout import LAParams
+from io import StringIO
+from io import open
 
+def readPDF(pdfFile):
+    rsrcmgr = PDFResourceManager()
+    retstr = StringIO()
+    laparams = LAParams()
+    device = TextConverter(rsrcmgr, retstr, laparams=laparams)
 
+    process_pdf(rsrcmgr, device, pdfFile)
+    device.close()
 
+    content = retstr.getvalue()
+    retstr.close()
 
+    return content
 
+pdfFile = urlopen("http://pythonscraping.com/pages/warandpeace/chapter1.pdf");
+outputString = readPDF(pdfFile)
+print(outputString)
+pdfFile.close()
+```
+출력 결과입니다.
 
+```
+CHAPTER I
 
+"Well, Prince, so Genoa and Lucca are now just family estates of
+theBuonapartes. But I warn you, if you don't tell me that this
+means war,if you still try to defend the infamies and horrors
+perpetrated bythat Antichrist- I really believe he is Antichrist- I will
+havenothing more to do with you and you are no longer my friend,
+no longermy 'faithful slave,' as you call yourself! But how do you
+do? I seeI have frightened you- sit down and tell me all the news."
+...
+```
 
+이 함수의 장점은 로컬 파일을 읽을 때는 urlopen에서 파이썬 파일 객체를 반환받지 않고 다음 행으로 대체하기만 하면 됩니다.
 
+```
+pdfFile = open("../chap6/chapter1.pdf", 'rb')
+```
 
-
-
-
-
-
+출력 결과가 완벽하다고 하긴 어렵습니다. 특히 이미지가 들어 있거나, 텍스트 형식이 이상하거나, 테이블이나 차트 안에 텍스트가 있는 PDF의 경우는 더 나쁩니다. 하지만 대부분의 텍스트 PDF에서는 텍스트 파일이었을 때와 다를 바 없이 출력 결과를 보입니다.
 
 ## 6.5 마이크로소프트 워드와 .docx
