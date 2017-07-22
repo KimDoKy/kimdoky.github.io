@@ -6,6 +6,10 @@ category: python
 tags: [ 'python' ]
 ---
 
+> 실습 코드는 <https://github.com/KimDoKy/WebScrapingWithPython/tree/master/chap5>{:target="`_`blank"} 에서 원본을 볼 수 있습니다.
+
+## python으로 smtp를 이용하여 email 보내기
+
 우선 이메일 내용을 작성한 파일을 준비합니다.
 
 `../textFile.txt`
@@ -140,4 +144,44 @@ smtplib.SMTPAuthenticationError: (535, b'5.7.8 Username and Password not accepte
 
 자세한 내용은 [문서](https://docs.python.org/3/library/smtplib.html){:target="`_`blank"}를 참조하세요.  
 
-carpedm20(http://carpedm20.blogspot.kr/2013/04/python-email.html)를 참고하였습니다. Thanks.
+## 이미지 파일을 이메일에 첨부하는 예제입니다.
+
+```python
+# 이메일을 보내기 위해 smtplib를 import합니다.
+import smtplib
+# 이메일에 이미지를 첨부하기 위한 모듈들도 import 합니다.
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+
+COMMASPACE = ', '
+family = 'abmu333@hanmail.net','makingfunk0@gmail.com'
+
+# 이메일 메세지 컨테이너를 만듭니다.
+msg = MIMEMultipart()
+msg['Subject'] = 'image send mail test 2'
+msg['From'] = 'makingfunk0@gmail.com'
+msg['To'] = COMMASPACE.join(family)
+# preamble 이 어떤 역할을 하는 속성인는 모르겠습니다.
+msg.preamble = 'what the..'
+pngfiles = ['./img/example.png', './img/example2.png']
+
+for file in pngfiles:
+    fp = open(file, 'rb')
+    img = MIMEImage(fp.read())
+    fp.close()
+    # 첨부한 파일의 파일이름을 입력합니다. (이 구문이 없으면 noname으로 발송됩니다.)
+    img.add_header('Content-Disposition', 'attachment', filename=file)
+    msg.attach(img)
+
+# 로컬 서버를 통해 메일을 보낼 때
+s = smtplib.SMTP('localhost')
+s.sendmail(me, family, msg.as_string())
+s.quit()
+# 외부 SMTP 서버를 이용할 때
+s = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+s.login(id, passwd)
+s.sendmail("","",msg.as_string())
+s.quit()
+```
+
+파일이름 지정 구문이 없다면 naname으로 가지만, naver의 메일으로 발송하면 attach(0).txt 으로 파일이 보내집니다. 즉, 메일을 받는 사람 입장에서는 이미지를 보려면 확장자를 하나하나 변경해서 봐야 합니다.
