@@ -572,7 +572,7 @@ conn.close()
 다음 예는 SMTP 서버를 로컬에서 실행한다고 가정합니다. 이 코드를 원격 SMTP 서버에 접속할 때 사용한다면 localhost를 원격 서버 주소로 바꾸기만 하면 됩니다.  
 
 파이썬으로 이메일을 보내는 코드는 아홉 줄이면 충분합니다.
-> 구글을 통해 이메일을 보내려 한다면 [스택오버플로](http://bit.ly/2fbytIs){:target="`_`blank"}에 바로 따라 할 수 있는 쉬운 예제가 있습니다. David Okwii, radtek 두 사용자의 답변을 참고하면 간단한 메일을 보내는 게는 큰 문제가 없을 것입니다.
+> 구글을 통해 이메일을 보내려 한다면 [PYTHON의 SMTP를 이용하여 E-MAIL 발송하기](https://kimdoky.github.io/python/2017/07/21/smtplib_email.html){:target="`_`blank"}를 참고합니다.
 
 ```python
 import smtplib
@@ -588,7 +588,7 @@ s = smtplib.SMTP('localhost')
 s.send_message(msg)
 s.quit()
 ```
-> 코드 점검 필요합니다. (실습 전입니다.)
+> 위 코드는 로컬 SMTP를 이용하여 발송하는 예입니다.
 
 파이썬에는 이메일과 관련된 중요한 패키지는 smtplib과 email 두 가지입니다.  
 
@@ -603,7 +603,7 @@ import smtplib
 from email.mime.text import MIMEText
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
-import times
+import time
 
 def sendMail(subject, body):
     msg = MIMEText(body)
@@ -611,7 +611,7 @@ def sendMail(subject, body):
     msg['From'] = "makingfunk0@gmail.com"
     msg['To'] = "abmu333@hanmail.net"
 
-s =smtplib.SMTP('localhost')
+s = smtplib.SMTP('localhost')
 s.send_message(msg)
 s.quit()
 
@@ -622,7 +622,45 @@ while(bsObj.find("a", {"id":"answer"}).attrs['title'] == "NO"):
 bsObj = BeautifulSoup(urlopen("https://isitchristmas.com"))
 sendMail("It's Christmas!", "According to http://isitchristmas.com, it is Christmas!")
 ```
-> 코드 점검 필요합니다. (실습 전입니다.)
+
+교재에 나온 코드인데.. 저대로 하면 저는 작동이 안되네요. 크롤링 하는 사이트의 구조가 변경 된 것 같기도 하고, smtp_ssl을 이용 했을때 send_message의 사용법도 아직 잘모르겠고.. 그래서 제 나름대로 다시 짜봤습니다.
+
+
+```python
+import smtplib
+from email.mime.text import MIMEText
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
+import time
+
+id = id
+passwd = passwd
+
+msg = MIMEText("The body of the email is here")
+bsObj = BeautifulSoup(urlopen("http://isitchristmas.com/"),"lxml")
+
+def sendMail(subject, body):
+    global msg
+    global bsObj
+    msg = MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = "makingfunk0@gmail.com"
+    msg['To'] = "abmu333@hanmail.net"
+    while(bsObj.find("noscript").text == "아니요"):
+        print("It is not Christmas yet.")
+        time.sleep(3600)
+        bsObj = BeautifulSoup(urlopen("https://isitchristmas.com"), "lxml")
+
+sendMail("It's Christmas!", "According to http://isitchristmas.com, it is Christmas!")
+
+s = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+s.login(id, passwd)
+s.sendmail("","abmu333@hanmail.net",msg.as_string())
+# s.send_massege(msg)
+s.quit()
+```
+
+이제 정상적으로 원하는 동작 결과를 보여주네요.  
 
 이 스크립트는 한 시간에 한 번씩 https://isitchristmas.com 웹사이트(날짜에 따라 커다란 YES 또는 NO를 표시하는)를 체크합니다. NO 외에 다른 것이 보이면 크리스마스가 되었다는 메일이 올 겁니다.  
 
