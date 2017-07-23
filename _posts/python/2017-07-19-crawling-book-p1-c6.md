@@ -307,3 +307,100 @@ pdfFile = open("../chap6/chapter1.pdf", 'rb')
 출력 결과가 완벽하다고 하긴 어렵습니다. 특히 이미지가 들어 있거나, 텍스트 형식이 이상하거나, 테이블이나 차트 안에 텍스트가 있는 PDF의 경우는 더 나쁩니다. 하지만 대부분의 텍스트 PDF에서는 텍스트 파일이었을 때와 다를 바 없이 출력 결과를 보입니다.
 
 ## 6.5 마이크로소프트 워드와 .docx
+
+워드 파일은 처음부터 이리저리 컴퓨터 사이를 이동하면서 사용할 것을 염두해 두지 않고 만들어졌기 때문에 컴퓨터 사이를 이동하면 종종 형태가 바뀌어버립니다. 거기에 용량도 크고, 느리고, 열기도 어렵습니다. 그럼에도 불구하고, 일부 사이트에서는 중요한 문서, 정보, 차트, 멀티미디어 등 HTML으로 만들어야 할 것들을 사리지 않고 워드 파일로 만들어 놓고 있습니다.  
+
+2008년 무렵까지, MS사의 제품은 `.docfile`형식을 사용했지만, 바이너리 형식은 읽기 어렵고 다른 워드프로세서의 지원도 좋지 않았습니다. 그래서 오픈 오피스 XML 기반 표준을 사용하기로 결정하였습니다. 그래서 마이크로소프트 파일도 오픈 소스나 기타 소프트웨어와 호환되게 됐습니다.  
+
+불행히도 파이썬은 구글 독스, 오픈 오피스, 마이크로소프트 오피스에서 사용하는 이 파일 형식을 완벽히 지원하지 못하고 있습니다. python-docx 라이브러리가 있지만, 문서를 만들거나 파일 크기와 타이틀 같은 기본적인 파일 데이터만 읽을 뿐, 실제 콘텐츠를 읽지는 못합니다. 마이크로소프트 오피스 파일을 읽으려면 직접 해결책을 만들어야 합니다.
+
+파일에서 XML을 읽는 첫 번째 단계입니다.
+
+```python
+from zipfile import ZipFile
+from urllib.request import urlopen
+from io import BytesIO
+
+wordFile = urlopen("http://pythonscraping.com/pages/AWordDocument.docx").read()
+wordFile = BytesIO(wordFile)
+document = ZipFile(wordFile)
+xml_content = document.read('word/document.xml')
+print(xml_content.decode('utf-8'))
+```
+
+이 코드는 원격 워드 문서를 바이너리 파일 객체로 읽습니다.(BytesIO는 StringIO와 비슷합니다.) 그리고 파이썬의 zipfile 라이브러리로 압축을 풀고(`.docx`는 모두 압축되어 있습니다.), 압축이 풀린 파일인 XML을 읽습니다.
+
+http://pythonscraping.com/pages/AWordDocument.docx 에 있는 워드 문서입니다.
+
+![]({{site.url}}/img/post/python/crawling/p1c6_5.png)
+> 이 워드 문서의 원하는 정보는 HTML이 아닌 .docx 파일로 업로드 되어있기 때문에 접급하기 어렵습니다.
+
+파이썬 스크립트의 출력 결과입니다.
+
+```
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 w15 wp14"><w:body><w:p w:rsidR="00764658" w:rsidRDefault="00764658" w:rsidP="00764658"><w:pPr><w:pStyle w:val="Title"/></w:pPr><w:r><w:t>A Word Document on a Website</w:t></w:r><w:bookmarkStart w:id="0" w:name="_GoBack"/><w:bookmarkEnd w:id="0"/></w:p><w:p w:rsidR="00764658" w:rsidRDefault="00764658" w:rsidP="00764658"/><w:p w:rsidR="00764658" w:rsidRPr="00764658" w:rsidRDefault="00764658" w:rsidP="00764658"><w:r><w:t>This is a Word document, full of content that you want very much. Unfortunately, it’s difficult to access because I’m putting it on my website as a .</w:t></w:r><w:proofErr w:type="spellStart"/><w:r><w:t>docx</w:t></w:r><w:proofErr w:type="spellEnd"/><w:r><w:t xml:space="preserve"> file, rather than just publishing it as HTML</w:t></w:r></w:p><w:sectPr w:rsidR="00764658" w:rsidRPr="00764658"><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/><w:cols w:space="720"/><w:docGrid w:linePitch="360"/></w:sectPr></w:body></w:document>
+```
+
+여기에는 정보가 많이 있지만, 파묻혀 있습니다. 다행히 사당의 타이틀을 포함해 문서의 텍스트는 모두 `<w:t></w:t>` 태그 안에 들어 있으므로 추출하기는 쉽습니다.
+
+```
+from zipfile import ZipFile
+from urllib.request import urlopen
+from io import BytesIO
+from bs4 import BeautifulSoup
+
+wordFile = urlopen("http://pythonscraping.com/pages/AWordDocument.docx").read()
+wordFile = BytesIO(wordFile)
+document = ZipFile(wordFile)
+xml_content = document.read('word/document.xml')
+
+wordObj = BeautifulSoup(xml_content.decode('utf-8'), "html.parser")
+textStrings = wordObj.find_all("w:t")
+for textElem in textStrings:
+    print(textElem.text)
+```
+A Word Document on a Website
+This is a Word document, full of content that you want very much. Unfortunately, it’s difficul
+t to access because I’m putting it on my website as a .
+docx
+ file, rather than just publishing it as HTML
+```
+출력결과
+textStrings = wordObj.find_all("w:t") 구문이 데이터를 못읽어 오고 있습니다.
+해결 후 수정 예정입니다.
+```
+
+docx라는 단어 한 행으로 출력되었다는 점을 주목해야 합니다 XML에서는 이 단어가 <w:prooferr w:type="spellStart"/> 태그로 둘러싸여 있습니다. 이 태그는 워드가 docx라는 단어에 붉고 구불구불한 밑줄을 남셔서 철자가 틀린 것 같다고 지적하는 태그입니다.  
+
+문서 타이틀은 스타일 서술자 태그인 <w:pStyle w:val="Title"/> 태그로 둘러싸여 있습니다. 이것만으로 타이틀을 (다른 스타일의 텍스트도) 아주 쉽게 구분할 수는 없지만 BeautifulSoup의 내비게이션 기능을 유용하게 쓸 수 있습니다.
+
+```python
+textStrings = wordObj.find_all("w:t")
+for textElem in textStrings:
+    closeTag = ""
+    try:
+        style = textElem.parent.previousSibling.find("w:pstyle")
+        if style is not None and style["w:val"] == "Title":
+            print("<h1>")
+            closeTag = "</h1>"
+    except AttributeError:
+        # 출력할 태그가 없습니다.
+        pass
+    print(textElem.text)
+    print(closeTag)
+```
+이 코드는 다른 텍스트 스타일 주위의 태그를 출력하거나 다른 방법으로 구분할 수 있도록 쉽게 확장할 수 있습니다.
+
+
+출력 결과입니다.
+
+```
+<h1>
+A Word Document on a Website
+</h1>
+This is a Word document, full of content that you want very much. Unfortunately, it’s difficul
+t to access because I’m putting it on my website as a .
+docx
+ file, rather than just publishing it as HTML
+```
