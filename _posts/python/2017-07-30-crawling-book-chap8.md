@@ -501,7 +501,35 @@ EX | existential "there" | 장소가 아니라 존재를 나타내는 there <br>
 FW | foreign word | 외래어
 IN | preposition,<br> subordinating conjunction | 전치사, 종속 접속사
 JJ | adjective | 형용사
-....
+JJR | adjective, comparative | 비교급 형용사 (My house is **larger** than hers.)
+JJS | adjective, superlative | 최상급 형용사 (My house us the **largest** one in our neighborhood.)
+LS | list item marker | 목록임을 나타내는 문자
+MD | modal | 법조동사(can, must, may 등)
+NN | noun, singular or mass | 명사. 단수 또는 복수
+NNS | noun, plural | 복수형 명사
+NNP | proper noun, singular | 단수형 고유명사
+NNPS | proper noun, plural | 복수형 고유명사
+PDT | predeterminer | 선행 한정사 (all, both, half 등)
+POS | possessive ending | 소유격 문자 (어포스트로피 및 's)
+PRP | personal pronoun | 인칭대명사 (I, you, he, she)
+PRP$ | possessive pronoun | 소유격 대명사 (The dog is **mine**.)
+RB | adverb | 부사
+RBR | adverb, comparative | 비교급 부사 (Jim works **harder** than his brother.)
+RBS | adverb, superlative | 최상급 부사 (Everyone in the race ran fest, but John ran the **festest** of all.)
+RP | Particle | 불변화사 (동사와 함께 쓰이는 부사나 전치사, She tore **up** the letter.)
+SYM | symbol | 기호
+TO |"to" | to
+UH | ilnterjection | 감탄사
+VB | verb, base form | 동사 원형
+VBD | verb, past tense | 과거형 동사
+VBG | verb, gerund or present participle | 동명사 또는 현재진행형(~ing)
+VBN | verb, past participle | 과거분사 (I have **seen** six deer.)
+VBP | verb, non-third person<br>singular present | 3인칭이 아닌 현재형 동사
+VBZ | verb, third person singular present | 3인칭 현재형 동사(s로 끝남)
+WDT | wh-determiner | wh로 시작하는 한정사(문장 맨 앞에 등장하지 않는 what, which)
+WP | wh-pronoun | wh로 시작하는 대명사 (what, which, who, whoever)
+WP$ | possessive wh-pronoun | wh로 시작하는 소유격 대명사 (whom, whose)
+WRB | wh-adverb | wh로 시작하는 부사 (when, where, why, how)
 
 NLTK는 문장을 분석하는 것 외에도 단어의 문맥과 내장된 방대한 사전으로 그 의미를 찾는 것을 도울 수 있습니다. 기본적인 수준에서 NLTK는 문장의 각 부분을 분석할 수 있습니다.
 
@@ -560,9 +588,17 @@ for sentence in sentences:
             if word[0].lower() == "google" and word[1] in nouns:
                 print(sentence)
 ```
+> 출력 결과입니다.  
+Google is one of the best companies in the world.
 
 이 코드는 google(또는 Google)이 동사가 아니라 명사로 사용된 문장만 출력합니다. 물론 더 명확하게 지정해서 NNP(고유명사)로 태그된 Google만 찾게 할 수도 있지만, NLTK라 할지라도 가끔은 실수하기 마련입니다. 애플리케이션에 따라서 융통성을 발휘해야 할 때가 좋을 때도 있습니다.  
 
 자연어의 모호한 부분은 대개 NLTK의 pos_tag 함수로 해결할 수 있습니다. 찾으려는 단어나 구절을 단순히 검색하지 말고 태그와 **함께** 검색한다면 스크레이퍼가 훨씬 정확하고 효율적으로 검색하게 만들 수 있습니다.
 
 ## 8.4 추가 자료
+
+컴퓨터로 자연어를 처리, 분석, 이해하는 것은 컴퓨터 과학에서 매우 어려운 일 중 하나이며, 이 주제에 관한 논문과 보고서는 헤아릴 수 없이 많습니다. 여기서 다운 내용을 일상적인 웹 스크레이핑을 넘어 다른 것을 생각할 영감을 얻거나, 자연어 분석이 필요한 프로젝트에 임할 때 방향을 자을 단서에 사용하면 됩니다.  
+
+기초적인 자연어 처리와 NLTK에 관한 자료는 훌륭한 것이 많이 있습니다. 특히 스티븐 버드, 유언 클라인, 에드워드 로퍼가 쓴 <Natural Language Processing with Python> 은 이 주제에 관한 쉽고 자세한 책입니다.  
+
+또한 제임스 푸스테요프스키와 엠버 스텁스의 <Natural Language Annotation for Machine Learning>은 좀 더 높은 수준의 이론적 가이드입니다. 이 책에서 다루는 주제들은 NLTK에서 완벽하게 동작합니다.
