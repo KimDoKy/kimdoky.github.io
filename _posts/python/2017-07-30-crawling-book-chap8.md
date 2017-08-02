@@ -227,12 +227,342 @@ buildWordDict 함수는 인터넷에서 가져온 텍스트 문자열을 받아�
 
 ### 8.2.1 위키백과의 여섯 다리: 결론
 
+챕터 3에서 케빈 베이컨에 관한 위키백과 항목에서 시작해 다른 항목으로 넘어가는 링크를 수집해 데이터베이스에 저장하는 스크레이퍼를 만들었습니다. 어떤 페이지에서 시작해 목표 페이지에 도달하는 링크 체인을 찾는 문제는 첫 번째 단어와 마지막 단어가 정해진 상태에서 마르코프 체인을 찾는 것과 마찬가지입니다. 이런 종류의 문제를 **방향성 그래프(directed graph)** 문제라고 부릅니다.이런 문제이서 A -> B는 B -> A와 같지 않습니다. football이라는 단어 뒤에는 player라는 단어가 따라올 때가 많지만, player 뒤에 football이 따라오는 경우는 매우 드문것과 같습니다. 케빈 베이컨의 위키백과 항목에는 그의 고향인 필라델피아를 가리키는 링크가 있지만, 필라델피아 항목에는 케빈 베이컨을 가리키는 링크가 없습니다.  
+
+이와는 대조적으로 원래 케빈 베이컨의 여섯 다리 게임은 **비방향성 그래프(undirected graph)** 문제입니다. 케빈 베이컨이 줄리아 로버츠와 함께 <유혹의 선>에 출연했다면, 줄리아 로버츠는 반드시 케빈 베이컨과 함께 <유혹의 선>에 출연한 겁니다. 따라서 관계를 양쪽을 모두 향합니다. 컴퓨터 과학에서 비방향성 그래프 문제는 방향성 그래프 문제보다 적기는 하지만, 둘 다 컴퓨터로 풀리에는 어려운 문제입니다.  
+
+이러한 문제를 풀기 위해 많은 연구가 행해졌고 다양한 변형도 시도됐지만, 방향성 그래프에서 가장 짧은 경로를 찾을 때 가장 좋고 가장 널리 쓰이는 방법은 **너비 우선 탐색(breadth0first search)** 입니다.  
+
+너비 우선 탐색에서는 우선 시작 페이지에서 출발하는 링크를 모두 검색합니다. 검색한 링크에 목표 페이지가 들어 있지 않으면 2단계 링크, 즉 시작 페이지에서 링크된 페이지에서 다시 링크된 페이지를 찾습니다. 링크 단계 제한에 걸리거나, 목표 페이지를 찾을 때까지 이 과정을 반복합니다.  
+
+챕터 5에서 설명한 링크 테이블을 사용해 너비 우선 탐색을 푸는 코드입니다.
+
+```python
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+import pymysql
+
+conn = pymysql.connect(host='127.0.0.1', user='root', passwd=None, db='mysql', charset='utf-8')
+
+cur = conn.cursor()
+cur.execute("Use wikipedia")
+
+class SolutionFound(RuntimeError):
+    def __init__(self, message):
+        self.message = message
+
+def getLinks(fromPageId):
+    cur.execute("SELECT toPageId FROM links WHERE fromPageId = %s", (fromPageId))
+    if cur.rowcount == 0:
+        return None
+    else:
+        return [x[0] for x in cur.fetchall()]
+
+def constructDict(currentPageId):
+    links = getLinks(currentPageId)
+    if links:
+        return dict(zip(links, [{}]*len(links)))
+    return {}
+
+# 링크 트리가 비어 있거나 링크가 여러 개 들어 있습니다.
+def searchDepth(targetPageId, currentPageId, linkTree, depth):
+    if depth == 0:
+        # 재귀를 중지하고 함수를 끝냅니다.
+        return linkTree
+    if not linkTree:
+        linkTree = constructDict(currentPageId)
+        if not linkTree:
+            # 링크가 발견되지 않았으므로 이 노드에서는 계속 할 수 없습니다.
+            return {}
+    if targetPageId in linkTree.keys():
+        print("TARGET " + str(targetPageId) + " FOUND!")
+        raise SolutionFound("PAGE: " + str(currentPageId))
+
+    for branchKey, branchValue in linkTree.items():
+        try:
+            # 재귀적으로 돌아와서 링크 트리를 구축합니다.
+            linkTree[branchKey] = searchDepth(targetPageId, branchKey, branchValue, depth-1)
+        except SolutionFound as e:
+            print(e.message)
+            raise SolutionFound("PAGE: " + str(currentPageId))
+    return linkTree
+
+try:
+    searchDepth(134951, 1, {}, 4)
+    print("No solution found")
+except:
+    print(e.message)
+```
+> DB 연결 부분을 더 점검해야 합니다. 현재 연결에서 에러가 일어납니다.
+```
+File "/usr/local/var/pyenv/versions/scrapingEnv/lib/python3.5/site-packages/pymysql/__init__.py", line 90, in Connect
+    return Connection(*args, **kwargs)
+  File "/usr/local/var/pyenv/versions/scrapingEnv/lib/python3.5/site-packages/pymysql/connections.py", line 678, in __init__
+    self.encoding = charset_by_name(self.charset).encoding
+AttributeError: 'NoneType' object has no attribute 'encoding'
+```
+패스워드를 입력해도 인코딩 에러가 일어납니다. 현재 이슈를 해결중입니다.
+
+>
+```
+AttributeError: 'NoneType' object has no attribute 'encoding'
+```
+위 에러는 파이썬 버젼에 따른 차이로 에러가 일어나는 것으로 추측됩니다. 인코딩방식(charset='utf-8') 부분을 삭제해주면 DB 연결은 성공합니다.
+
+
+getLinks와 constructDict는 주어진 페이지에 따라 데이터베이스에서 링크를 가져오고, 가져온 링크를 딕셔너리 형식으로 바꾸는 보조 함수입니다. 메인 ㅎ마수인 searchDepth는 재귀적으로 동작하면서 한 번에 한 단계씩 링크 트리를 구축하는 동시에 검색합니다. 이 함수는 다음 규칙을 따릅니다.
+
+- 주어진 재귀 제한에 도달하면(즉, 자기 자신을 너무 자주 호출했다면) 아무 일도 하지 않고 끝납니다.
+- 주어진 링크 딕셔너리가 비어 있다면 현재 페이지의 링크로 트리를 만듭니다. 현재 페이지에 링크가 없다면 돌아갑니다.
+- 현재 페이지에 목표 페이지를 가리키는 링크가 있다면 해결책을 찾았음을 알리는 예외를 일으킵니다. 그러면 각 스택에서 현재 페이지를 출력하면서 다시 예외를 일으키므로 결과적으로 해결책인 페이지 목록이 화면에 출력됩니다.
+- 해결책을 찾지 못하면 링크 단계 제한을 한 단계 줄이면서 자신을 다시 호출하여 다음 단계 링크를 검색합니다.
+
+케빈 베이컨의 페이지(id 1)와 에릭 아이들의 페이지(id 134951) 사이의 링크를 검색한 결과는 다음과 같습니다.
+
+```
+Target 134951 FOUND!
+PAGE: 156224
+PAGE: 155545
+PAGE: 3
+PAGE: 1
+```
+
+이 결과를 순서대로 보면 케빈 베이컨 -> 샌디에이고 코믹콘 -> 브라이언 프라우드 -> 테리 존스 -> 에릭 아이들 입니다.
+
+여섯 다리 문제와 문장에서 어떤 단어가 다른 어떤 단어 뒤에 자주 나타나는지를 모델링하는 것 외에도, 다양성 그래프와 비방향성 그래프는 웹 스크레이핑을 하다가 마주칠 다양한 상황을 모델링할 때 쓸 수 있습니다. 예를 들어 어떤 웹사이트가 다른 어떤 웹사이트를 링크하고 있는지, 어떤 보고서가 다른 어떤 보고서를 인용하고 있는지, 판매 사이트에 종종 함께 노출되는 상품은 어떤 것인지, 이 링크는 얼마나 강력한지, 링크는 양방향인지 등의 다양한 상황들에서 말입니다.  
+
+이들 관계릐 기본적인 타입을 알게 되면 스크랩한 데이터에 따라 모델을 만들거나, 시각화하거나, 뭔가 예측하려 할 때 큰 도움이 됩니다.
+
 ## 8.3 자연어 툴킷
+
+지금까지는 주로 텍스트 본문에 있는 단어를 통계적으로 분석하는데 집중했습니다. 가장 많이 쓰인 단어, 비정상적인 단어, 어떤 단어 뒤에 어떤 단어가 주로 따로오는지, 그들을 어떻게 묶을수 있는지 말입니다. 아직 하지 못한 것은 그 단어들이 어떤 의미인지 가능한한 이해하는 겁니다.  
+
+자연어 툴킷(NLTK. Natural Language Toolkit)은 영어 텍스트의 부분마다 식별하고 태깅하도록 설계된 파이썬 라이브러리 모음입니다. 2000년에 시작된 프로젝트로 15년간 수십명의 개발자가 참여했습니다.  
 
 ### 8.3.1 설치
 
+```
+pip install NLTK
+```
+
+모듈을 설치한 다음에는 미리 작성된 텍스트 저장소를 내려받아 몇 가지 기능을 쉽게 테스트해 볼 수 있습니다.
+
+```
+>>> import nltk
+>>> nltk.download()
+```
+이 명려은 NLTK 다운로더를 실행합니다.
+
+![]({{site.url}}/img/post/python/crawling/c8_3_1.png)
+
+패키지를 다운로드 해야 뒷 내용을 따라 갈 수 있습니다.
+
 ### 8.3.2 NLTK 를 사용한 통계적 분석
 
+NLTK는 텍스트에서 단어 숫자, 단어 빈도, 어휘 다양도 같은 통계적 정보를 생성할 때 아주 유용합니다. 필요한 것이 비교적 단순한 계산, 예를 들어 텍스트 섹션에서 고유한 단어 숫자를 세어보는 것이라면 NLTK는 좀 과할 수 있습니다. 이 모듈은 매우 크니까요. 하지만 비교적 광범위한 텍스트 분석이 필요하다면 이 모듈에서 제공하는 많은 함수를 통해 원하는 거의 모든 것을 얻을 수 있습니다.  
+
+NLTK 분석은 항상 Text 객체로 시작합니다. 다음과 같은 방법으로 단순한 파이썬 문자열을 Text 객체로 바꿀 수 있습니다.
+
+```python
+from nltk import word_tokenize
+from nltk import Text
+
+tokens = word_tokenize("Here is some not very interesting text")
+text = Text(tokens)
+```
+
+word_tokeniz 함수는 파이썬에서 문자열로 인식하는 텍스트는 무엇이든 받을 수 있습니다. 지금 당장은 테스트해볼 긴 문자열이 없지만 기능을 써보고 싶다면 NLTK에 내장된 몇 권의 책을 다음과 같이 임포트해서 사용할 수 있습니다.
+
+```
+from nltk.book import *
+```
+
+위 명령은 아홉 권의 책을 불러옵니다.
+
+```python
+>>> from nltk.book import *
+*** Introductory Examples for the NLTK Book ***
+Loading text1, ..., text9 and sent1, ..., sent9
+Type the name of the text or sentence to view it.
+Type: 'texts()' or 'sents()' to list the materials.
+text1: Moby Dick by Herman Melville 1851
+text2: Sense and Sensibility by Jane Austen 1811
+text3: The Book of Genesis
+text4: Inaugural Address Corpus
+text5: Chat Corpus
+text6: Monty Python and the Holy Grail
+text7: Wall Street Journal
+text8: Personals Corpus
+text9: The Man Who Was Thursday by G . K . Chesterton 1908
+```
+
+이 장의 나머지 예제에서는 text6인 <몬티 파이튼과 성배>를 사용하겠습니다.  
+
+Text 객체는 일반적인 파이썬 배열과 거의 비슷하게 조작할 수 있습니다. 텍스트 단어들로 구성된 배열이라고 생각하면 됩니다. 이런 특징을 이용해서 텍스트에 들어 있는 고유한 단어 숫자와 총 단어 숫자를 비교할 수 있습니다.
+
+```
+>>> len(text6)/len(text)
+2423.8571428571427
+```
+위 코드는 대본의 각 단어가 평균 2423번 정도 사용됐음을 보여줍니다.
+> 어떻게 해서 이렇게 결과가 나왔는지 아직 잘 이해가 안갑니다...
+
+텍스트를 빈도분포(frequency distribution.통계학에서는 도수분포라고 부릅니다.) 객체에 넘기면 가장 많이 쓰인 단어는 무엇인지, 다양한 단어들의 빈도가 어느 정도인지 알 수 있습니다.
+
+```python
+>>> from nltk import FreqDist
+>>> fdist = FreqDist(text6)
+>>> fdist.most_common(10)
+[(':', 1197), ('.', 816), ('!', 801), (',', 731), ("'", 421), ('[', 319), (']', 312), ('the', 299), ('I', 255), ('ARTHUR', 225)]
+>>> fdist["Grail"]
+34
+```
+
+이 텍스트는 영화 대본이므로 구조를 짐작할 수 있는 단어도 몇 가지 보입니다. 예를 들어 전부 대문자로 된 ARTHUR가 자주 등장하는데, 대본에서는 아서 왕의 대사가 있을 때마다 그 앞에 등장하기 때문입니다. 또한 모든 행에 등장하는 콜론(:)은 등장인물의 이름과 대사를 구분하는 역할을 합니다. 이걸 보면 이 영화에 대사가 1,197개가 있음을 알 수 있습니다.  
+
+이전에 살펴본 2-그램을 바이그램(bigram)이라고도 부릅니다. 마찬가지로 3-그램을 트라이그램(trigram)이라고 합니다. 이들을 만들고, 검색하고, 목록을 만드는 것도 쉽습니다.
+
+```python
+>>> from nltk import bigrams
+>>> bigrams = bigrams(text6)
+>>> bigramsDist = FreqDist(bigrams)
+>>> bigramsDist[("Sir", "Robin")]
+18
+```
+
+2-그램 Sir Robin을 검색하면 2-그램이 빈도분포에서 표현되는 방법과 일치하도록 Sir와 Robin의 배열로 만들면 됩니다. 3-그램에 해당하는 trigrams 모듈도 똑같이 동작합니다.
+일반적으로는 ngrams 모듈을 임포트하기만 하면 됩니다.
+
+```python
+>>> from nltk import ngrams
+>>> fourgrams = ngrams(text6, 4)
+>>> fourgramsDist = FreqDist(fourgrams)
+>>> fourgramsDist[("father", "smelt", "of", "elderberries")]
+1
+```
+여기서 ngrams 함수는 텍스트 객체를 분리해 두 번째 매개변수로 지정한 n-그램으로 나눕니다. 이 코드에서는 텍스트를 4-그램으로 나누게 했습니다. 그리고 father smelt of elderberries라는 구절이 정확히 한 번만 나온 것을 확인했습니다.
+> 구절의 단어 순서도 정확히 일치해야 합니다.
+
+빈도분포와 텍스트 객체, n-그램은 모두 루프에서 사용할 수 있습니다. 예를 들어 다음 코드는 coconut으로 시작하는 4-그램을 모두 출력합니다.
+
+```
+from nltk.book import *
+from nltk import ngrams
+fourgrams = ngrams(text6, 4)
+for fourgram in fourgrams:
+    if fourgram[0] == "coconut":
+        print(fourgram)
+```
+
+결과입니다.
+
+```
+*** Introductory Examples for the NLTK Book ***
+Loading text1, ..., text9 and sent1, ..., sent9
+Type the name of the text or sentence to view it.
+Type: 'texts()' or 'sents()' to list the materials.
+text1: Moby Dick by Herman Melville 1851
+text2: Sense and Sensibility by Jane Austen 1811
+text3: The Book of Genesis
+text4: Inaugural Address Corpus
+text5: Chat Corpus
+text6: Monty Python and the Holy Grail
+text7: Wall Street Journal
+text8: Personals Corpus
+text9: The Man Who Was Thursday by G . K . Chesterton 1908
+('coconut', 'and', 'you', "'")
+('coconut', "'", 's', 'tropical')
+('coconut', '?', 'ARTHUR', ':')
+('coconut', '.', 'ARTHUR', ':')
+('coconut', 'back', 'anyway', '...')
+('coconut', 'on', 'a', 'line')
+```
+
+NLTK 라이브러리에는 큰 텍스트를 정리하고, 수를 세고, 정렬하고, 측정하도록 설계된 방대한 여러 도구와 객체가 있습니다. 이 도구들은 대부분 아주 잘 설계되어 있으며, 파이썬에 익숙한 사람은 직관적으로 사용할 수 있습니다.
+
 ### 8.3.3 NLTK 를 사용한 사전적 분석
+
+지금까지 모든 단어를 곧이곧대로 비교하고 분류했습니다. 철자가 같지만 다른 단어를 구별하지도 않았고, 문맥에 따라 뜻이 다른 것도 생각하지 않았습니다.  
+
+"He was objective in achieving his objective of writing an objective philosophy, primarily using verbs in the objective case." 사람은 이런 문장을 쉽게 이해하지만, 웹 스크레이퍼는 이 문장을 보고 같은 단어가 4번 사용됐다고 생각할 뿐 각 단어의 의미는 이해하지 못합니다. (objective는 순서대로 객관적인, 목표, 실재적, 목적격 이라는 네 가지 다른 의미로 쓰였습니다.)
+
+연설문의 각 부분을 이해하는 것에 더해 어떤 단어가 여라 가지 의미로 사용되는 것을 구별할 수 있다면 유용할 겁니다. 예를 들어 일상적으로 쓰이는 영단어로 구성된 회사 이름을 찾아볼 수도 있고, 어떤 회사에 대한 의견인 "ACME Products is good"과 "ACME Products is not bad"가 같은 의견이라는 것도 알 수 있습니다. 한 문장에는 good이 있고 다른 문장에는 bad가 있는데도 말이죠.
+
+---
+> ### 펜 트리뱅크의 태그
+NLTK는 텍스트에 태그를 붙일 때 널리 쓰이는, 펜실베니아 대학의 펜 트리뱅크(Penn Treebank) 프로젝트(https://goo.gl/1ZoxjD)를 기본적으로 사용하고 있습니다. 태그 중에는 등위 접속사를 나타내는 CC처럼 쉽게 이해되는 것도 있지만, 불변화사를 나타내는 RP처럼 혼란스러운 것도 있습니다 이 섹션에서 사용되는 태그가 궁금할 때는 다음 표를 참고하세요.
+>
+태그 | 원어 | 한국어
+---|---|---
+CC | coordinating conjunction | 등위 접속사(and, or, but 같은 접속사)
+CD | cardinal number | 기수(순서의 의미가 없이 수량만 나타내는 수)
+DT | determiner | 한정사(명사 앞에 붙는 the, some, my 같은 말들)
+EX | existential "there" | 장소가 아니라 존재를 나타내는 there <br> (**There** is always some madness in love.)
+FW | foreign word | 외래어
+IN | preposition,<br> subordinating conjunction | 전치사, 종속 접속사
+JJ | adjective | 형용사
+....
+
+NLTK는 문장을 분석하는 것 외에도 단어의 문맥과 내장된 방대한 사전으로 그 의미를 찾는 것을 도울 수 있습니다. 기본적인 수준에서 NLTK는 문장의 각 부분을 분석할 수 있습니다.
+
+```Python
+>>> from nltk.book import *
+*** Introductory Examples for the NLTK Book ***
+Loading text1, ..., text9 and sent1, ..., sent9
+Type the name of the text or sentence to view it.
+Type: 'texts()' or 'sents()' to list the materials.
+text1: Moby Dick by Herman Melville 1851
+text2: Sense and Sensibility by Jane Austen 1811
+text3: The Book of Genesis
+text4: Inaugural Address Corpus
+text5: Chat Corpus
+text6: Monty Python and the Holy Grail
+text7: Wall Street Journal
+text8: Personals Corpus
+text9: The Man Who Was Thursday by G . K . Chesterton 1908
+>>> from nltk import word_tokenize
+>>> from nltk import pos_tag
+
+>>> text = word_tokenize("Strange women lying in ponds distributing swords is no basis for a system of government. Supreme executive power derives from a mandate from the masses, not from some farcical aquatic ceremony.")
+>>> words = pos_tag(text)
+>>> print(words)
+
+[('Strange', 'JJ'), ('women', 'NNS'), ('lying', 'VBG'), ('in', 'IN'), ('ponds', 'NNS'), ('distributing', 'VBG'), ('swords', 'NNS'), ('is', 'VBZ'), ('no', 'DT'), ('basis', 'NN'), ('for', 'IN'), ('a', 'DT'), ('system', 'NN'), ('of', 'IN'), ('government', 'NN'), ('.', '.'), ('Supreme', 'NNP'), ('executive', 'NN'), ('power', 'NN'), ('derives', 'VBZ'), ('from', 'IN'), ('a', 'DT'), ('mandate', 'NN'), ('from', 'IN'), ('the', 'DT'), ('masses', 'NNS'), (',', ','), ('not', 'RB'), ('from', 'IN'), ('some', 'DT'), ('farcical', 'JJ'), ('aquatic', 'JJ'), ('ceremony', 'NN'), ('.', '.')]
+```
+
+각 단어는 **튜플** 로 나뉩니다. 튜플에는 단어와 함께 그 단어가 연설문에서 어떤 의미로 쓰였는지 나타내는 태그가 들어 있습니다. 언뜻 보기엔 매우 단순해 보일지 모르지만, 다음 예를 보면 이 작업은 매우 복잡한 알고리즘을 거치고 있음을 알 수 있습니다.
+
+```python
+>>> text = word_tokenize("The dust was thick so he had to dust")
+>>> words = pos_tag(text)
+>>> print(words)
+[('The', 'DT'), ('dust', 'NN'), ('was', 'VBD'), ('thick', 'RB'), ('so', 'RB'), ('he', 'PRP'), ('had', 'VBD'), ('to', 'TO'), ('dust', 'VB')]
+```
+이 문잔에는 dust라는 단어가 한 번은 명사로, 다른 한 번은 동사로 쓰였습니다. NLTK는 두 단어의 쓰임을 문맥에 따라 정확히 판단했습니다. NLTK는 영어의 **문맥 자유 문법(context-free grammar)** 에 따라 문장의 각 부분을 판단합니다. 문맥 자유 문법은 간단히 말해서, 무엇이 다른 무엇의 다음에 올 수 있는지 정의한 순서 리스트입니다. 여기서는 연설의 각 부분이 다른 어떤의 뒤에 올 수 있는지 없는지를 정의하는데 쓰였습니다. dust처럼 모호한 단어를 만날 때마다 문맥 자유 문법을 참고해서 그 문법을 따르는 부분을 선택합니다.
+
+> ### 머신 러닝과 머신 트레이닝
+추가 예정
+
+그렇다면 문맥에 따라 주어진 단어가 명사인지 동사인지 알 수 있는건 좋지만, 웹 스크레이핑에는 어떤 도움이 될까요?
+
+웹 스크레이핑을 하다 보면 검색에 관련된 문제를 자주 겪게 됩니다. 예를 들어, 어떤 사이트의 텍스트를 수집한 후 거기서 google이라는 단어를 찾되, 고유명사가 아니라 동사로 사용된 것만 찾고 싶을 때가 있을 겁니다. 아니면 반대로, google을 가리키는 단어만 찾고 있는데, 작성자가 대소문자를 정확하게 쓰기만 바라기는 어려울 때도 있습니다.(문장 중간에서 단어의 첫 글자를 대문자로 쓰면 보통 고유명사입니다. 이걸 믿고 대소문자를 가려 Google만 찾으면 실수로 google이라고 쓴 부분은 모두 놓치게 됩니다.) 이럴 때 pos_tag 함수가 대단히 유용합니다.
+
+```python
+from nltk import word_tokenize, sent_tokenize, pos_tag
+sentences = sent_tokenize("Google is one of the best companies in the world. I constantly google myself to see what I'm up to.")
+nouns = ['NN', 'MMS', 'NNP', 'NNPS']
+
+for sentence in sentences:
+    if "google" in sentence.lower():
+        taggedWords = pos_tag(word_tokenize(sentence))
+
+        for word in taggedWords:
+            if word[0].lower() == "google" and word[1] in nouns:
+                print(sentence)
+```
+
+이 코드는 google(또는 Google)이 동사가 아니라 명사로 사용된 문장만 출력합니다. 물론 더 명확하게 지정해서 NNP(고유명사)로 태그된 Google만 찾게 할 수도 있지만, NLTK라 할지라도 가끔은 실수하기 마련입니다. 애플리케이션에 따라서 융통성을 발휘해야 할 때가 좋을 때도 있습니다.  
+
+자연어의 모호한 부분은 대개 NLTK의 pos_tag 함수로 해결할 수 있습니다. 찾으려는 단어나 구절을 단순히 검색하지 말고 태그와 **함께** 검색한다면 스크레이퍼가 훨씬 정확하고 효율적으로 검색하게 만들 수 있습니다.
 
 ## 8.4 추가 자료
