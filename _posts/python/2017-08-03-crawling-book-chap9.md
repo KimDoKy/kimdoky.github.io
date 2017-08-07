@@ -65,7 +65,18 @@ Hello there, Doky Kim!
 이 코드는 인터넷에 존재하는 단순한 폼 상당수에 적용할 수 있습니다. 예를 들어 오라일리의 미디어 소식지 구독 폼은 다음과 같습니다.
 
 ```HTML
-
+<form action="http://post.oreilly.com/client/o/oreilly/forms/quicksignup.cgi" id="example_form2" method="POST">
+  <input name="client_token" type="hidden" value="oreilly" />
+  <input name="subscribe" type="hidden" value="optin" />
+  <input name="success_url" type="hidden" value="http://oreilly.com/store/newsletter-thankyou.html" />
+  <input name="error_url" type="hidden" value="http://oreilly.com/store/newsletter-signup-error.html" />
+  <input name="topic-or-dod" type="hidden" value="1" />
+  <input name="source" type="hidden" value="orm-home-t1-dotd" />
+  <fieldset>
+    <input class="email_address long" maxlength="200" name="email_addr" size="25" type="text" value="Enter your email here" />
+    <button alt="Join" class="skinny" name="submit" onclick="return addClickTracking('orm', 'ebook', 'rightrail', 'dod');" value="submit">Join</button>
+  </fieldset>
+</form>
 ```
 
 여기서 두 가지만 기억하면 됩니다.
@@ -82,7 +93,7 @@ r = requests.post(url, data=params)
 print(r.text)
 ```
 
-오라일리의 메일링 리스트에 실제로 가입하려면 이 코드가 반환하는 폼을 다시 작성해야 하지만, 그 폼에도 같은 개념이 적용됩니다.
+오레일리의 메일링 리스트에 실제로 가입하려면 이 코드가 반환하는 폼을 다시 작성해야 하지만, 그 폼에도 같은 개념이 적용됩니다.
 
 ## 9.3 라디오 버튼, 체크박스, 기타 필드
 
