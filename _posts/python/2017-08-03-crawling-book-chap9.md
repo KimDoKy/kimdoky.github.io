@@ -164,6 +164,69 @@ The file docker-logo.png has been uploaded. <a href="/pages/uploads/docker-logo.
 
 ## 9.5 로그인과 쿠키처리
 
+지금까지는 사이트에 정보를 전송하는 걸 허용하거나, 폼을 넘어가면 바로 필요한 정보를 제공하는 폼을 다루었습니다. 하지만 '로그인 상태를 유지합니다' 같은 기능을 제공하는 로그인 폼과는 다릅니다.  
+
+최신 웹사이트는 대부분 쿠키를 사용해서 누가 로그인 했는지 추적합니다. 일단 사이트에서 로그인을 요청을 인증하면, 사이트는 브라우저에 쿠키를 저장합니다. 이런 쿠키에는 보통 서버에서 생성한 토큰, 만료일, 추적(tracking) 정보가 들어 있습니다. 사이트는 나중에 이 쿠키를 사이트에 머물러 방문하는 각 페이지에서 일종의 인증 증거로 사용합니다.
+
+쿠키는 웹 개발자들에게는 환영할 만한 것이지만, 웹 스크레이퍼에는 문제가 됩니다. 웹 스크레이퍼로 언제든 로그인할 수 있지만, 서버가 반환하는 쿠키를 활용하지 못하면 웹사이트는 로그인하지 않았다고 판단할 것입니다.  
+
+스크레이퍼 교재에서는 http://pythonscraping.com/pages/cookies/login.html 에 단순한 로그인 폼을 만들어두었습니다. 사용자 이름은 아무거나 써도 되지만, 비밀번호는 password 이어야 합니다.  
+
+이 폼을 처리하는 페이지는 http://pythonscraping.com/pages/cookies/welcome.php 이고, 이 페이지에는 '메인 사이트' 페이지인 http://pythonscraping.com/pages/cookies/profile.php 를 가리키는 링크가 있습니다.  
+
+로그인하지 않고 환영 페이지나 프로필 페이지에 접근하려 하면 에러 메시지와 함께 로그인하라는 안내가 표시됩니다. 프로필 페이지에서는 로그인 페이지에서 브라우저 쿠키를 만들었는지 체크합니다.
+
+requests 라이브러리를 사용하면 쿠키 추적도 쉽습니다.
+
+
+```python
+import requests
+
+params = {'username': 'Doky', 'password': 'password'}
+r = requests.post("http://pythonscraping.com/pages/cookies/welcome.php", params)
+print("Cookie is set to:")
+print(r.cookies.get_dict())
+print("---------")
+print("Going to profile page_")
+r = requests.get("http://pythonscraping.com/pages/cookies/profile.php", cookies=r.cookies)
+print(r.text)
+```
+
+실행 결과입니다.
+
+```
+Cookie is set to:
+{'username': 'Doky', 'loggedin': '1'}
+---------
+Going to profile page_
+Hey Doky! Looks like you're still logged into the site!
+```
+
+이 코드에서는 로그인 폼을 처리하는 환영 페이지에 로그인 매개변수를 보냅니다. 마지막 요청 결과에서 쿠키를 가져와서 출력으로 확인하고, cookies 매개변수를 통해 그 쿠키를 프로필 페이지에 보냅니다.  
+
+이런 방법은 단순한 상황에는 잘 동작하지만, 일부 복잡한 사이트는 경고 없이 자주 쿠키를 수정하기도 하며, 때로는 쿠키에 대해 생각하지 못하고 코드를 작성할 수도 있습니다. requests 라이브러리의 sessino 함수로 이런 문제를 해결할 수 있습니다.
+
+
+```python
+import requests
+
+session = requests.Session()
+
+params = {'username': 'Doky', 'password': 'password'}
+s = session.post("http://pythonscraping.com/pages/cookies/welcome.php", params)
+print("Cookie is set to:")
+print(s.cookies.get_dict())
+print("----------")
+print("Going to profile page_")
+s = session.get("http://pythonscraping.com/pages/cookies/profile.php")
+print(s.text)
+```
+
+여기서는 requests.Session() 로 가져온 세션 객체나 쿠키나 헤더, 심지어
+HTTPAdapters 같은 HTTP 에서 동작하는 프로토콜에 관한 정보까지 세션 정보를 관리합니다.  
+
+requests 라이브러리는 프로그래머가 이거저거 생각하거나 코드를 작성할 필요 없이 모든 일을 매끄럽게 처리하는 완성도 면에서는 셀레니움(Selenium)외에는 비교할 만한 대상이 없을 정도입니다. requests 라이브러리가 모든 일을 처리하도록 내버려두고 싶겠지만, 웹 스크레이퍼를 만들 때는 항상 쿠키가 어떤 모양이고 무슨 일을 하는지 파악해야 합니다. 이걸 잘 파악하면 디버깅 시간이나, 사이트가 이상하게 동작하는 이유를 파악하는 시간이 훨씬 짧아집니다.
+
 ### 9.5.1 HTTP 기본 접근 인증
 
 ## 9.6 기타 폼 문제
