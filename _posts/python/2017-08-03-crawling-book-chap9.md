@@ -97,6 +97,37 @@ print(r.text)
 
 ## 9.3 라디오 버튼, 체크박스, 기타 필드
 
+HTML 표준에는 폼에 쓸 수 있는 입력 필드가 여러가지 있습니다. 라디오 버튼, 체크박스, 셀렉트 박스 등입니다. HTML5에서는 범위 입력 필드인 슬라이더, 이메일, 날짜 등이 더 추가 됐습니다. 자바스크립트를 사용하면 쓸 수 있는 필드가 무한히 늘어납니다. 달력, 색깔 선택기 등 개발자가 만들기 나름입니다.  
+
+폼 필드가 다양하고 복잡하더라도 신경 쓸 것은 필드 이름과 값 뿐입니다. 필드 이름은 소스 코드에서 name 속성을 보면 됩니다. 값은 조금 복잡하데, 폼을 전송하기 직전에 자바스크립트를 써서 만들 수도 있기 때문입니다. 예를 들어 고급 폼 필드에 속하는 색깔 선택기는 #F03030 같은 값을 가질 수 있습니다.  
+
+입력 필드의 값 형식을 확신할 수 없다면 브라우저가 사이트와 주고받는 GET과 POST 요청을 추척하는 여러 도구를 쓸 수 있습니다. GET 요청을 추적하는 가장 좋은 방법은 그냥 사이트의 URL을 읽는 것입니다.
+
+```
+http://domainname.com?thing1=foo?thing2=bar
+```
+위와 같은 형식의 URL이 있다면 이에 대응하는 폼은 아래와 같을 겁니다.
+
+```html
+<form method="GET" action="someProcessor.php">
+  <input type="someCrazyInputType" name="thing1" value="foo" />
+  <input type="anotherCrazyInputType" name="thing2" value="bar" />
+  <input type="submit" value="submit" />
+</form>
+```
+
+이때 파이썬 매개변수 객체는 이렇게 만들면 됩니다.
+
+```
+{'thing1':'foo', 'thing2':'bar'}
+```
+
+POST 폼은 브라우저의 개발자 도구를 보는 겁니다.
+
+![]({{site.url}}/img/post/python/crawling/c9_3.png)
+
+크롬 개발자는 F12를 눌러 접근할 수 있습니다.(맥은 opt+cmd+i)
+
 ## 9.4 파일과 이미지 전송
 
 ## 9.5 로그인과 쿠키처리
