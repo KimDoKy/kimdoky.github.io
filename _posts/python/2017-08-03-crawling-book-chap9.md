@@ -229,4 +229,30 @@ requests 라이브러리는 프로그래머가 이거저거 생각하거나 코�
 
 ### 9.5.1 HTTP 기본 접근 인증
 
+쿠키가 등장하기 전에 널리 쓰이던 로그인 처리 방법은 **HTTP 기본 접근 인증(basic access authentication)** 입니다. 가끔, 특히 높은 보안이 중요한 사이트나 기업 사이트 중에는 API와 함께 이 방식을 쓰는 곳도 있습니다. http://pythonscraping.com/pages/auth/login.php 페이지는 이런 타입의 인증을 사용합니다.
+
+![]({{site.url}}/img/post/python/crawling/c9_5.png)
+> 기본 접근 인증을 사용하는 페이지에 접근하려면 반드시 사용자 이름과 비밀번호를 입력해야 합니다.
+
+이 예제는 사용자 이름은 무엇이든 상관없지만 비밀번호는 password 이어야 합니다.  
+
+requests 라이브러리에는 HTTP 인증을 처리하도록 특별히 설계된 auth 모듈이 있습니다.
+
+```python
+import requests
+from requests.auth import AuthBase
+from requests.auth import HTTPBasicAuth
+
+auth = HTTPBasicAuth('doky', 'password')
+r = requests.post(url="http://pythonscraping.com/pages/auth/login.php", auth=auth)
+print(r.text)
+```
+
+일반적인 POST 요청처럼 보이겠지만 이번에는 HTTPBasicAuth 객체를 auth 매개변수로 요청을 넣었습니다. 결과 텍스트는 사용자 이름과 비밀번호로 보호된 페이지입니다.(요청이 실패하면 접근 거부 페이지나 나타납니다.)
+
 ## 9.6 기타 폼 문제
+
+웹 폼은 온갖 악의적인 봇들이 넘쳐납니다. 봇이 사용자 계정을 만들고, 귀중한 서버 시간을 낭비하고, 블로그에 스팸을 뿌려댑니다. 따라서 최신 웹사이트의 HTML 폼에는 즉시 드러나지 않는 보안 기능이 포함될 때가 많습니다.  
+
+자동 가입 방지 문자(CAPTCHA)는 챕터 11에서 다룹니다.  
+허니팟과 숨긴 필드, 기타 웹사이트에서 폼을 보호하기 위해 채용하는 보안 수단은 챕터 12에서 다룹니다.
