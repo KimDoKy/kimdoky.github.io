@@ -133,7 +133,7 @@ POST 폼은 브라우저의 개발자 도구를 보는 겁니다.
 
 인터넷에서는 파일 업로드는 자주 사용하지만, 웹 스크레이핑에서는 자주 사용하지는 않습니다. 하지만 알아둬서 나쁠건 없으니까요.
 
-http://pythonscraping/files/form2.html 에 파일 업로드를 연습하는 폼이 준비되어 있었지만, 이 포스트를 작성할 때는....... 닫혔네요... ㅠㅠ
+http://pythonscraping.com/files/form2.html 에 파일 업로드를 연습하는 폼이 준비되어 있습니다.
 
 마크업은 아래와 같습니다.
 
@@ -149,12 +149,18 @@ Submit a jpg, png, or gif: <input type="file" name="image"><br>
 ```python
 import requests
 
-files = {'uploadFile': open('../files/Python-logo.png', 'rb')}
+files = {'uploadFile': open('../files/docker-logo.png', 'rb')}
 r = requests.post("http://pythonscraping.com/pages/processing2.php", files=files)
 print(r.text)
 ```
 
 이번에는 문자열이 아니라 open 함수가 반환한 파이썬 File 객체를 보냈습니다.(필드이름은 uploadFile 입니다.) 이 예제에서 보낸 파일은 이 코드를 기준으로 상대 경로(../files/Python-logo.png)에 있는 이미지입니다.
+
+실행결과입니다.
+
+```
+The file docker-logo.png has been uploaded. <a href="/pages/uploads/docker-logo.png">Link</a>
+```
 
 ## 9.5 로그인과 쿠키처리
 
