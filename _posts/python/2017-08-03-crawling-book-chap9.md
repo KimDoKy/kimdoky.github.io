@@ -126,9 +126,35 @@ POST 폼은 브라우저의 개발자 도구를 보는 겁니다.
 
 ![]({{site.url}}/img/post/python/crawling/c9_3.png)
 
-크롬 개발자는 F12를 눌러 접근할 수 있습니다.(맥은 opt+cmd+i)
+크롬 개발자는 F12를 눌러 접근할 수 있습니다.
+> (맥은 opt+cmd+i)
 
 ## 9.4 파일과 이미지 전송
+
+인터넷에서는 파일 업로드는 자주 사용하지만, 웹 스크레이핑에서는 자주 사용하지는 않습니다. 하지만 알아둬서 나쁠건 없으니까요.
+
+http://pythonscraping/files/form2.html 에 파일 업로드를 연습하는 폼이 준비되어 있었지만, 이 포스트를 작성할 때는....... 닫혔네요... ㅠㅠ
+
+마크업은 아래와 같습니다.
+
+```html
+<form action="processing2.php" method="post" enctype="multipart/form-data">
+Submit a jpg, png, or gif: <input type="file" name="image"><br>
+<input type="submit" value="Upload File">
+</form>
+```
+
+`<input>` 태그의 type 속성이 file 인 것을 제외하면 텍스트 기반 폼과 같습니다. requests 라이브러리를 사용하는 방법도 비슷합니다.
+
+```python
+import requests
+
+files = {'uploadFile': open('../files/Python-logo.png', 'rb')}
+r = requests.post("http://pythonscraping.com/pages/processing2.php", files=files)
+print(r.text)
+```
+
+이번에는 문자열이 아니라 open 함수가 반환한 파이썬 File 객체를 보냈습니다.(필드이름은 uploadFile 입니다.) 이 예제에서 보낸 파일은 이 코드를 기준으로 상대 경로(../files/Python-logo.png)에 있는 이미지입니다.
 
 ## 9.5 로그인과 쿠키처리
 
