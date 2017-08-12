@@ -20,6 +20,51 @@ tags: [ 'python' ]
 
 ## 10.1 자바스크립트에 관한 간단한 소개
 
+스크레이핑하는 스크립트에서 무슨 일을 하는지 최소한이라도 이해한다면 아주 큰 도움이 될 겁니다. 따라서 자바스크립트에 익숙해져야 합니다.  
+
+자바스크립트는 약한 타이핑 언어이며 그 문법은 종종 자바나 C++과 비교됩니다. 연산자나 루프, 배열 같은 문법적 요소는 일부 비슷하지만, 약한 타입과 스크립트에서 출발한 성격 때문에 일부 프로그래머들은 자바스크립트를 이해하는게 골치 아플 수 있습니다.  
+
+다음 코드는 재귀적으로 피보나치 수열을 계산한 후 브라우저의 개발자 콘솔에 출력합니다.
+
+```javascript
+<script>
+function fibonacci(a, b){
+  val nextNum = a + b;
+  console.log(nextNum+" is in the Fibonacci sequence");
+  if(nextNum < 100){
+    fibonacci(b, nextNum);
+  }
+}
+fibonacci(1, 1);
+</script>
+```
+
+모든 변수 앞에 `var`가 있습니다. 이 문법은 PHP의 $ 기호나, 자바와 C++의 int, String, List 등 타입 선언과 비슷합니다. 파이썬은 이렇게 명시적인 변수 선언이 없다는 점에서 독특합니다. 또한 자바스크립트에는 함수를 변수처럼 사용할 수 있다는 대단히 좋은 기능이 좋습니다.
+
+```javascript
+<script>
+var fibonacci = function() {
+  var a = 1;
+  var b = 1;
+  return function () {
+    var temp = b;
+    b = a + b;
+    a = temp;
+    return b;
+  }
+}
+var fibInstance = fibonacci();
+console.log(fibInstance()+" is in the Fibonacci sequence");
+console.log(fibInstance()+" is in the Fibonacci sequence");
+console.log(fibInstance()+" is in the Fibonacci sequence");
+</script>
+```
+
+이 코드는 언뜻 보기에는 이해가 안되지만, 람다 표현식을 염두해 둔다면 그리 어렵지 않습니다.  
+변수 fibonacci 는 함수로 정의됐습니다. 이 함수가 반환하는 값은 함수이며, 반환된 함수는 피보나치 수열에서 점점 커지는 값을 출력합니다. fibonacci 를 호출할 때마다 피보나치 수열을 계산하는 함수를 반환하며, 그 함수를 다시 실행해서 함수에 들어 있는 값을 증가시킵니다.  
+
+언뜻 보기엔 대단히 난해해 보이지만, 피보나치 수열을 계산하는 것 같은 종류의 문제는 대개 이런 패턴을 사용합니다. 함수를 마치 변수처럼 다루는 개념은 사용자의 행동이나 콜백을 처리할 때 대단히 유용하며, 자바스크립트 코드를 읽어야 한다면 이런 프로그래밍 스타일에 익숙해질 필요가 있습니다.
+
 ### 10.1.1 널리 쓰이는 자바스크립트 라이브러리
 
 #### 제이쿼리
