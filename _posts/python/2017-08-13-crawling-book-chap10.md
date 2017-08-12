@@ -67,11 +67,71 @@ console.log(fibInstance()+" is in the Fibonacci sequence");
 
 ### 10.1.1 널리 쓰이는 자바스크립트 라이브러리
 
+자바스크립트 표준을 이해하는 것도 중요하지만, 라이브러리가 없으면 최신 웹에서 할 수 있는 일은 상당히 제한됩니다. 페이지의 소스 코드를 읽어보면 널리 쓰이는 라이브러리가 하나 이상은 들어 있습니다.  
+
+파이썬을 이용해 자바스크립트를 실행하는건 많은 시간과 프로세스 자원을 소비합니다. 특시 대규모로 실행한다면 더 심할 것입니다.
+
 #### 제이쿼리
+
+제이쿼리(jQuery)는 널리 쓰이는 라이브러리입니다. 제이쿼리를 사용하는 사이트는 코드 어딘가에 다음과 같은 제이쿼리를 불러오는 임포트 문이 있기 때문에 구분하기 쉽습니다.
+
+```HTML
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+```
+
+사이트에서 제이쿼리를 사용한다면 반드시 조심해서 스크랩해야 합니다. 제이쿼리는 자바스크립트가 실행된 다음에 동적으로 HTML 콘텐츠를 생성할 수 있기 때문입니다. 이전 챕터들에서 다룬 방법으로 스크랩하면 자바스크립트로 생성한 콘텐츠는 모두 놓치게 됩니다.  
+
+또한, 제이쿼리를 사용하는 페이지에는 애니메이션이나 대화형 콘텐츠, 미디어 파일 등이 들어 있을 확률이 높고 이런 것들은 스크랩을 어렵게 합니다.
 
 #### 구글 애널리틱스
 
+전체 웹사이트의 50% 이상이 [구글 애널리틱스(Google Analytics)](http://bit.ly/2fBflnQ){:target="`_`blank"}를 사용합니다. 구글 애널리틱스는 아마 인터넷에서 가장 널리 쓰이는 자바스크립트 라이브러리인 동시에, 가장 널리 쓰이는 사용자 추적 도구일 겁니다.  
+
+페이지에서 구글 애널리틱스를 사용하는지 여부는 간단히 알 수 있습니다. 구글 애널리틱스를 사용하는 페이지는 소스 코드 마지막에 다음과 비슷한 자바스크립트가 들어 있습니다.
+
+```HTML
+<!-- Google Analytics -->
+<script type="text/javascript">
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-4591498-1']);
+_gaq.push(['_setDomainName', 'oreilly.com']);
+_gaq.push(['_addIgnoredRef', 'oreilly.com']);
+_gaq.push(['_setSiteSpeedSampleRate', 50]);
+_gaq.push(['_trackPageview']);
+
+(function() { var ga = document.createElement('script'); ga.type =
+'text/javascript'; ga.async = true; ga.src = ('https:' ==
+document.location.protocol ? 'https://ssl' : 'http://www') +
+'.google-analytics.com/ga.js'; var s =
+document.getElementsByTagName('script')[0];
+s.parentNode.insertBefore(ga, s); })();
+</script>
+```
+> 위 코드는 https://www.oreilly.com/ 에서 가져왔습니다. 해당 코드는 head에 들어 있습니다.
+
+이 스크립트는 페이지에서 페이지로 이동하는 사용자의 움직임을 추적하는 특수한 쿠키를 사용합니다. 챕터 후반에서 셀레니움을 사용해 자바스크립트를 실행하고 쿠키를 처리하는 스크레이퍼를 만들 겠지만, 이런 스크레이퍼에서는 구글 애널리틱스는 문제가 될 수 있습니다.  
+
+사이트에서 구글 애널리틱스나 그와 비슷한 웹 분석 시스템을 사용하고, 그 사이트에서 스크레이퍼가 다녀갔음을 알지 못하게 하고 싶다면 분석에 사용되는 쿠키 또는 모든 쿠키를 비활성화해야 합니다.
+
 #### 구글 지도
+
+구글 지도는 어느 사이트에든 아주 쉽게 지도를 임베드할 수 있는 API를 제공합니다.  
+
+어떤 종류든 위치 데이터를 스크랩할 경우, 구글 지도가 어떻게 작동하는지 이해한다면 위도/경도 좌표, 운이 좋다면 주소까지 수월하게 가져올 수 있습니다. 구글 지도에서 위치를 표시하기 위해 가장 많이 쓰는 방법은 **마커** (핀이라고 부르기도 함)입니다.  
+
+구글 지도에서 마커를 삽입할 때는 다음과 같은 코드를 사용합니다.
+
+```javascript
+var marker = new google.maps.Marker({
+  position: new google.maps.LatLng(-25.363883,131.044922),
+  map: map,
+  title: 'Some marker text'
+});
+```
+
+파이써에서 google.maps.LatLng 사이에 있는 좌표를 모두 추출해 위도/경도 리스트를 만드는건 어렵지 않습니다.  
+
+[구글의 리버스 지오코딩(reverse Geocoding)](https://developers.google.com/maps/documentation/javascript/examples/geocoding-reverse){:target="`_`blank"} API 를 사용하면 이들 좌표 쌍을 저장하고 분석하기 알맞은 형태의 주소로 변환할 수 있습니다.
 
 ## 10.2 Ajax와 동적 HTML
 
