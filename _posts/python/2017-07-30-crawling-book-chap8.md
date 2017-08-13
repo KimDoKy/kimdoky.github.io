@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: crawling - P2. 고급 스크레이핑 _ cahp 8. 자연어 읽고 쓰기
+title: crawling - P2. 고급 스크레이핑 _ chap 8. 자연어 읽고 쓰기
 category: python
 tags: [ 'python' ]
 ---

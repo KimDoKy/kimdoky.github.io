@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: crawling - P1.스크레이퍼 제작 _ cahp 2. 고급 HTML 분석
+title: crawling - P1.스크레이퍼 제작 _ chap 2. 고급 HTML 분석
 category: python
 tags: [ 'python' ]
 ---

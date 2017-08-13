@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: crawling - P1.스크레이퍼 제작 _ cahp 6. 문서 읽기
+title: crawling - P1.스크레이퍼 제작 _ chap 6. 문서 읽기
 category: python
 tags: [ 'python' ]
 ---

@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: crawling - P2. 고급 스크레이핑 _ cahp 9. 폼과 로그인 뚫기
+title: crawling - P2. 고급 스크레이핑 _ chap 9. 폼과 로그인 뚫기
 category: python
 tags: [ 'python' ]
 ---

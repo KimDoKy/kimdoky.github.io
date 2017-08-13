@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: crawling - P1.스크레이퍼 제작 _ cahp 1. 첫 번째 웹 스크레이퍼
+title: crawling - P1.스크레이퍼 제작 _ chap 1. 첫 번째 웹 스크레이퍼
 category: python
 tags: [ 'python' ]
 ---

@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: crawling - P1.스크레이퍼 제작 _ cahp 5. 데이터 저장
+title: crawling - P1.스크레이퍼 제작 _ chap 5. 데이터 저장
 category: python
 tags: [ 'python' ]
 ---

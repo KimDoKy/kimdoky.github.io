@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: crawling - P2. 고급 스크레이핑 _ cahp 7. 지저분한 데이터 정리하기
+title: crawling - P2. 고급 스크레이핑 _ chap 7. 지저분한 데이터 정리하기
 category: python
 tags: [ 'python' ]
 ---
