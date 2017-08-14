@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: crawling - P2. 고급 스크레이핑 _ cahp 10. 자바스크립트 스크레이핑
+title: crawling - P2. 고급 스크레이핑 _ chap 10. 자바스크립트 스크레이핑
 category: python
 tags: [ 'python' ]
 ---
@@ -313,3 +313,52 @@ XPath 문법은 크게 4 가지 개념으로 이루어집니다.
 다른 문법이 필요하다면 [마이크로소프트의 XPath 문법 페이지](http://bit.ly/1HEMbd3){:target="`_`blank"}를 참고하세요.
 
 ## 10.3 리다이렉트 처리
+
+클라이언트 쪽 리다이렉트는 페이지 콘텐츠를 보내기 전에 서버에서 실행하는 리다이렉트와는 달리 브라우저에서 자바스크립를 통해 실행되는 리다이렉트입니다. 웹 브라우저에서 페이지를 방문할 때는 그 차이를 구분하기 어렵습니다. 리다이렉트가 워낙 빨리 일어나서 지연 시간을 전혀 느끼지 못하므로 서버 리다이렉트라고 생각할 수도 있습니다.  
+
+하지만 웹 스크레이핑에서는 차이가 큽니다. 서버 쪽 리다이렉트의 경우, 셀레니움을 전혀 쓰지 않고 파이썬의 `urllib` 라이브러리만으로도 쉽게 처리할 수 있습니다. 반면 클라이언트쪽 리다이렉트는 자바스크립트를 실행하지 않으면 전혀 처리할 수 없습니다.  
+
+셀레니움은 자바스크립트 리다이렉트를 다른 자바스크립트와 같은 방법으로 처리합니다. 하지만 이런 리다이렉트에서 중요한 점은 페이지가 리다이렉트를 끝낸 시점이 언제인지 파악하는 것입니다.
+http://pythonscraping.com/pages/javascript/redirectDemo1.html 페이지에 이런 파입의 리다이렉트 예제가 있습니다. 이 페이지는 2초후 리대이렉트가 일어납니다.  
+
+이런 리다이렉트를 감지하려면 페이지를 처음 불러올 때 있었던 DOM 요소 하나를 주시하고 있어야 합니다. 그러다가 셀레니움이 `NoSuchElementException` 예외를 일으킬 때, 즉 그 요소가 페이지의 DOM에 더는 존재하지 않을 때가 바로 리다이렉트가 일어난 시점입니다.
+
+```python
+from selenium import webdriver
+import time
+from selenium.webdriver.remote.webelement import WebElement
+from selenium.common.exceptions import NoSuchElementException
+
+def waitForLoad(driver):
+    elem = driver.find_element_by_tag_name("html")
+    count = 0
+    while True:
+        count += 1
+        if count > 20:
+            print("Timing out after 10 seconds and returning")
+            return
+        time.sleep(.5)
+        try:
+            elem == driver.find_element_by_tag_name("div")
+        except NoSuchElementException:
+            return
+
+driver = webdriver.PhantomJS()
+driver.get("http://pythonscraping.com/pages/javascript/redirectDemo1.html")
+waitForLoad(driver)
+print(driver.page_source)
+```
+이 스크립트는 0.5초마다 페이지를 체크하면서 총 10초를 기다립니다.
+
+실행 결과입니다.
+
+```
+<html><head>
+<title>The Destination Page!</title>
+
+</head>
+<body>
+This is the page you are looking for!
+
+</body></html>
+```
