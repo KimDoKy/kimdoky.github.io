@@ -85,6 +85,91 @@ pip install numpy
 
 ## 11.2 형식이 일정한 텍스트 처리
 
+텍스트사 형식이 일정하다고 하려면 다음의 조건을 갖추어야 합니다.
+
+- 표준 폰트 하나로 작성되어야 한다. 손으로 쓴 글씨, 필기체, 지나치게 장식적인 폰트는 제외합니다.
+- 복사하거나 사진을 찍었다면 행 구분이 명료해야 하며, 복사로 인한 열화 현상이나 심하게 어두워진 부분이 없어야 합니다.
+- 수평으로 잘 정렬되어 있어야 하며, 기울어진 글자가 없어야 합니다.
+- 텍스트가 이미지를 벗어나거나, 이미지 모서리에 잘려서는 안 됩니다.
+
+이런 조건 중 일부는 전처리를 통해 해결할 수 있습니다. 예를 들어 이미지를 그레이스케일로 바꾸고, 밝기와 명암을 조절하고, 필요 없는 부분을 잘라내거나 회전할 수 있습니다. 하지만 근본적인 한계는 있습니다.
+
+![]({{site.url}}/img/post/python/crawling/c11_2_1.png)
+위 이미지는 형식이 일정한 텍스트의 이상적인 예입니다.  
+
+테서랙트를 실행해 이 이미지 파일을 읽고 결과를 텍스트 파일로 저장한 다음, 해당 텍스트 파일을 화면에 출력하는 명령입니다.
+
+```
+$ tesseract text.tif textoutput | cat textoutput.txt
+```
+
+출력 결과는 테서랙트가 실행 중임을 알리는 한 줄과 새로 만든 textoutput.txt의 내용입니다.
+
+```
+This is some text, written in Arial, that will be read by
+Tesseract. Here are some symbols: !@#$%"&‘()
+
+Tesseract Open Source OCR Engine v3.05.01 with Leptonica
+```
+
+기호 일부가 잘못 인식되긴 했지만, 결과는 거의 정확합니다. 일반적으로 텍스트 인식에 만족할 수 있을 정도입니다.  
+
+이미지 텍스트에 블로 효과를 적용하고 JPG 압축으로 인한 열화가 생기게 하고, 배경에 그레이디언트를 추가하면 결과는 훨씬 나빠집니다.
+
+![]({{site.url}}/img/post/python/crawling/c11_2_2.png)
+> 인터넷에서 만나는 대부분의 이미지는 이런 이미지일 가능성이 높습니다.
+
+테서랙트는 이 이미지를 이전 이미지만큼 잘 처리하지 못합니다. 주된 이유는 배경의 그레디언트 때문입니다.
+
+```
+This Is some text, wrmen In Aﬂll, ..
+Tesseract Here are some symbdsz-
+
+Tesseract Open Source OCR Engine v3.05.01 with Leptonica
+```
+
+배경의 그레이디언트가 텍스트를 구별하기 어렵게 하는 지점에 다다르자 텍스트가 잘렸습니다. 각 행의 마지막 글자도 틀렸는데, 테서랙트는 이 글자를 인식하려 했지만, 실패했습니다. JPG 열화와 블러 효과도 테서랙트가 소문자 i와 대문자 I, 숫자 1을 구분하기 어렵게 만듭니다.  
+
+파이썬 스크립트로 이미지를 깔끔하게 만들면 도움이 됩니다. 필로 라이브러리로 임계점(threshold) 필터를 만들어 배경의 회색을 제거해서 텍스트가 잘 드러나게 하면 테서랙트가 이미지를 인식하기 쉬워집니다.
+
+```python
+from PIL import Image
+import subprocess
+
+def cleanFile(filePath, newFilePath):
+    image = Image.open(filePath)
+
+    # 회색 임계점을 설정하고 이미지를 저장합니다.
+    image = image.point(lambda x: 0 if x<143 else 255)
+    image.save(newFilePath)
+
+    # 새로 만든 이미지를 테서랙트로 읽습니다.
+    subprocess.call(["tesseract", newFilePath, "output"])
+
+    # 결과 텍스트 파일을 열어 읽습니다.
+    outputFile = open("output.txt", 'r')
+    print(outputFile.read())
+    outputFile.close()
+
+cleanFile("text_2.tif", "text_2_clean.png")
+```
+자동으로 생성된 결과 이미지 `text_2_clean.png`입니다.
+
+![]({{site.url}}/img/post/python/crawling/c11_2_1_text_2_clean.png)
+
+문장부호 일부가 사라지거나 읽기 어렵게 되었지만, 텍스트는 최소한 사람의 눈으로 읽을 수 있는 수준입니다. 테서랙트 역시 훨씬 나은 결과를 보입니다.
+
+```
+This Is some text. written In Anal, that will be read
+Tesselact Here are some symbols: !@#$%"&'0
+```
+
+마침표와 쉼표는 아주 작아서 이렇게 이미지를 이리저리 변형하다보면 사람에게나 테서랙트에게는 안보이게 됩니다. Arial를 Anal로 잘못 인식하기도 했는데, 그런 r,i를 n 한 글자로 인식했기 때문입니다.  
+
+그래도 텍스트의 거의 반이 날아간 이전 버전보다는 개선되었습니다.  
+테서랙트의 가장 큰 약점은 밝기가 일정치 않은 배경입니다. 테서랙트의 알고리즘은 텍스트를 읽기 전에 자동으로 명암을 조절하려 시도하지만, 필로 라이브러리 같은 도구로 직접 처리하는 것이 더 나은 결과를 보여줍니다.  
+기울어진 이미지나 텍스트가 없는 영역이 넓은 이미지, 기타 다른 문제를 가진 이미지는 테서랙트로 읽기 전에 먼저 조정하는 것이 좋습니다.
+
 ### 11.2.1 웹사이트 이미지에서 텍스트 스크레이핑하기
 
 ## 11.3 CAPTCHA 읽기와 테서랙트 훈련
