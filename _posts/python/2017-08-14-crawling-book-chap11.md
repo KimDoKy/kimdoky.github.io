@@ -100,7 +100,7 @@ pip install numpy
 테서랙트를 실행해 이 이미지 파일을 읽고 결과를 텍스트 파일로 저장한 다음, 해당 텍스트 파일을 화면에 출력하는 명령입니다.
 
 ```
-$ tesseract text.tif textoutput | cat textoutput.txt
+$ tesseract text.tif textoutput && cat textoutput.txt
 ```
 
 출력 결과는 테서랙트가 실행 중임을 알리는 한 줄과 새로 만든 textoutput.txt의 내용입니다.
@@ -171,6 +171,99 @@ Tesselact Here are some symbols: !@#$%"&'0
 기울어진 이미지나 텍스트가 없는 영역이 넓은 이미지, 기타 다른 문제를 가진 이미지는 테서랙트로 읽기 전에 먼저 조정하는 것이 좋습니다.
 
 ### 11.2.1 웹사이트 이미지에서 텍스트 스크레이핑하기
+
+웹 스크레이퍼와 테서랙트의 조합은 강력한 도구가 됩니다. 텍스트를 이미지로 만들어서 알아보기 어렵게 되는 경우도 있지만, 고의적으로 텍스트를 숨기기 위해 이미지를 쓰는 경우도 있습니다.  
+
+아마존의 robots.txt 파일은 사이트의 상품 페이지 스크레이핑을 허용하긴 하지만, 책 미리보기를 스크랩하는 봇은 많지 않습니다. 이는 아마존이 미리보기를 사용자 행동에 반응하는 Ajax 스크립트로 불러오며 실제 몇 겹의 div 아래 깊게 숨겨져 있기 때문입니다. 사실 이런 미리보기는 이미지 파일보다는 플래시로 만든 것으로 보일 겁니다. 게다가 이미지에 접근한다 하더라도 그걸 텍스트로 읽는 건 쉽지 않습니다.  
+
+다음 스크립트는 아마존에 있는 <이상한 나라의 앨리스> 큰 활자판으로 이동한 다음, 미리보기를 열고, 이미지 URL을 수집하고, 이미지를 내려받아 읽은 다음 그 텍스트를 출력합니다.
+> 테서랙트는 텍스트를 인식할 때 활자가 큰 이미지를 더 잘 인식합니다.
+
+```python
+import time
+from urllib.request import urlretrieve
+import subprocess
+from selenium import webdriver
+
+# 셀레니움 드라이버를 만듭니다.
+# driver = webdriver.PhantomJS()
+# 가끔 펜텀JS가 이 페이지에 있는 요소를 찾아내지 못할 때가 있습니다.
+# 그럴 경우 크롬드라이버를 사용하세요.
+driver = webdriver.Chrome()
+
+
+driver.get("https://www.amazon.com/Alice-Wonderland-Large-Lewis-Carroll/dp/145155558X")
+time.sleep(2)
+
+# 책 미리보기 버튼을 클릭합니다.
+driver.find_element_by_id("sitbLogoImg").click()
+imageList = set()
+
+# 페이지 로드를 기다립니다.
+time.sleep(5)
+
+# 오른쪽 화살표를 클릭할 수 있으면 계속 클릭해서 페이지를 넘깁니다.
+while "pointer" in driver.find_element_by_id("sitbReaderRightPageTurner").get_attribute("style"):
+    driver.find_element_by_id("sitbReaderRightPageTurner").click()
+    time.sleep(2)
+    # 새로 불러온 페이지를 가져옵니다. 한 번에 여러 페이지를 불러올 때도 있지만,
+    # 세트에는 중복된 요소는 들어가지는 않습니다.
+    pages = driver.find_elements_by_xpath("//div[@class='pageImage']/div/img")
+    for page in pages:
+        image = page.get_attribute("src")
+        imageList.add(image)
+
+driver.quit()
+# 수집된 이미지를 테서랙트로 처리합니다.
+i = 0
+for image in sorted(imageList):
+    urlretrieve(image, "page" + str(i) + ".jpg")
+    p = subprocess.Popen(["tesseract", "page" + str(i) + ".jpg", "page" + str(i)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p.wait()
+    f = open("page" + str(i) + ".txt", "r", encoding="utf-8")
+    print(f.read())
+    i += 1
+```
+
+테서랙트는 책에 실린 긴 문장들을 거의 완벽하게 인식합니다.  
+다음은 1페이지의 미리보기 결과입니다.
+
+```
+Alice was beginning to get very tired
+
+of sitting by her sister on the bank, and of
+having nothing to do. Once or twice she
+had peeped into the book her sister was
+reading, but it had no pictures or
+conversations in it, "and what is the use of
+a book," thought Alice. "without pictures
+or conversations?"
+
+So she was considering in her own mind
+(as well as she could, for the day made
+her feel very sleepy and stupid), whether
+the pleasure of making a daisy-chain
+would be worth the trouble of getting up
+and picking the daisies, when suddenly a
+White Rabbit with pink eyes ran close by
+her.
+```
+
+하지만 책의 앞표지나 뒤표지처럼 배경에 색깔이 들어가 있으면 인식률이 떨어집니다.
+
+```
+A’lice in Wanderland
+
+In that direction”, the cat said, waving the right paw ’round,
+”llves a Hatter, and In (hat diredvon,”wavmg the other paw,
+”llves a March Hare V1516 elfher you 11kg, (hey’re bath mad.”
+
+But I don’( want to go among mad people ”, Alxce Rcmarked.
+```
+
+물론 필로 라이브러리를 써서 필요한 이미지를 수정할 수 있지만, 자동화한 설계치고는 비효율적입니다.  
+
+다음 섹션에서는 심하게 훼손된 텍스트에 대처하는 방법을 다룹니다. 이 방법은 테서랙트를 훈련시킬 시간이 없을 때 유용합니다. 테서랙트에 텍스트 이미지를 많이 입력하고 그 원본 텍스트도 함께 입력하면 테서랙트는 나중에 같은 폰트를 훨씬 정확히 인식할 수 있습니다. 배경이 끼어들거나 위치에 문제가 있어도 가능합니다.
 
 ## 11.3 CAPTCHA 읽기와 테서랙트 훈련
 
