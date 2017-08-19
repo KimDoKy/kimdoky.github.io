@@ -397,10 +397,86 @@ $ cp eng.traineddata $TESSDATA_PREFIX/tessdata
 위 단계들을 모두 수행했다면 테서랙트는 훈련한 타입의 CAPTCHA를 문제없이 인식할 수 있습니다. 앞에서 다른 CAPTCHA 이미지를 다시 읽으면 정확히 응답하는 것을 볼 수 있습니다.
 
 ```
-$ tesseract captchaExample.fitt stdout
+$ tesseract captchaExample.tiff stdout
 4MmC3
 ```
 
 이 섹션에서 소개한 것은 테서랙트의 폰트 훈련과 인식 기능을 간단히 소개한 것입니다. 테서랙트를 고도로 훈련시키는 것에 관심이 있다면 [테서랙트 문서](https://github.com/tesseract-ocr/){:target="`_`blank"}를 참고하세요.
 
-## 11.2 CAPTCHA 가져오기와 답 보내기
+> #### `No such file or directory: 'unicharset_extractor'` 에러가 일어난다면!?  
+1. tesseract를 삭제합니다. `brew uninstall tesseract`  
+2. tesseract를 training tools와 함께 설치합니다. `brew install --with-training-tools tesseract`  
+
+>
+#### `UnicodeDecodeError: 'utf-8' codec can't decode bytes in position 103-104: invalid continuation byte` 에러가 일어난다면!!?  
+정확한 원인은 아직 모르겠지만 디코딩에서 에러가 일어나서 해당부분은 수정하면 타입에러(문자열) 에러가 일어났습니다. 그래서 에러가 일어나는 부분을 문자열로 변환하여 해결하였습니다.
+홍인의
+010-9143-7453
+
+## 11.4 CAPTCHA 가져오기와 답 보내기
+
+널리 쓰이는 콘텐츠 관리 시스템은 사용자 등록 페이지에서 봇의 자동 가입 스팸을 받는 일이 많습니다. CAPTCHA 가 있지만, 이렇게 밀어닥치는 등록 스팸에는 큰 도움이 되지 않습니다.  
+
+이러한 봇은 어떻게 만들까요? 하드 디스크에 있는 이미지의 CAPTCHA를 푸는데는 성공했지만, 봇이 완벽하게 기능하려면 어떻게 해야 할까요?  
+
+대부분의 이미지 기반 CAPTCHA에는 몇 가지 공통점이 있습니다.
+
+- 이들은 서버 쪽 프로그램에서 동적으로 생성한 이미지입니다. 이 이미지의 소스는 우리가 생각하는 일반적인 이미지와는 다릅니다. 예를 들어 `<img src="WebForm.asp?id=8AP85CQKE9TJ">` 같은 형태일 수 있습니다. 하지만 다른 이미지와 마찬가지로 내려받고 조작할 수 있습니다.
+- 이미지의 답은 서버 데이터베이스에 들어있습니다.
+- CAPTCHA에는 대게 제한 시간이 있습니다. 보통 봇에는 별 문제가 되지 않지만, 그 답을 나중에 쓰려고 한다거나, 기타 CAPTCHA 요청이 일어난 시점과 답을 제출하는 시점 사이에 지연이 생길 원인이 있었다면 실패할 겁니다.
+
+일반적인 방법은 CAPTCHA 이미지를 하드디스크에 내려받아 테서랙트로 분석한 뒤, 답을 적절한 폼 매개변수로 전송하는 겁니다.
+
+CAPTCHA를 무력화할 봇을 만들면 웹 페이지에 봇 혼자 댓글을 달게 할 수 있습니다.
+
+봇은 다음과 같은 형태입니다.
+
+```python
+from urllib.request import urlretrieve
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+import subprocess
+import requests
+from PIL import Image
+from PIL import ImageOps
+
+def cleanImage(imagePath):
+    image = Image.open(imagePath)
+    image = image.point(lambda x: 0 if x<143 else 255)
+    borderImage = ImageOps.expand(image,border=20,fill='white')
+    borderImage.save(imagePath)
+
+html = urlopen("http://pythonscraping.com/humans-only")
+bsObj = BeautifulSoup(html, "html.parser")
+
+# 미리 만들어진 폼 값을 수집합니다.
+imageLocation = bsObj.find("img", {"title": "Image CAPTCHA"})["src"]
+formBuildId = bsObj.find("input", {"name": "form_build_id"})["value"]
+captchaSid = bsObj.find("input", {"name": "captcha_sid"})["value"]
+captchaToken = bsObj.find("input", {"name": "captcha_token"})["value"]
+captchaUrl = "http://pythonscraping.com" + imageLocation
+urlretrieve(captchaUrl, "captcha.jpg")
+cleanImage("captcha.jpg")
+p = subprocess.Popen(["tesseract", "captcha.jpg", "captcha"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+p.wait()
+f = open("captcha.txt", "r")
+
+# 공백을 제거합니다.
+captchaResponse = f.read().replace(" ", "").replace("\n", "")
+print("Captcha solution attempt: " + captchaResponse)
+
+if len(captchaResponse) == 5:
+    params = {"captcha_token" : captchaToken, "captcha_sid":captchaSid, "form_id":"commited_node_page_form", "form_build_id":formBuildId, "captcha_response":captchaResponse, "name":"Doky", "subject":"I come to seek the Grail", "comment_body[und][0][value]":"...and I am definitely not a bot"}
+    r = requests.post("http://www.pythonscraping.com/comment/reply/10", data=params)
+    responseObj = BeautifulSoup(r.txt, "html.parser")
+    if responseObj.find("div", {"class":"messages"}) is not None:
+        print(responseObj.find("div", {"class":"messages"}).get_text())
+    else:
+        print("There was a problem reading the CAPTCHA correctly!")
+```
+
+이 스크립트가 실패하는 조건은 두 가지입니다. 첫 번째는 테서랙트가 이미지에서 정확히 다섯 글자를 추출하지 못한 경우이고(위 사이트의 CAPTCHA의 답은 반드시 다섯 글자입니다.), 둘째는 폼을 전송했지만 답이 틀린 경우입니다. 첫 번째는 대략 50% 확률로 일어납니다. 글자 수가 틀리면 폼을 전송하지 않고 에러를 낸 후 종료합니다. 두 번째는 대략 20% 확률로 일어납니다. 합산해보면 총 성공률 30% 내외입니다. 혹은 다섯 글자에 대해 각각 80% 정도의 성공률이라고 할 수 있습니다.  
+
+성공률이 낮아 보이지만, CAPTCHA는 보통 사용자가 몇 번 시도할 수 있는지 제한하지 않으며, 실패한 경우 대부분은 폼을 아예 보내지도 않습니다. 폼을 보냈다면 성공률이 꽤 높은겁니다.  
+
+아무렇게나 찍어서 보낸다면 성공률은 0.0000001% 이겠지만, 이 프로그램을 서너번 실행하여 해결할 수 있다면, 9억 번 찍는 것보다 훨씬 시간을 단축할 수 있습니다.
