@@ -33,6 +33,41 @@ tags: [ 'python' ]
 
 ## 13.2 파이썬 `unittest`
 
+파이썬의 단위 테스트 모듈 `unittest`는 파이썬을 표준으로 설치하면 항상 설치됩니다. `unittest.TestCase` 를 임포트해서 확장해 쓰기만 하면 다음과 같은 기능을 제공합니다.
+
+- 각 단위 테스트의 처음과 끝에서 동작하는 setUp, tearDown 함수
+- 테스트가 성공 또는 실패하게 하는 여러 가지 타입의 assert 문
+- `test_`로 시작하는 모든 함수를 단위 테스트로 실행하고 이 접두어가 없는 함수는 무시
+
+다음 코드는 2 + 2 = 4 를 테스트하는 매우 단순한 단위 테스트입니다.
+
+```python
+import unittest
+
+class TestAddition(unittest.TestCase):
+    def setUp(self):
+        print("Setting up the test")
+    def tearDown(self):
+        print("Tearing down the test")
+    def test_twoPlusTwo(self):
+        total = 2+2
+        self.assertEqual(4, total)
+if __name__ == '__name__':
+    unittest.main()
+```
+
+이 코드에서 `setUp`과 `tearDown`에 별 유용한 기능은 없지만 예시 목적으로 여기 포함시켰습니다. 이들 함수는 각 테스트가 시작하고 끝날 때 실행되는 것이지, 클래스에 있는 모든 테스트보다 먼저 실행되거나 모든 테스트가 끝난 다음에 실행되는 것은 아닙니다.
+
+```
+Setting up the test
+Tearing down the test
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+```
+
 ### 13.2.1 위키백과 테스트
 
 ## 13.3 셀레니움을 사용한 테스트
