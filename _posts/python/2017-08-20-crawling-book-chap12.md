@@ -183,8 +183,102 @@ time.sleep(3)
 
 ## 12.3 널리 쓰이는 폼 보안 기능
 
+봇이 사이트에서 공개한 글과 블로그 포스트를 몇 개 내려받는 건 별 문제가 아니지만, 봇이 사용자 계정을 수천 개 만들고 사이트 사용자에게 스팸을 뿌려댄다면 큰 문제가 됩니다. 웹 폼, 특히 계정 생성과 로그인에 관련된 폼은 봇의 무분별한 사용을 차단하지 못한다면 중요한 위협 보안과 서버 자원에 심각한 위협이 됩니다. 따라서 대부분의 사이트 소유자들은 사이트 접근 제한을 중요한 문제로 판단하고 있습니다.  
+
+폼과 로그인에서 봇을 차단하기 위해 사용하는 보안수단은 웹 스크레이퍼에게 매우 어려운 문제입니다.  
+
+이 섹션에서 설명하는 내용은 자동화된 봇을 만들 때 고려해야 할 보안 수단의 일부일 뿐입니다.  
+
 ### 12.3.1 숨긴 필드 값
 
+'숨긴' 필드의 값은 브라우저에게는 보이지만 사용자에게는 보이지 않습니다.(물론 사이트의 소스 코드에서는 볼 수 있습니다.) 쿠키에 변수를 저장하고 웹사이트 전체에서 사용하는 방법이 널리 퍼지면서 숨김 필드는 한동안 사용되지 않았지만, 스크레이퍼가 폼을 전송하지 못하게 막는 용도로 최근에 사용되고 있습니다.  
+
+다음 그림은 페이스북 로그인 페이지에 사용된 숨김 필드입니다. 페이스북 로그인 페이지에서 사용자에게 보이는 것은 사용자 이름과 비밀번호 필드, 전송 버튼뿐이지만 사실 이 폼은 이면에서 아주 많은 정보를 서버에 전달합니다.
+
+![]({{site.url}}/img/post/python/crawling/c12_3_1.png)
+
+숨긴 필드가 웹 스크레이핑을 막는 방법은 크게 두 가지입니다. 서버에서 폼을 생성할 때 무작위로 변수를 만들어 폼을 넣고 그 값을 처리하는 페이지에서 받는 방법입니다. 이 값이 폼에 들어 있지 않다면 서버는 전송 받은 값이 폼 페이지에서 온 것이 아니라 봇이 직접 보냈다고 판단할 만한 근거를 갖게 됩니다. 이 방법에 대응하는 가장 좋은 방법은 먼저 폼 페이지를 스크랩해서 무작위로 생성된 변수를 가져온 후 처리 페이지로 보내는 것입니다.  
+
+두 번째 방법은 일종의 허니팟(honey pot)입니다.
+> #### 허니팟(honey pot)?  
+컴퓨터 보안 탐지, 어떤 방식으로의 무단 사용 시도에 대항하도록 설정 메커니즘 정보 시스템  
+속임술, 악성 코드 허니팟, 스팸 버전, 이메일 트랩 등이 있다.
+
+폼에 숨긴 필드가 있고, 그 필드의 name 속성이 당연히 있을 법한, 예를 들어 username 이나 email address 같은 것이라면, 이런 상황을 고려하지 않고 만든 봇은 그 필드가 숨겨져 있는지 아닌지와 관계없이 값을 채우고 전송할 것입니다. 숨긴 필드가 실제 값으로 채워지거나, 처리하는 페이지에서 기본값으로 정해놓은 값과 다르다면 서버는 전송된 값을 무시하고, 심지어 해당 사용자를 차단하는 경우도 있습니다.  
+
+다시 정리하자면, 이따근 서버에서 예상하고 있는 것을 놓치지는 않았는지 폼 페이지를 확인해야합니다. 숨긴 필드가 여러 개 있고 종종 무작위로 생성된 큰 문자열 변수가 들어 있다면 서버에서 폼을 전송 받을 때 그 값이 들어 있는지 체크하고 있을 가능성이 높습니다. 또한 폼 변수가 단 한 번만 사용됐는지, 최근에 생성됐는지 체크하는 서버도 있습니다. 이렇게 체크하면 그 값 자체를 스크립트에 저장하고 몇 번이고 사용하는 것을 막을 수 있습니다.
+
 ### 12.3.2 허니팟 피하기
+
+CSS를 활용해, 즉 id와 class를 읽어서 유용한 정보와 그렇지 않은 정보를 쉽게 구분할 수 있을 때도 있지만, 가끔 웹 스크레이퍼에서 CSS 때문에 문제가 생길 때도 있습니다. CSS를 써서 폼 필드를 숨겼다면, 사이트에 방문하는 일반적인 사용자에게는 그 필드가 보이지 않으니 작성하지 않을 거라고 봐야합니다. 그 필드가 값으로 채워졌다면 봇으로 판단하는 함정입니다.  
+
+이런 방식은 비단 폼만이 아니라 링크나 이미지, 파일, 기타 사이트에 존재하는 무엇이든, 사용자에는 보이지 않고 봇은 읽을 수 있는 모든 것에 적용할 수 있습니다. 숨겨둔 링크로만 도달할 수 있는 페이지에 방문했다면 서버 쪽 스크립트로 사용자의 IP 주소를 차단하거나, 사용자를 로그아웃 시키거나, 다른 방법으로 이후 사이트에 접근하지 못하게 막는 것은 간단합니다. 사실 여러 비즈니스 모델이 이 개념에 따라 만들어졌습니다.  
+
+http://pythonscraping.com/pages/itsatrap.html 예제 페이지입니다. 이 페이지에는 두 개의 링크가 있는데 하나는 CSS로 숨겼고 다른 하나는 보입니다. 그리고 숨긴 필드가 두 개 있는 폼이 들어 있습니다.
+
+```html
+<html><head>
+	<title>A bot-proof form</title>
+<style>
+body {
+	overflow-x:hidden;
+}
+.customHidden {
+	position:absolute;
+	right:50000px;
+}
+</style></head>
+
+<body>
+	<h2>A bot-proof form</h2>
+<a href="http://pythonscraping.com/dontgohere" style="display:none;">Go here!</a>
+<a href="http://pythonscraping.com">Click me!</a>
+<form>
+<input type="hidden" name="phone" value="valueShouldNotBeModified"><p>
+<input type="text" name="email" class="customHidden" value="intentionallyBlank"></p><p>
+<input type="text" name="firstName"></p><p>
+<input type="text" name="lastName"></p><p>
+<input type="submit" value="Submit"></p><p>
+</p></form>
+
+</body></html>
+```
+
+이 세 요소는 각각 다른 방법으로 사용자에게 숨겼습니다.
+
+- 첫 번째 링크는 CSS `display:none` 속성으로 숨겼습니다.
+- 전화번호 필드는 숨긴 필드입니다.
+- 이메일 필드는 화면 오른쪽으로 50,000픽셀 이동하였고, 스크롤바를 숨겨서 모니터에서 보이지도, 이동하지도 못하게 했습니다.
+
+셀레니움은 방문한 페이지를 실제로 렌더링하므로 페이지에 보이는 요소와 보이지 않는 요소를 구별할 수 있습니다. 페이지에 요소가 존재하는지는 `is_displayed()`함수로 알 수 있습니다.  
+
+다음 코드는 앞에서 설명한 페이지를 가져와서 숨긴 링크와 필드가 있는지 찾습니다.
+
+```python
+from selenium import webdriver
+from selenium.webdriver.remote.webelement import WebElement
+
+driver = webdriver.PhantomJS()
+driver.get("http://pythonscraping.com/pages/itsatrap.html")
+links = driver.find_elements_by_tag_name("a")
+for link in links:
+    if not link.is_displayed():
+        print("The link "+link.get_attribute("href")+" is a trap")
+
+fields = driver.find_elements_by_tag_name("input")
+for field in fields:
+    if not field.is_displayed():
+        print("Do not change value of "+field.get_attribute("name"))
+```
+
+셀레니움은 숨긴 링크와 필드를 찾고 다음의 결과를 출력합니다.
+
+```
+The link http://pythonscraping.com/dontgohere is a trap
+Do not change value of phone
+Do not change value of email
+```
+
+숨긴 링크에는 방문하지 않겠지만, 미리 생성된 값이 들어 있는 숨긴 필드도 전송하지 말아야 합니다. 요약하면, 숨긴 필드를 단순히 무시해서는 위험하며 반드시 매우 조심스헙게 조작해야 합니다.
 
 ## 12.4 사람처럼 보이기 위한 체크리스트
