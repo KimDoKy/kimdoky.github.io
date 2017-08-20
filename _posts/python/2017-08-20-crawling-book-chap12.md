@@ -77,6 +77,98 @@ Safari/9537.53
 
 ### 12.2.2 쿠키 처리
 
+쿠키를 정확히 사용하면 스크레이핑 문제를 상당히 피할 수 있지만, 쿠키는 양날의 검이기도 합니다. 쿠키를 사용해서 웹사이트 어디를 다니는지 추적하는 사이트라면, 폼을 너무 빨리 완성한다거나 너무 여러 페이지를 다니는 등 이상한 행동을 보이는 쿠키를 차단할 수도 있습니다. 연결을 끊었다가 다시 연결하거나 IP 주소를 바꿔도 이런 '이상한 행동'을 숨길 수 있지만, 쿠키에서 정체를 숨길 수 있다면 그런 트릭은 필요 없게 됩니다.  
+
+쿠키는 사이트를 스크랩할 때도 꼭 필요합니다. 사이트에 로그인된 상태를 유지하려면 페이지 사이를 이동할 때 쿠키를 유지하고 제시할 수 있어야 합니다. 일부 웹 사이트는 매번 로그인할 필요조차 없습니다. 한 번 로그인하면 그 쿠키를 오랫동안 가지고 있으면서 사용합니다.  
+
+스크레이핑하는 웹사이트가 많지 않다면 그 사이트가 생성하는 쿠키를 점검해보고 스크레이퍼에서 어떤 쿠키를 조작해야 할지 생각해봐야 합니다. 사이트에 방문하고 이동함에 따라 쿠키가 어떻게 바뀌는지 보여주는 브라우저 플러그인이 많이 있습니다. 많이 사용되는 플러그인들 중 하나는 크롬 확장 프로그램인 [EditThisCookie](http://www.editthiscookie.com/){:target="`_`blank"}입니다.
+
+`requests` 모듈을 써서 쿠키를 처리하는 방법은 [chap9](https://kimdoky.github.io/python/2017/08/03/crawling-book-chap9.html){:target="`_`blank"}을 참고하면 됩니다. 물론 `requests` 모듈은 자바스크립트를 실행하지 못하므로 구글 애널리틱스 같은 최신 추적 소프트웨어에서 만나는 쿠키는 처리하지 못합니다. 이런 쿠키는 클라이언트 쪽 스크립트가 실행을 마치거나 버튼 클릭 같은 페이지 이벤트에 따라 만들어집니다. 이런 쿠키를 처리하려면 셀레니움과 펜텀JS가 필요합니다.  
+
+아무 사이트에나 방문해서 `get_cookies()`를 호출하면 쿠키를 볼 수 있습니다.
+
+```python
+from selenium import webdriver
+
+driver = webdriver.PhantomJS()
+driver.get("http://pythonscraping.com")
+driver.implicitly_wait(1)
+print(driver.get_cookies())
+```
+
+이 코드를 실행하면 매우 일반적인 구글 애널리틱스 쿠키가 보입니다.
+
+```
+[{'value': '1', 'domain': '.pythonscraping.com', 'path': '/', 'expiry': 1503214202, 'secure': False, 'httponly': False, 'name': '_gat', 'expires': '일, 20 8월 2017 07:30:02 GMT'}, {'value': 'GA1.2.667061982.1503214143', 'domain': '.pythonscraping.com', 'path': '/', 'expiry': 1503300542, 'secure': False, 'httponly': False, 'name': '_gid', 'expires': '월, 21 8월 2017 07:29:02 GMT'}, {'value': 'GA1.2.1041228017.1503214143', 'domain': '.pythonscraping.com', 'path': '/', 'expiry': 1566286142, 'secure': False, 'httponly': False, 'name': '_ga', 'expires': '화, 20 8월 2019 07:29:02 GMT'}, {'value': '1', 'domain': 'pythonscraping.com', 'name': 'has_js', 'httponly': False, 'secure': False, 'path': '/'}]
+```
+
+쿠키를 조작할 때는 `delete_cookie()`, `add_cookie()`, `delete_all_cookies()` 함수를 사용합니다. 또한 쿠키를 다른 웹 스크레이퍼에서 쓸 수 있게 저장하는 것도 가능합니다.
+
+```python
+from selenium import webdriver
+
+driver = webdriver.PhantomJS()
+driver.get("http://pythonscraping.com")
+driver.implicitly_wait(1)
+print(driver.get_cookies())
+
+savedCookies = driver.get_cookies()
+
+driver2 = webdriver.PhantomJS()
+driver2.get("http://pythonscraping.com")
+driver2.delete_all_cookies()
+for cookie in savedCookies:
+   driver2.add_cookie({
+       'domain':'.pythonscraping.com',
+       'name': cookie['name'],
+       'value': cookie['value'],
+       'path': '/',
+       'expires': None
+   })
+
+driver2.get("http://pythonscraping.com")
+driver.implicitly_wait(1)
+print(driver2.get_cookies())
+```
+>
+```python
+for cookie in savedCookies:
+    driver2.add_cookie(cookie)
+```
+교재의 원래 코드(위 코드)로 실행하면, driver2의 쿠키를 교체하는 부분에서 에러가 발생합니다.
+```
+Message: {"errorMessage":"Unable to set Cookie"
+```
+
+이 예의 첫 번째 웹드라이버는 사이트를 가져와서 쿠키를 출력한 다음 `savedCookies` 변수에 저장했습니다. 두 번째 웹드라이버는 같은 웹사이트를 다시 불러온 다음 두 번째 쿠키를 모두 지우고 첫 번째 웹드라이버에서 저장했던 쿠키로 교체합니다.(두 번째 웹드라이버에서 사이트를 다시 불러오는 것 자체에는 다른 의미가 없지만, 셀레니움이 이 쿠키가 어느 사이트에 속하는지 알게 하려면 꼭 필요한 일입니다.) 페이지를 다시 불러오면 타임스탬프와 코드, 기타 정보가 모두 쿠키와 완전히 같아야 합니다. 구글 애널리틱스로 비교해보니 두 번째 웹드라이버는 첫 번째와 완전히 같았습니다.
+
+> 쿠키 변경 부분을 한 줄씩 실행하여 변경 상황을 체크해봤습니다. (쉽게 구분하기 위해 value 값만 적었습니다.)
+
+```python
+# driver cookie
+>>> savedCookies
+[{... 'name': '_gat', ... 'value': '1', ...}, {... 'name': '_gid', ... 'value': 'GA1.2.1160189992.1503215827', ...}, {... 'name': '_ga', ... 'value': 'GA1.2.1407323930.1503215827', ...}, {'name': 'has_js', ... 'value': '1', ... }]
+
+# driver2 cookie
+>>> print(driver2.get_cookies())
+[{... 'name': '_gat', ... 'value': '1', ... }, {... 'name': '_gid', ... 'value': 'GA1.2.1827877731.1503215859', ...}, {... 'name': '_ga',  ... 'value': 'GA1.2.304429178.1503215859', ...}, {'name': 'has_js', ... 'value': '1', ... }]
+
+# delete driver2 cookie
+>>> driver2.delete_all_cookies()
+>>> print(driver2.get_cookies())
+[]
+
+# change driver2 cookie to driver cookie
+>>> print(driver2.get_cookies())
+[{'name': 'has_js', ... 'value': '1', ...}, {'name': '_ga', ... 'value': 'GA1.2.1407323930.1503215827', ...}, {'name': '_gid', ... 'value': 'GA1.2.1160189992.1503215827', ...}, {'name': '_gat', ... 'value': '1', ...}]
+
+# after refrash driver2 cookie
+>>> driver2.get("http://pythonscraping.com")
+>>> driver.implicitly_wait(1)
+>>> print(driver2.get_cookies())
+[{...'name': '_gid', ... 'value': 'GA1.2.1160189992.1503215827', ...}, {... 'name': '_ga', ... 'value': 'GA1.2.1407323930.1503215827', ...}, {'name': 'has_js', ... 'value': '1', ...}, {'name': 'has_js', ... 'value': '1', ...}, {'name': '_gat', ... 'value': '1', ...}]
+```
+
 ### 12.2.3 타이밍이 가장 중요합니다
 
 ## 12.3 널리 쓰이는 폼 보안 기능
