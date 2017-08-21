@@ -300,6 +300,61 @@ Hello there, Doky Kim!
 
 #### 드래그 앤 드롭
 
+버튼을 클릭하고 텍스트를 입력하는 것도 유용하지만, 셀레니움이 정말 뛰어난 것은 웹에서 비교적 최근부터 쓰이는 상호작용도 따라 할 수 있다는 점입니다. 셀레니움은 드래그 앤 드롭 동작도 쉽게 흉내 낼 수 있습니다. 드래그 앤 드롭 기능을 사용하려면 드래그할 요소인 '소스' 요소를 지정하고, 이동할 오프셋 또는 드래그 대상 요소를 지정하면 됩니다.  
+
+데모 페이지(http://pythonscraping.com/pages/javascript/draggableDemo.html)에서 드래그 앤 드롭 인터페이스 예제를 볼 수 있습니다.
+
+```
+from selenium import webdriver
+from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver import ActionChains
+
+jquery_url = "http://code.jquery.com/jquery-1.11.2.min.js"
+
+driver = webdriver.PhantomJS()
+driver.get("http://pythonscraping.com/pages/javascript/draggableDemo.html")
+
+print(driver.find_element_by_id("message").text)
+
+### drag and drop ###
+# load jQuery helper
+with open("jquery_load_helper.js") as f:
+    load_jquery_js = f.read()
+
+# load drag and drop helper
+with open("drag_and_drop_helper.js") as f:
+    drag_and_drop_js = f.read()
+
+# load jQuery
+driver.execute_async_script(load_jquery_js, jquery_url)
+
+driver.execute_script(drag_and_drop_js + "$('#draggable').simulateDragDrop({ dropTarget: '#div2'});")
+########################
+'''
+element = driver.find_element_by_id("draggable")
+target = driver.find_element_by_id("div2")
+actions = ActionChains(driver)
+actions.drag_and_drop(element, target).perform()
+'''
+
+print(driver.find_element_by_id("message").text)
+```
+> 점검 필요  
+https://stackoverflow.com/questions/29381233/how-to-simulate-html5-drag-and-drop-in-selenium-webdriver/29381532#29381532
+
+```
+Prove you are not a bot, by dragging the square from the blue area to the red area!
+```
+그리고 작업이 왼료됨과 동시에, 다음 메시지가 표시됩니다.
+```
+You are definitely not a bot!
+```
+페이지의 메시지처럼, 요소를 드래그해서 봇이 아님을 증명하는 것은 CAPTCHA에서 널리 쓰이는 방법입니다. 물론 그저 클릭하고, 누른 채 움직이기만 하면 되니까 봇이 페이지 요소를 드래그 할 수 있게 된 건 오래된 일이지만 이걸 움직여서 사람임을 증명하라는 발상은 아직 그대로입니다.  
+
+드래그 앤 드롭을 사용하는 CAPTCHA 라이브러리에서 '고양이 그림을 소 그림 위로 드래그하시오'같은, 봇에게는 무척 어려운(명령을 이해하고, 고양이와 소를 구분해야 하니까요) 행동을 지시하는 경우는 별로 없습니다. 대개는 숫자를 정렬한다거나 하는 쉬운 문제를 냅니다.  
+
+물론 이런 드래그 앤 드롭 테크닉의 강점은 그 변형이 엄청나게 많다는 것인데, 사실 그런 변형들은 많이 쓰이지 않습니다. 그런 경우의 수에 모두 대응하는 봇을 만들 사람은 없으니까요.
+
 #### 스크린샷 찍기
 
 ## 13.4 `unittest` vs 셀레니움
