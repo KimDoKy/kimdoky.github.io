@@ -238,6 +238,66 @@ driver.close()
 
 ### 13.3.1 사이트 조작
 
+폼의 기능을 테스트하고 브라우저에서 완벽히 동작하는지 확인하려면 어떻게 해야 할까요?  
+
+이전에 링크 이동과 폼 제출, 기타 상호작용과 비슷한 동작들을 다루었지만, 핵심은 브라우저 인터페이스를 사용하는 것이 아니라 **지나가는** 것이었습니다. 반면 셀레니움은 문자 그대로 텍스트를 입력하고, 버튼을 클릭하고, 기타 우리가 브라우저를 사용 할때 하는 일 전부를 합니다. 그리고 잘못된 폼, 코드가 엉성한 자바스크립트, HTML 오타, 그 밖에도 고객이나 방문자를 방해할 만한 요소들을 모두 찾아낼 수 있습니다.  
+
+이런 종류의 테스트의 핵심은 셀레니움 elements 라는 개념입니다. [쳅터10](https://kimdoky.github.io/python/2017/08/13/crawling-book-chap10.html){:target="`_`blank"}에서 가볍게 다루었었습니다. 다음과 같이 호출하면 이 객체가 반환됩니다.
+
+```python
+usernameField = driver.find_element_by_name('username')
+```
+브라우저에서 사이트의 여러 요소에 다양한 행동을 취할 수 있는 것처럼, 셀레니움도 주어진 요소에 다양한 행동을 취할 수 있습니다. 그중에서도 다음과 같은 것들이 널리 쓰입니다.
+
+```python
+myElement.click()
+myElement.click_and_hold()
+myElement.release()
+myElement.double_click()
+myElement.send_keys_to_element("content to enter")
+```
+
+이런 행동 여러 개를 **체인** 으로 묶어서 저장하고 원하는 만큼 실행할 수도 있습니다. 액션 체인은 행동 여러 개를 하나로 묶는 간편한 방법이면서, 앞서 다룬 예제들처럼 요소에 대해 해당 행동을 명시적으로 호출하는 것과 기능적으로는 완전히 같습니다.  
+
+http://pythonscraping.com/pages/files/form.html 에 있는 폼 페이지를 보면 어떤 차이가 있는지 볼 수 있습니다. 다음 방법으로 폼을 채우고 전송할 수 있습니다.
+
+```python
+from selenium import webdriver
+from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver import ActionChains
+
+driver = webdriver.PhantomJS()
+driver.get("http://pythonscraping.com/pages/files/form.html")
+
+firstnameField = driver.find_element_by_name("firstname")
+lastnameField = driver.find_element_by_name("lastname")
+submitButton = driver.find_element_by_id("submit")
+
+### 방법 1 ###
+firstnameField.send_keys("Doky")
+lastnameField.send_keys("Kim")
+submitButton.click()
+#############
+
+### 방법 2 ###
+actions = ActionChains(driver).click(firstnameField).send_keys("Doky").click(lastnameField).send_keys("Kim").send_keys(Keys.RETURN)
+actions.perform()
+#############
+
+print(driver.find_element_by_tag_name("body").text)
+
+driver.close()
+```
+
+방법 1은 두 필드에서 `send_keys`를 호출한 다음 전송 버튼을 클릭합니다. 방법 2는 액션 체인으로 각 필드를 클릭한 다음 텍스트를 입력하는데, 이 동작은 `perform` 메서드를 호출했을 때 차례대로 일어납니다. 어느 방법을 써도 동일하게 동작합니다.
+
+```
+Hello there, Doky Kim!
+```
+
+두 방법에는 작은 차이가 하나 더 있습니다. 첫 번째 방법은 전송 버튼을 두번 클릭했고, 두 번째 방법은 엔터 키를 눌렀습니다. 셀레니움에서는 결과적으로는 같은 동작을 여러 가지 방법으로 할 수 있으니 다양한 방법을 생각해 낼 수 있습니다.
+
 #### 드래그 앤 드롭
 
 #### 스크린샷 찍기
