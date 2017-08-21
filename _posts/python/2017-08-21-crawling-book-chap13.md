@@ -70,6 +70,156 @@ OK
 
 ### 13.2.1 위키백과 테스트
 
+웹사이트 프론트엔드 테스트는 스크레이퍼에 파이썬 `unittest` 라이브러리를 결합하기만 하면 될 정도로 매우 간단합니다.
+
+```python
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+import unittest
+
+class TestWikipedia(unittest.TestCase):
+    bsObj = None
+    def setUpClass():
+        global bsObj
+        url = "http://en.wikipedia.org/wiki/Monty_Python"
+        bsObj = BeautifulSoup(urlopen(url), "html.parser")
+
+    def test_titleText(self):
+        global bsObj
+        pageTitle = bsObj.find("h1").get_text()
+        self.assertEqual("Monty Python", pageTitle)
+
+    def test_contentExists(self):
+        global bsObj
+        content = bsObj.find("div", {"id":"mw-content-text"})
+        self.assertIsNotNone(content)
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+이번에는 두 가지를 테스트합니다. 첫 번째 테스트는 페이지 타이틀이 Monty Python 인지 확인하고, 두 번째 테스트는 페이지에 콘텐츠 div가 있는지 확인합니다.  
+
+```
+..
+----------------------------------------------------------------------
+Ran 2 tests in 1.790s
+
+OK
+```
+
+페이지 콘텐츠는 한 번만 불러왔고 전역 객체 bsObj를 두 테스트에서 공유합니다. 이렇게 할 수 있는 것은 `unittest`에서 사용하는 `setUpClass`함수 덕분입니다. 이 함수는 매 테스트마다 실행되는 `setUp`과는 달리 클래스를 시작할 때 단 한 번 실행됩니다. `setUp` 대신 `setUpClass`를 사용하면 불필요한 로딩을 줄이고 페이지 콘텐츠를 한 번만 불러와서 여러 테스트를 실행할 수 있습니다.  
+
+한 번에 페이지 하나씩 테스트하는 건 그리 강력하거나 흥미로워 보이지 않지만, 웹사이트의 페이지 전체를 방문하는 웹 크롤러와 각 페이지마다 어서션을 실행하는 단위 테스트와 결합하면 어떨까요?  
+
+테스트를 반복적으로 실행하는 방법은 여러 가지이지만, 각 테스트 세트마다 페이지를 반드시 한 번씩만 불러오도록 조심해야 하며, 메모리에 너무 많은 정보를 담고 있지 않게 해야 합니다. 다음 코드가 바로 그 작업입니다.
+
+```python
+class TestWikipedia(unittest.TestCase):
+    bsObj = None
+    url = None
+
+    def test_PageProperties(self):
+        global bsObj
+        global url
+
+        url = "http://en.wikipedia.org/wiki/Monty_Python"
+        # 처음 100 페이지를 테스트 합니다.
+        for i in range(1,100):
+            bsObj = BeautifulSoup(urlopen(url), "html.parser")
+            titles = self.titleMatchesURL()
+            self.assertEquals(titles[0], titles[1])
+            self.assertTrue(self.contentExists())
+            url = self.getNextLink()
+        print("Done!")
+
+    def titleMatchesURL(self):
+        global bsObj
+        global url
+        pageTitle = bsObj.find("h1").get_text()
+        urlTitle = url[(url.index("/wiki/")+6):]
+        urlTitle = urlTitle.replace("_", " ")
+        urlTitle = unquote(urlTitle)
+        return [pageTitle.lower(), urlTitle.lower()]
+
+    def contentExists(self):
+        global bsObj
+        content = bsObj.find("div", {"id":"mw-content-text"})
+        if content is not None:
+            return True
+        return False
+
+    def getNextLink(self):
+        # 챕터5에서 설명한 방법에 따라 페이지의 링크를 무작위로 반환합니다.
+        global bsObj
+        links = bsObj.find("div", {"id":"bodyContent"}).findAll("a", href=re.compile("^(/wiki/)((?!:).)*$"))
+        link = links[random.randint(0, len(links)-1)].attrs['href']
+        print("Next link is: "+link)
+        return "http://en.wikipedia.org"+link
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+실행 결과입니다.
+
+```
+chap13_2_1_wiki_unittest_2.py:22: DeprecationWarning: Please use assertEqual instead.
+  self.assertEquals(titles[0], titles[1])
+Next link is: /wiki/Twice_a_Fortnight
+Next link is: /wiki/The_Philosophers%27_Football_Match
+...
+Next link is: /wiki/Mythic_Entertainment
+Next link is: /wiki/Customization_of_avatars
+F
+======================================================================
+FAIL: test_PageProperties (__main__.TestWikipedia)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "chap13_2_1_wiki_unittest_2.py", line 22, in test_PageProperties
+    self.assertEquals(titles[0], titles[1])
+AssertionError: 'avatar (computing)' != 'customization of avatars'
+- avatar (computing)
++ customization of avatars
+
+
+----------------------------------------------------------------------
+Ran 1 test in 30.957s
+
+FAILED (failures=1)
+```
+
+여기에는 몇 가지 눈여겨볼 것이 있습니다. 먼저, 이 클래스에 실제 테스트는 단 하나뿐입니다. 다른 함수들은 테스트가 통과했는지 판단하기 위해 복잡한 작업을 하긴 하지만, 그래도 보조 함수일 뿐입니다. 테스트 함수에서 assert 문을 실행하므로, 테스트 결과는 그 함수로 다시 돌아갑니다.  
+
+또, contentExists는 불리언을 반환하지만 titleMatchesURL은 그 값을 평가할 수 있도록 반환합니다. 그냥 불리언을 반환하지 않고 값을 되돌린 이유는, 다음 블리언 어서션의 결과를 비교해 보면 알 수 있습니다.
+
+```
+======================================================================
+FAIL: test_PageProperties (__main__.TestWikipedia)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "chap13_2_1_wiki_unittest_2.py", line 22, in test_PageProperties
+    self.assertTrue(self.titleMatchesURL())
+AssertionError: False is not true
+```
+
+assertEquals 문의 결과입니다.
+
+```
+======================================================================
+FAIL: test_PageProperties (__main__.TestWikipedia)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "chap13_2_1_wiki_unittest_2.py", line 22, in test_PageProperties
+    self.assertEquals(titles[0], titles[1])
+AssertionError: 'avatar (computing)' != 'customization of avatars'
+- avatar (computing)
+```
+
+디버그하기에 훨씬 수월해집니다.  
+
+여기서 에러가 난 이유는 http://wikipedia.org/wiki/Customization_of_avatars 항목이 avatar (computing) 항목으로 리다이렉트했기 때문입니다.
+
 ## 13.3 셀레니움을 사용한 테스트
 
 ### 13.3.1 사이트 조작
