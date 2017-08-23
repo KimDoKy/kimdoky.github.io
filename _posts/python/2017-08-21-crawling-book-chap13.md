@@ -357,4 +357,13 @@ You are definitely not a bot!
 
 #### 스크린샷 찍기
 
+셀레니움에는 스크린샷 기능이 있습니다.
+
+```python
+driver = webdriver.PhantomJS()
+driver.get('http://www.pythonscraping.com/')
+driver.get_screenshot_as_file('tmp/pythonscraping.png')
+```
+이 스크립트는 http://www.pythonscraping.com 으로 이동한 후 홈페이지 스크린샷을 찍어서 tmp 폴더에 저장합니다.(폴더는 미리 만들어두어야 합니다.) 스크린샷은 다양한 이미지 형식을 사용할 수 있습니다.
+
 ## 13.4 `unittest` vs 셀레니움
