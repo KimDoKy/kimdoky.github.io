@@ -367,3 +367,39 @@ driver.get_screenshot_as_file('tmp/pythonscraping.png')
 이 스크립트는 http://www.pythonscraping.com 으로 이동한 후 홈페이지 스크린샷을 찍어서 tmp 폴더에 저장합니다.(폴더는 미리 만들어두어야 합니다.) 스크린샷은 다양한 이미지 형식을 사용할 수 있습니다.
 
 ## 13.4 `unittest` vs 셀레니움
+
+unittest와 셀레니움은 각각 최적화 되어 있는 부분들이 있습니다. 셀레니움은 사이트에서 정보를 가져오는데 편리하고, unittest는 그 정보가 테스트를 통과하는 기준에 맞는지 평가할 수 있습니다. unittest에 셀레니움을 임포트해서 사용할 수도 있습니다.  
+
+바로 앞의 드래그 예제에서 어서션을 포함한 단위 테스트를 만들 수 있습니다.
+
+```python
+from selenium import webdriver
+from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver import ActionChains
+import unittest
+
+class TestAddition(unittest.TestCase):
+    driver = None
+    def setUp(self):
+        global driver
+        driver = webdriver.PhantomJS()
+        url = 'http://pythonscraping.com/pages/javascript/draggableDemo.html'
+
+    def tearDown(self):
+        print("Tearing down the test")
+
+    def test_drag(self):
+        global driver
+        element = driver.find_element_by_id("draggable")
+        target = driver.find_element_by_id("div2")
+        actions = ActionChains(driver)
+        actions.drag_and_drop(element, target).perform()
+
+        self.assertEqual("You are definitely not a bot!", driver.find_element_by_id("message").text)
+
+if __name__ == '__main__':
+    unittest.main()
+```
+> 위의 드래그 예제가 제대로 실행이 안되기 때문에 어서션 에러가 일어납니다.
+
+파이썬 unittest와 셀레니움을 조합하면 웹사이트의 거의 모든 것을 테스트 할 수 있습니다. [이미지처리 라이브러리](https://kimdoky.github.io/python/2017/08/14/crawling-book-chap11.html){:target="`_`blank"}와 함께 사용한다면 사이트의 스크린샷을 찍어 픽셀 단위로 정교하게 테스트할 수도 있습니다.
