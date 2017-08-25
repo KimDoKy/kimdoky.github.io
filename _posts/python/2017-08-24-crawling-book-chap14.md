@@ -51,6 +51,49 @@ tags: [ 'python' ]
 
 ### 14.2.1 파이삭스
 
+파이삭스(PySocks)는 프록시 서버로 트래픽을 돌리는 매우 단순한 파이썬 모듈이며 토르와 함께 잘 동작합니다.
+
+##### 설치
+
+```
+pip install pysocks
+```
+
+파이삭스 문서는 자세히 나오지는 않지만 매우 단순합니다. 이 코드를 실행하려면 토르 서비스가 반드시 포트 9150(기본포트)에서 실행 중이어야 합니다.
+
+```python
+import socks
+import socket
+from urllib.request import urlopen
+
+socks.set_default_proxy(socks.SOCKS5, "localhost", 9150)
+socket.socket = socks.socksocket
+print(urlopen('http://icanhazip.com').read())
+```
+http://icanhazip.com 사이트는 서버에 연결된 클라이언트의 IP 주소만 표시하며 테스트에 유용하게 쓸 수 있습니다. 이 스크립트를 실행한 결과로 표시된 IP 주소는 자신의 원래 IP와 달라야 합니다.  
+
+```
+b'192.160.102.169\n'
+```
+
+셀레니움과 펜텀JS를 써서 토르를 사용한다면 파이삭스가 필요하지 않습니다. 토르가 실행 중 일 때 셀레니움에서 포트 9150을 사용하게 하는 `service_args` 매개변수를 사용하기만 하면 됩니다.
+
+```python
+from selenium import webdriver
+service_args = [ '--proxy=localhost:9150', '--proxy-type=socks5', ]
+driver = webdriver.PhantomJS(executable_path='[path to PhantomJS]', service_args=service_args)
+driver.get("http://icanhazip.com")
+print(driver.page_source)
+driver.close()
+```
+
+이번에도 표시된 IP 주소는 원래 IP가 아니라 토르가 현재 사용 중인 IP 주소여야 합니다.
+
+```
+<html><head></head><body><pre style="word-wrap: break-word; white-space: pre-wrap;">2605:e200:d00c:c01d::7777
+</pre></body></html>
+```
+
 ## 14.3 원격 호스팅
 
 ### 14.3.1  웹사이트 호스트 계정에서 실행
