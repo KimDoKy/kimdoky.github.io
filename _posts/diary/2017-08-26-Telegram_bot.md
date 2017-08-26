@@ -109,3 +109,64 @@ bot.sendMessage(chat_id = chat_id, text="저는 봇입니다.")
 그러면 bot이 메시지를 보낸 것을 확인 할 수 있습니다.
 
 ![]({{site.url}}/img/post/diary/telegram/botfather_4.png)
+
+#### 채널로 메시지 보내기
+
+채널은 공개된 채팅방으로 이해하면 됩니다.  
+
+채널을 생성하고 설정해 줍니다.
+
+![]({{site.url}}/img/post/diary/telegram/bot_1.png)
+
+채널 이름을 설정합니다.
+
+![]({{site.url}}/img/post/diary/telegram/bot_2.png)
+
+테스트용이기 때문에 공개, 비공개의 큰 의미는 없으니 기본 설정인 비공개로 하겠습니다.
+
+![]({{site.url}}/img/post/diary/telegram/bot_3.png)
+
+마크를 클릭하여 설정으로 들어갑니다.
+
+![]({{site.url}}/img/post/diary/telegram/bot_4.png)
+
+admins으로 들어갑니다.
+
+![]({{site.url}}/img/post/diary/telegram/bot_5.png)
+
+관리자를 추가합니다.
+
+![]({{site.url}}/img/post/diary/telegram/bot_6.png)
+
+![]({{site.url}}/img/post/diary/telegram/bot_7.png)
+
+권한을 하나하나 설정할 수 있네요. 테스트니까 기본값으로 진행합니다.
+
+![]({{site.url}}/img/post/diary/telegram/bot_8.png)
+
+봇이 메시지를 보낼 수 있게 상단의 Edit - Channel Type으로 들어 갑니다.
+
+![]({{site.url}}/img/post/diary/telegram/bot_9.png)
+
+하단의 링크를 수정합니다. t.me/ 뒤에 들어갈 주소가 `chat_id`가 됩니다.  
+채널을 공개로 해야 수정이 가능합니다.(비공개로 하면 `chat_id`가 먹히지 않는 것 같네요.)
+
+![]({{site.url}}/img/post/diary/telegram/bot_10.png)
+
+이제 메시지를 보내는 코드를 작성합니다.
+
+```python
+import telegram
+import telegram_token
+
+my_token = telegram_token.telegram_token
+bot = telegram.Bot(token = my_token)
+bot.sendMessage(chat_id = '@fourss', text="저는 봇입니다.")
+```
+실행하면 아래와 같이 메시지라 발송됩니다.
+
+![]({{site.url}}/img/post/diary/telegram/bot_11.png)
+
+> 테스트 이후에 비공개로 전환해도 정상적으로 작동하며, `chat_id`는 그대로 사용합니다.
+
+psangwoo 님의 가이드가 친절히 잘 나와있어서 쉽게 완성되었습니다. 하지만 포스팅하신지 10개월 정도가 지난 시점이라 자잘한 여러부분들이 업데이트 되어 오류들이 있었지만 금방 큰 문제점들이 아니라 금방 해결되었네요.
