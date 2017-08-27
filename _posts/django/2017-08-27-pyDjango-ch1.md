@@ -1,14 +1,14 @@
 ---
 layout: post
 section-type: post
-title: pyDjango - chap1. 장고 개발의 기본 사항
+title: pyDjango - chap 1. 장고 개발의 기본 사항
 category: django
 tags: [ 'django' ]
 ---
 두 번째 실습이라서 요점만 포스팅합니다.
 
 ## 1.1 MTV 개발 방식
-MTV
+### MTV
 - Model : 테이블을 정의합니다. (`models.py`)
 - Template : 사용자가 보게 될 화면의 모습을 정의합니다. (`templates/*.html`)
 - View : 애플리케이션의 제어 흐름 및 처리 로직을 정의합니다. (`views.py`)
@@ -53,7 +53,8 @@ URLconf 는 URL과 뷰(함수 또는 메소드)를 매핑해주는 urls.py파일
 
 프로젝트 전체 URL을 정의하는 **프로젝트 URL** 과 앱마다 정의하는 **앱 URL** , 2계층으로 나눠서 코딩하는 방식을 추천합니다. 이 방식은 URLconf 모듈을 계층적으로 구성하므로 변경도 쉽고 확장도 용이해집니다. 이미 개발해 놓은 앱을 다른 프로젝트에서 사용하는 경우 urls.py 파일을 수정 없이 재활용할 수도 있습니다.  
 
-URL 패턴별로 이름을 지정할 수 있고, 패턴 그룹에 대해 이름공간(namespace)을 지정할 수도 있습니다. 이는 `reverse()`함수나 `{% url %}` 템플릿 태그를 사용해, 소스에 URL을 하드 코딩하지 않아고 필요한 URL을 추출할 수 있는 기능입니다.
+URL 패턴별로 이름을 지정할 수 있고, 패턴 그룹에 대해 이름공간(namespace)을 지정할 수도 있습니다. 이는 `reverse()`함수나 {% raw %}`{% url %}`
+{% endraw %} 템플릿 태그를 사용해, 소스에 URL을 하드 코딩하지 않아고 필요한 URL을 추출할 수 있는 기능입니다.
 
 ## 1.6 views.py 주요 사항
 
