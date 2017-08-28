@@ -277,6 +277,7 @@ INSTALLED_APPS = [
 ### 2.3.1 테이블 정의
 
 - bookmark/models.py  
+
 ```python
 from django.db import models
 
@@ -300,6 +301,7 @@ class Bookmark(models.Model):
 
 models.py 파일에서 정의한 테이블도 Admin 사이트에 보이도록 등록합니다.
 - bookmark/admin.py
+
 ```python
 from django.contrib import admin
 from bookmark.models import Bookmark
