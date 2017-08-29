@@ -388,6 +388,27 @@ Quit the server with CONTROL-C.
 ```
 명령어 뒤에 `&`를 붙이면 백그라운드에서 명령이 실행되며, `jobs` 명령으로 실행 중인 프로세스 목록을 볼 수 있습니다.
 
+```
+http://127.0.0.1:8000/admin
+```
+위 주소로 접속하여 Admin 사이트의 로그인 페이지가 나타면 정상입니다.
+
+![]({{site.url}}/img/post/python/django/book_2_3_4.png)
+
+앞에서 생성한 슈퍼유저로 로그인합니다.
+
+![]({{site.url}}/img/post/python/django/book_2_3_4_2.png)
+
+장고에서 기본적으로 만들어주는 User, Group 테이블 이외에 Bookmark 테이블을 볼 수 있습니다. [ADD] 버튼을 클릭하면, models.py 파일에 정의한 테이블이 어떤 모습인지 UI 화면을 볼 수 있습니다.
+
+![]({{site.url}}/img/post/python/django/book_2_3_4_3.png)
+
+> #### Admin 사이트의 이름 표기 방식
+Admin 사이트에서 보여주는 이름들은 영문 방식으로 표기되어 있어서 혼동할 수 있습니다. 예를 들어, 애플리케이션 이름은 'bookmark'인데 Bookmark로 보여주고, 테이블 이름은 'Bookmark'인데 Bookmarks라고 표기됩니다. 이는 장고가 자동으로 만들어준 것인데 다음과 같은 룰을 따릅니다.
+1. 애플리케이션명 : startapp appname 명령시 사용한 appname을 대문자로 표시합니다.
+2. 테이블명 : 객체명에 복수형 접미사(s)를 추가하고 첫 글자를 대무낮로 표시합니다. 예를 들어 클래스명이 MyCooky라면 테이블명은 My cookys가 됩니다. 이는 verbose_name_plural 메타 옵션으로 변경할 수 있습니다.
+3. 객체명 : models.py 파일에 정의한 모델 클래스 이름을 소문자와 공백으로 바꾼 것입니다. 예를 들어 MyCooky라면 my cooky가 됩니다. 이는 verbose_name 메타 옵션으로 지정할 수 있습니다.
+
 ## 2.4 개발 코딩하기 - URLconf
 
 ## 2.5 개발 코딩하기 - 뷰
