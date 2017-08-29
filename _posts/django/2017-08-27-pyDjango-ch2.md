@@ -411,6 +411,56 @@ Admin 사이트에서 보여주는 이름들은 영문 방식으로 표기되어
 
 ## 2.4 개발 코딩하기 - URLconf
 
+URLconf는 mysite/urls.py와 bookmark/urls.py 2개의 파일에 코딩할 수도 있지만, 간단한 앱이라서 하나의 파일에 코딩합니다. 하지만 가능하면 2개의 파일에 코딩하는 것을 추천합니다.
+
+- mysite/urls.py
+
+```python
+from django.conf.urls import url
+from django.contrib import admin
+
+from bookmark.views import BookmarkLV, BookmarkDV
+
+urlpatterns = [
+    url(r'^admin/', admin.site.urls),
+
+    # Class-based views for Bookmark app
+    url(r'^bookmark/$', BookmarkLV.as_view(), name='index'), # 1
+    url(r'^bookmark/(?P<pk>\d+)/$', BookmarkDV.as_view(), name='detail'),  # 2
+]
+```
+
+- 1 : URL /bookmark/ 요청을 처리할 뷰 클래스를 BookmarkLV로 지정합니다. URL 패턴의 이름은 'index'로 명명합니다.
+- 2 : URL /bookmark/숫자/ 요청을 처리할 뷰 클래스를 BookmarkDV로 지정합니다. URL 패턴의 이름은 'detail'으로 명명합니다.
+
+> #### admin.site.urls 재활용 방식
+URLconf를 작성 시 다른 곳에서 정의한 URLconf 를 가져와서 재활용하고자 할 때는 `include()` 함수를 사용합니다. 다만 Admin 사이트에 대한 URLconf인 admin.site.urls를 재활용할 때는 예외적으로 include() 함수를 사용하지 않아도 가능합니다.  
+따라서 다음 2 가지 방법이 모두 가능합니다.  
+- url(r'^admin/', admin.site.urls),
+- url(r'^admin/', include(admin.site.urls)),
+
+클래스형 뷰는 간단한 경우는 views.py 파일에 코딩할 필요 없이, URLconf에서 뷰 및 뷰 처리에 필요한 파라미터를 모두 지정할 수 있습니다. 이렇게 하면 views.py 파일을 작성하지 않아도 되는 장점이 있어서, 간단한 뷰의 경우에는 이 방법을 많이 사용합니다.  
+
+하지만 간단한 뷰라도 views.py 파일에 코딩할 것을 권장합니다. 뷰 로직은 URLconf가 아니라 views.py 파일에 작성하는 것이 향후 확장성이나 임포트 관계를 단순하게 유지하는 장점이 있습니다.
+
+참고로 다음과 같이 views.py를 작성하지 않고 urls.py 파일 하나만으로 작성할 수도 있습니다.
+
+```python
+from django.conf.urls import url
+from django.contrib import admin
+
+from django.views.generic import ListView, DetailView
+from bookmark.models import Bookmark
+
+urlpatterns = [
+    url(r'^admin/', admin.site.urls),
+
+    # Class-based views for Bookmark app
+    url(r'^bookmark/$', ListView.as_view(model=Bookmark), name='index'),
+    url(r'^bookmark/(?P<pk>\d+)/$', DetailView.as_view(model=Bookmark), name='detail'),
+]
+```
+
 ## 2.5 개발 코딩하기 - 뷰
 
 ## 2.6 개발 코딩하기 - 템플릿
