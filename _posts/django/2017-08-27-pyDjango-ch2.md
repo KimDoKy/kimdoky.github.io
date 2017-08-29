@@ -463,6 +463,35 @@ urlpatterns = [
 
 ## 2.5 개발 코딩하기 - 뷰
 
+URLconf에서 지정한 클래스형 뷰를 코딩합니다.  
+
+클래스형 뷰를 코딩할 때 가정 먼저 고려해야 할 사항은, 어떤 제네릭 뷰를 사용할 것인가입니다. 개발하고자 하는 애플리케이션의 로직을 분석해보고 가장 적합한 제네릭 뷰를 찾을 수 있어야 합니다.
+
+- bookmark/views.py
+
+```python
+from django.views.generic import ListView, DetailView # 1
+from bookmark.models import Bookmark # 2
+
+# Create your views here.
+
+# ListView
+class BookmarkLV(ListView): # 3
+    model = Bookmark
+
+# DetailView
+class BookmarkDV(DetailView): # 4
+    model = Bookmark
+```
+
+- 1 : 클래스형 제네릭 뷰를 사용하기 위해 ListView, DetailView 클래스를 임포트합니다.
+- 2 : 테이블 조회를 위해 모델 클래스를 임포트합니다.
+- 3 : BookmarkLV는 Bookmark 테이블의 레코드 리스트를 보여주기 위한 뷰로써, ListView 제네릭 뷰를 상속받았습니다.  
+그리고 명시적으로 지정하지 않아도 장고에서 디폴트로 알아서 2가지 속성을 지정해줍니다. 첫 번째는 컨텍스트 변수로 **Object_list** 를 사용하는 것이고, 두 번째는 템플릿 파일을 **모델명소문자_list.html** 형식의 이름으로 지정합니다. 그래서 템플릿 파일명은 bookmark_list.html 이 됩니다.
+- 4 : BookmarkDV는 Bookmark 테이블의 특정 레코드에 대한 상세 정보를 보여주기 위한 뷰로써, DetailView 제네릭 뷰를 상속받습니다.  
+그리고 명시적으로 지정하지 않아도 2가지 속성을 디폴트로 지정해 줍니다. 첫 번째는 컨텍스트 변수로 **object** 를 사용하는 것이고, 두 번째는 템플릿 파일을 **모델명소문자_detail.html** 형식의 이름으로 지정합니다. 그래서 템플릿 파일명은 bookmark_detail.html이 됩니다.  
+DetailView를 상속받는 경우는 특정 객체 하나를 컨텍스트 변수에 담아서 템플릿 시스템에 넘겨주면 됩니다. 만일 테이블에서 기본 키로 조회해서 특정 객테를 가져오는 경우에는 테이블명, 즉 모델 클래스명만 지정해주면 됩니다. 조회 시 사용할 기본 키 값은 URLconf에서 추출해 뷰로 넘어온 파라미터를 사용합니다.
+
 ## 2.6 개발 코딩하기 - 템플릿
 
 ### 2.6.1 bookmark_list.html 템플릿 작성하기
