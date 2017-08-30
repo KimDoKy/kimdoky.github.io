@@ -5,7 +5,6 @@ title: pyDjango - chap2. Bookmark 앱
 category: django
 tags: [ 'django' ]
 ---
-
 북마크(Bookmark) 앱을 개발합니다. '즐겨찾기' 정도로 이해하면 되는 기능입니다.  
 
 북마크 앱은 로직이 간단해서 웹 프로그래밍을 시작하기에 좋은 예제입니다. 북마크에 등록된 URL을 따라 다른 사이트로 이동하는 링크 기능을 구현해볼 수 있고, 북마크의 생성, 수정, 삭제 등의 기능을 어렵지 않게 작성해 볼 수 있기 때문입니다.  
@@ -494,12 +493,114 @@ DetailView를 상속받는 경우는 특정 객체 하나를 컨텍스트 변수
 
 ## 2.6 개발 코딩하기 - 템플릿
 
+Bookmark는 애플리케이션에 소속된 템플릿만 필요하므로, 앱 템플릿 디렉터리 하위에 템플릿 파일만 코딩합니다.
+
 ### 2.6.1 bookmark_list.html 템플릿 작성하기
 
+북마크 리스트를 화면에 보여주는 템플릿 파일을 코딩합니다.
+
+- bookmark/templates/bookmark/bookmark_list.html
+
+```html
+<!doctype html>
+<html>
+<head>
+    <title>Django Bookmark List</title>
+</head>
+<body>
+
+<div id="content">
+    <h1>Bookmark LIst</h1>
+
+    <ul>
+        {% raw %}{% for bookmark in object_list %}{% endraw %} # 1
+            <li><a href="{% raw %}{% url 'detail' bookmark.id %}{% endraw %}">{% raw %}{{ bookmark }}{% endraw %}</a></li> # 2
+        {% raw %}{% endfor %}{% endraw %}
+    </ul>
+</div>
+
+</body>
+</html>
+```
+- 1 : object_list 객체는 BookmarkLV 클래스형 뷰에서 넘겨주는 파라미터입니다.
+- 2 : object_list 객체의 내용을 순회하면서 title을 화면에 순서 없는 리스트로 보여줍니다. (<ul>,<li> 태그 역할). 또한 각 텍스트에 URL 링크를 연결합니다. URL 링크는 /bookmark/1/ 과 같은 형식입니다.
+
+여기서 유의할 점은 {% raw %}{{ bookmark }}{% endraw %} 템플릿 변수입니다. {% raw %}{{ bookmark }}{% endraw %} 템플릿 변수는 Bookmark 테이블의 특정 레코드 하나를 의미합니다. 즉 특정 Bookmark 객체를 의미하며, 해당 객체를 프린트하면, 해당 객체의 __str__() 메소드를 호출해서 그 결과를 출력합니다. models.py 파일에서 __str__() 메소드를 정의할 때, 다음처럼 그 객체의 title을 반환하도록 정의했습니다.
+
+```python
+def __str__(self):
+    return self.title
+```
+
+그래서 {% raw %}{{ bookmark }}{% endraw %} 템플릿 변수를 프린트하면 해당 객체의 title이 출력됩니다.
+
+`__str__()` 메소드의 의미를 더 확실히 알고 싶다면 아래처럼 코드를 수정해서 차이점을 확인해봅니다.
+
+```python
+def __str__(self):
+    return "%s %s" %(self.title, self.url)
+```
+그리고 다음 코드는 화면에 Bookmark 객체를 표시하고 해당 텍스트를 클릭하는 경우, `<a href>` 태그 기능에 의해 'detail' URL(/bookmark/1/ 형식)으로 웹 요청을 보낸다는 의미입니다. URL 패턴을 만들어주면 {% raw %}{% URL %}{% endraw %} 태그 기능은 자주 사용되기 때문에 확실히 이해하고 넘어가야 합니다.
+
+```
+<a href="{% raw %}{% url 'detail' bookmark.id %}"{{ bookmark }}{% endraw %}</a>
+```
+
+> #### {% raw %}`{% url %}`{% endraw %} 태그 기능  
+{% raw %}`{% url %}`{% endraw %} 템플릿 태그는 URL 패턴에서 URL 문자열을 추출하는 역할을 합니다.
+
+
 ### 2.6.2 bookmark_detail.html 템플릿 작성하기
+
+북마크 리스트에서 특정 북마크를 클릭하면, 해당 북마크에 대한 상세 정보를 보여주는 템플릿 파일을 코딩합니다.
+
+- bookmark/templates/bookmark/bookmark_detail.html
+
+```html
+<!doctype html>
+<html>
+<head>
+    <title>Django Bookmark Detail</title>
+</head>
+<body>
+
+<div id="content">
+
+    <h1>{% raw %}{{  object.title }}{% endraw %}</h1> # 1
+
+    <ul>
+        <li>URL: <a href="{% raw %}{{ object.url }}{% endraw %}">{% raw %}{{ object.url }}{% endraw %}</a></li> # 2
+    </ul>
+</div>
+</body>
+</html>
+```
+
+- 1 : 제목은 object.title로 지정합니다. object 객체는 BookmarkDV 클래스형 뷰에서 컨텍스트 변수로 넘겨주는 Bookmark 클래스의 특정 객체입니다.
+- 2 : {% raw %}{{ object.url }}{% endraw %} 템플릿 변수의 내용을 순서 없는 리스트로 보여줍니다. 또한 해당 텍스트에 URL 링크를 연결합니다. URL 링크는 {% raw %}{{ object.url }}{% endraw %} 템플릿 변수값이므로 http://www.google.com 과 유사합니다.
 
 ## 2.7 지금까지의 작업 확인하기
 
 ### 2.7.1 Admin에서 데이터 입력하기
 
+작업이 정상적으로 완료되었는지 확인하기 위해 데이터를 입력합니다.
+
+Bookmark 테이블에 입력할 데이터
+
+title | url
+---|---
+Google | http://www.google.com
+Daum | http://wwww.daum.net
+Naver | http://www.naver.com
+
 ### 2.7.2 브라우저로 확인하기
+
+`http://127.0.0.1:8000/bookmark/` 으로 접속합니다.
+
+북마크 앱의 첫 화면이 나타납니다. 정상적으로 동작하고 있음을 확인할 수 있습니다.
+
+![]({{site.url}}/img/post/python/django/book_2_7_2.png)
+
+각 항목을 클릭하여 상세 화면도 확인해봅니다.
+
+![]({{site.url}}/img/post/python/django/book_2_7_2_2.png)
