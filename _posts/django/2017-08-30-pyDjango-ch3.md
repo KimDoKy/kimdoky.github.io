@@ -176,3 +176,98 @@ python manage.py migrate
 models.py 파일에 테이블을 정의하고 이를 데이터베이스에 반영하는 명령을 실행했습니다. 또한 테이블을 Admin 사이트에 등록했습니다. Admin 사이트에서 데이터베이스에 테이블이 제대로 등록되었는지 쉽게 확인할 수 있습니다.
 
 ![]({{site.url}}/img/post/python/django/book_3_2_2.png)
+
+### 3.2.3 URLconf 코딩하기
+
+앞으로는 ROOT_URLCONF와 APP_URLCONF, 2개의 파일에 코딩합니다. 이번 블로그 앱도 mysite/urls.py와 blog/urls.py 2개의 파일에 코딩합니다.
+
+> #### ROOT_URLCONF vs APP_URLCONF
+ROOT_URLCONF와 APP_URLCONF는 이해를 돕기 위한 용어일뿐, 장고 공식 용어는 아닙니다. URLconf를 2계층으로 코딩하는 것이 확장성 측면에서 유리합니다.
+- ROOT_URLCONF : URL 패턴에서 보통 첫 단어는 애플리케이션을 식별하는 단어가 옵니다. 첫 단어를 인식하고 해당 애플리케이션의 urls.py 파일을 포함시키기(include) 위한 URLconf입니다. 프로젝트 디렉터리에 있는 urls.py 파일을 의미합니다.
+- APP_URLCONF : URL 패턴에서 애플리케이션을 식별하는 첫 단어를 제외한, 그 이후 단어들을 인식해서 해당 뷰를 매핑하기 위한 URLCONF입니다. 각 애플리케이션 디렉터리에 있는 urls.py 파일을 의미합니다.
+
+ROOT_URLCONF인 mysite/urls.py 파일을 코딩합니다.
+
+```python
+from django.conf.urls import url, include
+from django.contrib import admin
+
+# from bookmark.views import BookmarkLV, BookmarkDV # 1
+
+urlpatterns = [
+    url(r'^admin/', admin.site.urls),
+    url(r'^bookmark/', include('bookmark.urls', namespace='bookmark')), # 2
+    url(r'^blog/', include('blog/urls', namespace='blog')), # 3
+
+    # Class-based views for Bookmark app # 4
+    # url(r'^bookmark/$', BookmarkLV.as_view(), name='index'),
+    # url(r'^bookmark/(?P<pk>\d+)/$', BookmarkDV.as_view(), name='detail'),
+]
+```
+
+- 1 : APP_URLCONF으로 옮길 줄은 삭제(주석) 처리합니다.
+- 2 : 북마크 앱의 APP_URLCONF를 포함하고, 이름공간을 'bookmark'라고 지정합니다.
+- 3 : 블로그 앱의 APP_URLCONF를 포함하고, 이름공간을 'blog'라고 지정합니다.
+- 4 : APP_URLCONF으로 옮길 줄은 삭제(주석) 처리합니다.
+
+다음은 북마크 앱의 APP_URLCONF인 bookmark/urls.py 파일을 코딩합니다.
+
+```python
+from django.conf.urls import url
+from bookmark.views import BookmarkLV, BookmarkDV # 1
+
+urlpatterns = [
+    # Class-based views
+    url(r'^$', BookmarkLV.as_view(), name='index'), # 2
+    url(r'^(?P<pk>\d+)/$', BookmarkDV.as_view(), name='detail'), # 3
+]
+```
+
+- 1 : 뷰 모듈의 관련 클래스를 임포트합니다.
+- 2 : URL /bookmark/ 요청을 처리할 뷰 클래스를 지정합니다. URL 패턴의 이름은 이름공간을 포함해 'bookmark:index'가 됩니다.
+- 3 : URL /bookmark/숫자/ 요청을 처리할 뷰 클래스를 지정합니다. 숫자 자리에는 레코드의 기본 키가 들어갑니다. URL 패턴의 이름은 이름공간을 포함해 'bookmark:detail'이 됩니다.
+- URL 패턴의 이름이 변경되었으므로, 관련된 템플릿 파일도 변경해 줘야 합니다.
+
+블로그 앱의 APP_URLCONF인 blog/urls.py 파일을 코딩합니다. 날짜와 관련된 제네릭 뷰를 정의하고 있습니다.
+
+```python
+from django.conf.urls import url
+from blog.views import *
+
+urlpatterns = [
+    # ex: /
+    url(r'^$', PostLV.as_view(), name='index'), # 1
+
+    # ex: /post/ (same as /)
+    url(r'^post/$', PostLV.as_view(), name='post_list'), # 2
+
+    # ex: /post/ex/
+    url(r'^post/(?P<slug>[-\w]+)/$', PostDV.as_view(), name='post_detail'), # 3
+
+    # ex: /archive/
+    url(r'^archive/$', PostAV.as_view(), name='post_archive'), # 4
+
+    # ex: /2017/
+    url(r'^(?P<year>\d{4})/$', PostYAV.as_view(), name='post_year_archive'), # 5
+
+    # ex: /2017/nov/
+    url(r'^(?P<year>\d{4})/(?P<month>[a-z]{3}/$', PostMAV.as_view(), name='post_month_archive'), # 6
+
+    # ex: /2017/nov/10/
+    url(r'^(?P<year>\d{4})/(?P<month>[a-z]{3}/(?P<day>\d{1,2})/$', PostDAV.as_view(), name='post_day_archive'), # 7
+
+    # ex: /today/
+    url(r'^today/$', PostTAV.as_view(), name='post_today_archive'), # 8
+]
+```
+
+- 1 : URL /blog/ 요청을 처리할 뷰 클래스를 PostLV로 지정합니다. URL 패턴의 이름은 이름공간을 포함해 'blog:index'가 됩니다.
+- 2 : URL /blog/post/ 요청을 처리할 뷰 클래스를 PostLV로 지정합니다. URL 패턴의 이름은 이름공간을 포함해 'blog:detail'이 됩니다. PostLV 뷰 클래스는 /blog/와 /blog/post/ 2가지 요청을 모두 처리한다는 점을 유의해야 합니다.
+- 3 : URL /blog/영단어/ 요청을 처리할 뷰 클래스를 PostDV로 지정합니다. URL 패턴의 이름은 이름공간을 포함해 'blog:detail'가 됩니다.
+- 4 : URL /blog/archive/ 요청을 처리할 뷰 클래스를 PostAV로 지정합니다. URL 패턴의 이름은 이름공간을 포함해 'blog:archive'가 됩니다.
+- 5 : URL /blog/4자리숫자/ 요청을 처리할 뷰 클래스를 PostYAV로 지정합니다. URL 패턴의 이름은 이름공간을 포함해 'blog:post_year_archive'가 됩니다.
+- 6 : URL /blog/4자리숫자/3자리소문자/ 요청을 처리할 뷰 클래스를 PostMAV로 지정합니다. URL 패턴의 이름은 이름공간을 포함해 'blog:post_month_archive'가 됩니다.
+- 7 : URL /blog/4자리숫자/3자리소문자/1~2자리숫자/ 요청을 처리할 뷰 클래스를 PostDAV로 지정합니다. URL 패턴의 이름은 이름공간을 포함해 'blog:post_day_archive'가 됩니다.
+- 8 : URL /blog/today/ 요청을 처리할 뷰 클래스를 PostTAV로 지정합니다. URL 패턴의 이름은 이름공간을 포함해 'blog:post_today_archive'가 됩니다.
+
+### 3.2.4 뷰 코딩하기
