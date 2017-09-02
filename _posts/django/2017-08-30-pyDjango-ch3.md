@@ -389,3 +389,38 @@ get_absolute_url() 메소드는 모델 클래스의 메소드로 정의되어 �
 - `<a href="{% url 'blog:post_detail' post.slug %}">{{ post.title }}</a>`{% endraw %}
 
 #### post_detail.html
+
+포스트 내용을 보여주는 템플릿 파일을 코딩합니다.
+
+- blog/templates/blog/post_detail.html
+
+```python
+{% raw %}
+<h2>{{ object.title }}</h2>
+
+<p class="other_posts">
+    {% if object.get_previous_by_modify_date %} # 1
+    <a href="{{ object.get_previous_post.get_absolute_url }}" title="View previous post"> &laquo;--{{ object.get_previous_post }}</a> # 2
+    {% endif %}
+
+    {% if object.get_next_by_modify_date %} # 3
+    | <a href="{{ object.get_next_post.get_absolute_url }}" title="View next post">{{ object.get_next_post }}--&raquo;</a> # 4
+    {% endif %}
+</p>
+
+<p class="date">{{ object.modify_date|date:"j F Y" }}</p> # 5
+<br/>
+
+<div class="body">
+    {{ object.content|linebreaks }} # 6
+</div>
+{% endraw %}
+```
+
+- 1 : get_previous_by_modify_date 함수는 modify_date 컬럼 기준으로 이전 객체를 반환합니다. 즉, 변경 날짜가 현재 객체보다 오래된 객체가 있는지 확인합니다.
+- 2 : get_previous_post 함수는 이전 객체(포스트)를, get_previous_post.get_absolute_url 함수는 이전 객체를 지칭하는 URL 패턴을 반환합니다. 따라서 이 문장은 이전 객체의 문자열 텍스트를 출력하고 그 텍스트에 URL 링크를 연결합니다. URL 링크는 /blog/post/slug단어/ 같은 형식이 됩니다. `&laquo;` 는 HTML 특수문자(<<)를 의미합니다.
+- 3 : get_next_by_modify_date 함수는 modify_date 컬럼 기준으로 다음 객체를 반환합니다. 즉, 변경 날짜가 현재 객체 보다 최신 객체가 있는지 확인합니다.
+- 4 : get_next_post 함수는 다음 객체(포스트)를, get_next_post.get_absolute_url 함수는 다음 객체를 지칭하는 URL 패턴을 반환합니다. 따라서 이 문장은 다음 객체의 문자열 텍스트를 출력하고 그 텍스트에 URL 링크를 연결합니다. URL 링크는 /blog/post/slug단어/ 와 같은 형식이 됩니다.
+- 5 : 객체의 modify_date 속성값을 "j F Y" 포맷으로 출력합니다.(ex: 02 July 2017)
+- 6 : 포스트 객체의 내용(content 속성값)을 출력합니다. linebreaks 템플릿 필터는 \n(newline)을 인식할 수 있게 합니다.
+- 7 : 별도로 HTML 태그 지정이 없으면, 장고는 `<body>` 영역으로 간주합니다.
