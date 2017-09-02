@@ -459,3 +459,35 @@ get_absolute_url() 메소드는 모델 클래스의 메소드로 정의되어 �
 - 5 : 디폴트 컨텍스트 변수로 object_list와 latest 둘 다 가능하고, 여기에는 뷰에서 넘겨준 개체 리스트가 담겨 있습니다.
 - 6 : 순서 없는 리스트로 포스트 수정일과 제목을 출력하고, 그 사이에는 빈칸 3개가 있습니다. "Y-m-d" 포맷 문자열은 2017-09-02 형식이고, `&nbsp;`는 빈칸을 출력하는 HTML 특수문자입니다. 포스트 제목에는 get_absolute_url() 메소드를 사용해 해당 포스트를 지정하는 URL을 링크했습니다.
 {% endraw %}
+
+#### post_archive_year.html
+
+- blog/templates/blog/post_archive_year.html
+{% raw %}
+```python
+<h1>Post Archives for {{ year|date:"Y" }}</h1> # 1
+
+<ul>
+    {% for date in date_list %} # 2
+    <li style="display: inline;">
+        <a href="{% url 'blog:post_month_archive' year|date:'Y' date|date:'b' %}">{{ date|date:"F" }}</a></li> # 3
+    {% endfor %}
+</ul>
+<br/>
+
+<div>
+    <ul>
+        {% for post in object_list %} # 4
+        <li>{{ post.modify_date|date:"Y-m-d" }}&nbsp;&nbsp;&nbsp;
+            <a href="{{ post.get_absolute_url }}"><strong>{{ post.title }}</strong></a></li>
+        {% endfor %}
+    </ul>
+</div>
+```
+
+- 1 :  year 컨텍스트 변수는 해당 연도에 대한 datetime.date 타입의 객체입니다. "Y" 포맷 문자열은 2017 형식입니다.
+- 2 : date_list 컨텍스트 변수는 DateQuerySet 객체 리스트를 담고 있습니다. DateQuerySet 객체 리스트는 QuerySet 객체 리스트에서 날짜 정보만을 추출해 담고 있는 객체 리스트입니다. DateQuerySet에 들어 있는 객체는 datetime.date 타입의 객체입니다.
+- 3 : 월 메뉴는 "F", 즉 July 형식의 텍스트로, 해당 연월에 생성 또는 수정된(modify_date) 포스트를 보여주는 URL이 링크되어 있습니다.
+- 4 : latest 컨텍스트 변수는 ArchiveIndexView에서만 정의된 변수이므로, 여기서는 사용할 수 없습니다.
+
+{% endraw %}
