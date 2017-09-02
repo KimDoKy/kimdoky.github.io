@@ -91,7 +91,7 @@ INSTALLED_APPS = [
 
 ```python
 from django.db import models
-from django.core.urlresolvers import resolve # 1
+from django.core.urlresolvers import reverse # 1
 
 # Create your models here.
 class Post(models.Model):
@@ -112,7 +112,7 @@ class Post(models.Model):
         return self.title
 
     def get_absolute_url(self): # 9
-        return reversed('blog:post_detail', args=(self.slug,))
+        return reverse('blog:post_detail', args=(self.slug,))
 
     def get_previous_post(self): # 10
         return self.get_previous_by_modify_date()
@@ -121,7 +121,7 @@ class Post(models.Model):
         return self.get_next_by_modify_date()
 ```
 
-- 1 : `reversed()` 함수를 사용하기 위해 임포트합니다. reversed() 함수는 URL 패턴을 만들어주는 장고의 내장 함수입니다.
+- 1 : `reverse()` 함수를 사용하기 위해 임포트합니다. reverse() 함수는 URL 패턴을 만들어주는 장고의 내장 함수입니다.
 - 2 : title 컬럼에 대한 레이블은 'TITLE'입니다. 레이블은 폼 화면에 나타나는 문구로, Admin 사이트에서 확인할 수 있습니다.
 - 3 : slug 컬럼은 제목의 별칭입니다. SlugField에 Unique 옵션을 추가해 특정 포스트를 검색시 기본 키 대신에 사용됩니다. allow_unicode 옵션을 추가하면 한글 처리가 가능합니다. help_text는 해당 컬럼을 설명해주는 문구로 폼 화면에 나타납니다. Admin 사이트에서 확인이 가능합니다.
 > #### 슬러그란?  
@@ -288,7 +288,7 @@ from blog.models import Post
 #-- ListView
 class PostLV(ListView): # 1
     model = Post # 2
-    template_name = 'blog/post_all_html' # 3
+    template_name = 'blog/post_all.html' # 3
     context_object_name = 'posts' # 4
     paginate_by = 2 # 5
 
@@ -540,3 +540,22 @@ get_absolute_url() 메소드는 모델 클래스의 메소드로 정의되어 �
 ## 3.3 지금까지의 작업 확인하기
 
 ### 3.3.1 Admin에서 데이터 입력하기
+
+![]({{site.url}}/img/post/python/django/book_3_3_1.png)
+
+Admin 접속 후 테스트를 위한 더미 데이터를 입력합니다.
+
+데이터 입력 화면에서 [SLUG] 필드는 [TITLE] 필드로부터 자동으로 채워집니다. 이런 특징은 admin.py 파일에 prepopulated_fields 속성으로 정의됩니다. 필드에 대한 도움말 문구는(help_text)도 회색으로 표시되었습니다. 또한 models.py 파일에서 모델 클래스의 필드를 정의할 때, 첫 번째 인자인 필드의 레이블이 어떤 모습으로 표현되는지 정의할 수 있습니다. 레이블을 'contents' 라고 했다면 첫 글자를 대문자로 적용해서 Admin 화면에는 'Contents'라고 표시될 것입니다.
+
+![]({{site.url}}/img/post/python/django/book_3_3_2.png)
+
+create_date 및 modify_date 필드는 auto_now_add 및 auto_now 속성이므로, 장고에서 자동으로 채워주고 Add 화면에는 나타나지 않습니다.
+
+뷰에서 한 페이지에 paginate_by 속성을 2개로 지정했으므로, 페이징 기능을 확인하기 위해 3개 이상의 포스트를 입력하세요.
+
+### 3.3.2 브라우저로 확인하기
+
+```
+http://127.0.0.1:8000/blog
+```
+블로그 앱이 정상적으로 동작하고 있는 것을 확인할 수 있습니다.
