@@ -197,7 +197,7 @@ from django.contrib import admin
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^bookmark/', include('bookmark.urls', namespace='bookmark')), # 2
-    url(r'^blog/', include('blog/urls', namespace='blog')), # 3
+    url(r'^blog/', include('blog.urls', namespace='blog')), # 3
 
     # Class-based views for Bookmark app # 4
     # url(r'^bookmark/$', BookmarkLV.as_view(), name='index'),
@@ -251,10 +251,10 @@ urlpatterns = [
     url(r'^(?P<year>\d{4})/$', PostYAV.as_view(), name='post_year_archive'), # 5
 
     # ex: /2017/nov/
-    url(r'^(?P<year>\d{4})/(?P<month>[a-z]{3}/$', PostMAV.as_view(), name='post_month_archive'), # 6
+    url(r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/$', PostMAV.as_view(), name='post_month_archive'), # 6
 
     # ex: /2017/nov/10/
-    url(r'^(?P<year>\d{4})/(?P<month>[a-z]{3}/(?P<day>\d{1,2})/$', PostDAV.as_view(), name='post_day_archive'), # 7
+    url(r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\d{1,2})/$', PostDAV.as_view(), name='post_day_archive'), # 7
 
     # ex: /today/
     url(r'^today/$', PostTAV.as_view(), name='post_today_archive'), # 8
@@ -536,3 +536,7 @@ get_absolute_url() 메소드는 모델 클래스의 메소드로 정의되어 �
 {% endraw %}
 
 참고로 TodayArchiveView와 DayArchiveView 제네릭 뷰는 디폴트 템플릿 파일명이 동일하므로, 별도로 TodayArchiveView에 대한 템플릿 파일은 작성하지 않아도 됩니다. 하지만 이 2개의 탬플릿 파일을 구분하고 싶다면, 어느 하나의 제네릭 뷰에서 template_name 속성을 다른 이름으로 지정해주면 됩니다.
+
+## 3.3 지금까지의 작업 확인하기
+
+### 3.3.1 Admin에서 데이터 입력하기
