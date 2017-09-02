@@ -491,3 +491,24 @@ get_absolute_url() 메소드는 모델 클래스의 메소드로 정의되어 �
 - 4 : latest 컨텍스트 변수는 ArchiveIndexView에서만 정의된 변수이므로, 여기서는 사용할 수 없습니다.
 
 {% endraw %}
+
+#### post_archive_month.html
+
+- blog/templates/blog/post_archive_month.html
+{% raw %}
+```python
+<h1>POST Archives for {{ month|date:"N, Y" }}</h1> # 1
+
+<div>
+    <ul>
+        {% for post in object_list %}
+        <li>{{ post.modify_date|date:"Y-m-d" }}&nbsp;&nbsp;&nbsp;
+            <a href="{{ post.get_absolute_url }}"><strong>{{ post.title }}</strong></a></li>
+        {% endfor %}
+    </ul>
+</div>
+```
+
+- 1 : month 컨텍스트 변수는 해당 월에 대한 datetime.date 타입의 객체입니다. "N, Y" 포맷 문자열은 May, 2017 형식입니다.
+
+{% endraw %}
