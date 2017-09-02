@@ -512,3 +512,27 @@ get_absolute_url() 메소드는 모델 클래스의 메소드로 정의되어 �
 - 1 : month 컨텍스트 변수는 해당 월에 대한 datetime.date 타입의 객체입니다. "N, Y" 포맷 문자열은 May, 2017 형식입니다.
 
 {% endraw %}
+
+#### post_archive_day.html
+
+이번 템플릿 파일은 /blog/2017/may/02/ 와 같이 연/월/일이 주어진 URL 요청에 대해 해당 날짜에 생성 또는 수정된 포스트 리스트를 보여줍니다.
+
+- blog/templates/blog/post_archive_day.html
+{% raw %}
+```python
+<h1>Post Archives for {{ day|date:"N d, Y" }}</h1 # 1
+
+<div>
+    <ul>
+        {% for post in object_list %}
+        <li>{{ post.modify_date|date:"Y-m-d" }}&nbsp;&nbsp;&nbsp;
+            <a href="{{ post.get_absolute_url }}"><strong>{{ post.title }}</strong></a></li>
+        {% endfor %}
+    </ul>
+</div>
+```
+
+- 1 : day 컨텍스트 변수는 해당 날짜에 대한 datetime.date 타입의 객체입니다. "N d, Y" 포맷 문자열은 May 02, 2017 형식입니다.
+{% endraw %}
+
+참고로 TodayArchiveView와 DayArchiveView 제네릭 뷰는 디폴트 템플릿 파일명이 동일하므로, 별도로 TodayArchiveView에 대한 템플릿 파일은 작성하지 않아도 됩니다. 하지만 이 2개의 탬플릿 파일을 구분하고 싶다면, 어느 하나의 제네릭 뷰에서 template_name 속성을 다른 이름으로 지정해주면 됩니다.
