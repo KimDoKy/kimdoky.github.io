@@ -336,3 +336,56 @@ class PostTAV(TodayArchiveView): # 13
 페이징 기능이나 날짜 기반 제네릭 뷰를 직접 코딩하기는 쉽지 않습니다. 이러한 복잡한 로직을 장고에서 모두 처리하고, 개발자는 단 몇 줄의 코딩으로 완료할 수 있습니다. 코딩 과정에서 버그 가능성도 크게 줄어듭니다. 이것이 장고 제네릭 뷰의 큰 장점입니다.
 
 ### 3.2.5 템플릿 코딩하기
+
+블로그 앱의 포스트 리스트 및 포스트 상세 내용을 화면에 보여주는 템플릿 파일을 코딩합니다.
+
+#### post_all.html
+
+post_all.html은 포스트 리스트를 보여줍니다.
+
+- blog/templates/blog/post_all.html
+
+```python
+<h1>Blog List</h1>
+{% raw %}
+{% for post in posts %} # 1
+    <h2><a href="{{ post.get_absolute_url  }}">{{ post.title }}</a></h2> # 2
+    {{ post.modify_date|date:"N d, Y" }} # 3
+    <p>{{ post.description }}</p> # 4
+{% endfor %}
+
+<br/>
+
+<div>
+    <span> # 5
+        {% if page_obj.has_previous %} # 6
+            <a href="?page={{ page_obj.previous_page_number }}">PreviousPage</a> # 7
+        {% endif %}
+
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} # 8
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">NextPage</a> # 9
+        {% endif %}{% endraw %}
+    </span>
+</div>
+```
+
+- 1 : posts 객체는 PostLV 클래스 뷰에서 넘겨주는 컨텍스트 변수로써, Post 객체 리스트가 담겨 있습니다. posts 객체의 내용을 순화하면서 Post 객체의 title, modify_date, description 속성을 출력합니다.
+- 2 : 객체 title을 <h2> 폰트 크기로 출력합니다. 또한 title 텍스트에 URL 링크를 연결합니다. URL 링크는 개체의 get_absolute_url() 메소드를 호출해 구하는데, /blog/post/slug단어/ 와 같은 형식이 될 것입니다.
+- 3 : 다음 줄에 객체의 modify_date 속성값을 "N d, Y" 포맷으로 출력합니다.(ex: July 02, 2017)
+- 4 : 다음 줄에 객체의 description 속성값을 출력합니다.
+- 5 : <span> 태그 내의 요소들을 같은 줄에 배치됩니다. 페이징 기능을 위한 줄입니다.
+- 6 : page_obj는 장소의 Page 객체가 들어 있는 컨텍스트 변수입니다. 현재 페이지를 기준으로 이전 페이지가 있는지 확인합니다.
+- 7 : page_obj.previous_page_number는 이전 페이지의 번호입니다. PreviousPage라는 텍스트를 출력하고, 이 텍스트에 URL링크를 연결합니다. URL 링크는 ?page=3 와 같은 형식입니다.
+- 8 : page_obj.number는 현재 페이지 번호, page_obj.paginator.num_pages는 총 페이지 개수를 의미합니다.
+- 9 : page_obj.next_page_number는 다음 페이지의 번호입니다. NextPage라는 텍스트를 출력하고, 이 텍스트에 URL 링크를 연결합니다. URL 링크는 ?page=5 와 같은 형식입니다.
+
+> #### 템플릿에서 URL 추출 함수  
+템플릿 파일에서 URL을 추출하는 문법은 2가지가 있습니다. **get_absolute_url()** 메소드를 호출하는 방법과 {% raw %}**{% url %}**{% endraw %} 템플릿 태그를 사용하는 방법입니다. 두 가지 모두 URL 패턴명을 이용한다는 점을 동일합니다. {% raw %}{% url %}{% endraw %} 태그는 직접 태그의 인자로 URL 패턴명을 사용하는 반면, get_absolute_url() 메소드에서는 간접적으로 URL 패턴명을 사용합니다.  
+get_absolute_url() 메소드는 모델 클래스의 메소드로 정의되어 있어야 사용 가능합니다. 이 메소드를 정의할 때 reverse() 함수를 사용하고, reverse() 함수의 인자로 URL 패턴명을 사용하고 있습니다. 이 사항은 models.py 파일에서 확인 할 수 있습니다.  
+참고로 아래 두 문장은 동일한 문장으로, 어느 문장을 사용해도 무방합니다.  
+- `{% raw %}<a href='{{ post.get_absolute_url }}'>{{ post.title }}</a>`  
+- `<a href="{% url 'blog:post_detail' post.slug %}">{{ post.title }}</a>`{% endraw %}
+
+#### post_detail.html
