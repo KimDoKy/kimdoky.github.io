@@ -559,3 +559,32 @@ create_date 및 modify_date 필드는 auto_now_add 및 auto_now 속성이므로,
 http://127.0.0.1:8000/blog
 ```
 블로그 앱이 정상적으로 동작하고 있는 것을 확인할 수 있습니다.
+
+![]({{site.url}}/img/post/python/django/book_3_3_3.png)
+블로그 앱의 첫 화면입니다.  
+
+각 링크를 클리갛여 페이지 이동 및 포스트 이동 기능도 확인해 봅니다. 최종적으로 URL 설계에서 정의한 URL 요청 처리가 모두 정상이어야 합니다.
+
+![]({{site.url}}/img/post/python/django/book_3_3_4.png)
+페이지 이동 화면입니다.
+
+![]({{site.url}}/img/post/python/django/book_3_3_5.png)
+포스트 상세 화면입니다.
+
+![]({{site.url}}/img/post/python/django/book_3_3_6.png)
+포스트 이동 화면입니다.
+
+![]({{site.url}}/img/post/python/django/book_3_3_7.png)
+아카이브 화면입니다. 작성한 해(year)를 수정하여 동작 확인을 하였습니다.
+
+![]({{site.url}}/img/post/python/django/book_3_3_8.png)
+2017년도 아카이브 화면입니다.
+
+![]({{site.url}}/img/post/python/django/book_3_3_9.png)
+2017.09 아카이브 화면입니다.
+
+![]({{site.url}}/img/post/python/django/book_3_3_10.png)
+2017.09.02 아카이브 화면입니다.
+
+![]({{site.url}}/img/post/python/django/book_3_3_11.png)
+오늘(Today) 아카이브 화면입니다.
