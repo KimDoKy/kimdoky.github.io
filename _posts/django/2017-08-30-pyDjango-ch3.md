@@ -424,3 +424,38 @@ get_absolute_url() 메소드는 모델 클래스의 메소드로 정의되어 �
 - 5 : 객체의 modify_date 속성값을 "j F Y" 포맷으로 출력합니다.(ex: 02 July 2017)
 - 6 : 포스트 객체의 내용(content 속성값)을 출력합니다. linebreaks 템플릿 필터는 \n(newline)을 인식할 수 있게 합니다.
 - 7 : 별도로 HTML 태그 지정이 없으면, 장고는 `<body>` 영역으로 간주합니다.
+
+#### post_archive.html
+
+/blog/archive/ URL 요청에 대해 포스트 리스트를 날짜별로 구분해서 보여줍니다.  
+
+- blog/templates/blog/post_archive.html
+{% raw %}
+```python
+<h1>Post Archives until {% now "N d, Y" %}</h1> # 1
+<ul>
+    {% for date in date_list %} # 2
+    <li style="display: inline;"> # 3
+        <a href="{% url 'blog:post_year_archive' date|date:'Y' %}">Year-{{ date|date:"Y" }}</a></li> # 4
+    {% endfor %}
+</ul>
+<br/>
+
+
+<div>
+    <ul> # 4
+        {% for post in object_list %} # 5
+        <li>{{  post.modify_date|date:"Y-m-d" }}&nbsp;&nbsp;&nbsp; # 6
+            <a href="{{ post.get_absolute_url }}"><strong>{{ post.title }}</strong></a></li>
+        {% endfor %}
+    </ul>
+</div>
+```
+
+- 1 : {% now %} 템플릿 태그는 현재의 날짜와 시간을 원하는 포맷으로 출력합니다. 포맷 문자열을 인자로 받습니다. "N d, Y" 포맷 문자열은 July 02, 2017 형식입니다.
+- 2 : date_list 컨텍스트 변수는 DateQuerySet 객체 리스트를 담고 있습니다. DateQuerySet 객체 리스트는 QuerySet 객체 리스트에서 날짜 정보만 추출해 담고 있는 객체 리스트입니다. DateQuerySet에 들어있는 객체는 datetime.date 타입의 객체입니다.
+- 3 : 다음 줄은 연도 메뉴를 한 줄에 보여주기 위해 `<li>` 스타일을 inline 으로 지정했습니다.
+- 4 : 연도 메뉴는 Year-YYYY 형식의 텍스트로, YYYY 연도에 작성된, 정확하게는 생성되거나 수정된(modify_date 컬럼이 기준) 포스트를 보여주는 URL이 링크되어 있습니다.
+- 5 : 디폴트 컨텍스트 변수로 object_list와 latest 둘 다 가능하고, 여기에는 뷰에서 넘겨준 개체 리스트가 담겨 있습니다.
+- 6 : 순서 없는 리스트로 포스트 수정일과 제목을 출력하고, 그 사이에는 빈칸 3개가 있습니다. "Y-m-d" 포맷 문자열은 2017-09-02 형식이고, `&nbsp;`는 빈칸을 출력하는 HTML 특수문자입니다. 포스트 제목에는 get_absolute_url() 메소드를 사용해 해당 포스트를 지정하는 URL을 링크했습니다.
+{% endraw %}
