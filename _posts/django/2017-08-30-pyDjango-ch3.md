@@ -271,3 +271,68 @@ urlpatterns = [
 - 8 : URL /blog/today/ 요청을 처리할 뷰 클래스를 PostTAV로 지정합니다. URL 패턴의 이름은 이름공간을 포함해 'blog:post_today_archive'가 됩니다.
 
 ### 3.2.4 뷰 코딩하기
+
+URLconf에서 지정한 클래스형 제네릭 뷰를 코딩합니다. 블로그 앱은 기본적인 ListView, DetailView 외에도 날짜를 기준으로 연도별, 월별, 일별 포스트를 찾아주는 날짜 제네릭 뷰를 사용하고 있다는 점입니다. 대부분의 블로그 앱에서 아카이브 메뉴를 제공하는 기능입니다.  
+
+- blog/views.py
+
+```python
+from django.views.generic import ListView, DetailView
+from django.views.generic.dates import ArchiveIndexView, YearArchiveView, MonthArchiveView
+from django.views.generic.dates import DayArchiveView, TodayArchiveView
+
+from blog.models import Post
+
+# Create your views here.
+
+#-- ListView
+class PostLV(ListView): # 1
+    model = Post # 2
+    template_name = 'blog/post_all_html' # 3
+    context_object_name = 'posts' # 4
+    paginate_by = 2 # 5
+
+#-- DetailView
+class PostDV(DetailView): # 6
+    model = Post # 7
+
+#-- ArchiveView
+class PostAV(ArchiveIndexView): # 7
+    model = Post
+    date_field = 'modify_date' # 8
+
+class PostYAV(YearArchiveView):  # 9
+    model = Post
+    date_field = 'modify_date'
+    make_object_list = True # 10
+
+class PostMAV(MonthArchiveView): # 11
+    model = Post
+    date_field = 'modify_date'
+
+class PostDAV(DayArchiveView): # 12
+    model = Post
+    date_field = 'modify_date'
+
+class PostTAV(TodayArchiveView): # 13
+    model = Post
+    date_field = 'modify_date'
+```
+
+- 1 : ListView 제네릭 뷰를 상속받아 PostLV 클래스형 뷰를 정의합니다. ListView 제네릭 뷰는 테이블로부터 객체 리스트를 가져와 그 리스트를 출력합니다.
+- 2 : PostLV 클래스의 대상 테이블은 Post 테이블입니다.
+- 3 : 템플릿 파일은 'blog/post_all.html'로 지정합니다. 만일 지정하지 않으면, 디폴트 템플릿 파일명은 'blog/post_list.html'이 됩니다.
+- 4 : 템플릿 파일로 넘겨주는 객체 리스트에 대한 컨텍스트 변수명으로 'posts'로 지정합니다. 이렇게 별도로 지정하더라도 디폴트 컨텍스트 변수명인 'object_list' 역시 사용할 수 있습니다.
+- 5 : 한 페이지에 보여주는 객체 리스트의 숫자는 2 입니다. 이렇게 paginate_by 속성을 정의하는 것만으로도 장고가 제공하는 페이징 기능을 사용할 수 있습니다. 페이징 기능을 활성화하면 객체 리스트 하단에 페이지를 이동할 수 있는 버튼을 만들 수 있습니다.
+- 6 : DetailView 제네릭 뷰를 상속받아 PostDV 클래스형 뷰를 정의합니다. DetailView 제네릭 뷰는 테이블로부터 특정 객체를 가져와 그 객체의 상세 정보를 출력합니다. 테이블에서 특정 객체를 조뢰하기 위한 키를 기본 키 대신 slug 속성을 사용하고 있습니다. 이 slug 파라미터는 URLconf 에서 추출해 뷰로 넘겨줍니다.
+- 7 : ArchiveIndexView 제네릭 뷰를 상속받아 PostAV 클래스형 뷰를 정의합니다. ArchiveIndexView 제네릭 뷰는 테이블로부터 객체 리스트를 가져와, 날짜 필드를 기준으로 최신 객체를 먼저 출력합니다.
+- 8 : 기준이 되는 날짜 필드는 'modify_date' 컬럼을 사용합니다. 즉, 변경 날짜가 최근인 포스트를 먼저 출력합니다.
+- 9 : YearArchiveView  제네릭 뷰를 상속받아 PostYAV 클래스형 뷰를 정의합니다. YearArchiveView 제네릭뷰는 테이블로부터 날짜 필드의 연도를 기준으로 객체 리스트를 가져와, 그 객체들이 속한 월을 리스트로 출력합니다. 날짜 필드의 연도 파라미터는 URLconf에서 추출해 뷰로 넘겨줍니다.
+- 10 : make_object_list 속성이 True 이면 해당 년도에 해당하는 객체의 리스트를 만들어서 템플릿에 넘겨줍니다. 즉 템플릿 파일에서 object_list 컨텍스트 변수를 사용할 수 있습니다. 디폴트는 False 입니다.
+- 11 : MonthArchiveView 제네릭 뷰를 상속받아 PostMAV 클래스형 뷰를 정의합니다. MonthArchiveView 제네릭 뷰는 테이블로부터 날짜 필드의 연월을 기준으로 객체 리스트를 가져와, 그 리스트를 출력합니다. 날짜 필드의 연도 및 월 파라미터는 URLconf에서 추출해 뷰로 넘겨줍니다.
+- 12 : DayArchiveView 제네릭 뷰를 상속받아 PostDAV 클래스형 뷰를 정의합니다. DayArchiveView 제네릭 뷰는 테이블로부터 날짜 필드의 연월일을 기준으로 객체 리스트를 가져와, 그 리스트를 출려합니다. 날짜 필드의 연도, 월, 일 파라미터는 URLconf에서 추출해 뷰로 넘겨줍니다.
+- 13 : TodayArchiveView 제네릭 뷰를 상속받아 PostTAV 클래스형 뷰를 정의합니다. TodayArchiveView 제네릭 뷰는 테이블로부터 날짜 필드가 오늘인 객체 리스트를 가져와, 그 리스트를 출력합니다. TodayArchiveView는 오늘 날짜를 기준 연월일로 지정한다는 점 이외에는 DayArchiveView와 동일합니다.
+
+페이징 기능이나 날짜 기반 제네릭 뷰를 직접 코딩하기는 쉽지 않습니다. 이러한 복잡한 로직을 장고에서 모두 처리하고, 개발자는 단 몇 줄의 코딩으로 완료할 수 있습니다. 코딩 과정에서 버그 가능성도 크게 줄어듭니다. 이것이 장고 제네릭 뷰의 큰 장점입니다.
+
+### 3.2.5 템플릿 코딩하기
