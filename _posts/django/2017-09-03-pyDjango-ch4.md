@@ -90,6 +90,91 @@ class HomeView(TemplateView): # 1
 
 
 ### 4.2.5 템플릿 코딩하기 - base.html
+템플릿 상속은 보통 3단계로 구성합니다. 여기서는 복자반 편이 아니므로 2단계로 구성합니다. 최상위 템플릿은 사이트 전체의 룩앤필을 정의하는 것으로 보통은 파일명을 base.html로 합니다. 파일의 위치는 배결 애플리케이션 템플릿이 아니라 공통 템플릿이므로, 프로젝트 템플릿 디렉터리에 생성합니다.  
+
+프로젝트 템플릿 디렉터리는 settings.py 파일에 다음과 같이 정의해 두었습니다.
+
+```python
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        ...
+```
+
+base.html에 모든 페이지에서 공통을 사용하는 제목과 메뉴, 이런 페이지 구성요소들을 배치하는 내용으로 코딩합니다.
+
+![]({{site.url}}/img/post/python/django/book_4_2.png)
+
+- templates/base.html
+{% raw %}
+```html
+<!doctype html> # 1
+<html lang="ko">
+<head>
+    <title>{% block title %} Django Web Programming {% endblock %}</title>
+    {% load staticfiles %} # 2
+    <link rel="stylesheet" href="{% static "css/base.css" %}" type="text/css"> # 3
+    <link rel="stylesheet" href="{% block extrastyle %}{% endblock %}">
+</head>
+
+<body>
+<div id="header"> # 4
+    <h2 class="maintitle">Easy&amp;Fast Django Web Programming</h2>
+    <h4 class="welcome">Welcome, <a href="#">makingfunk</a>
+        <a href="#">Change Password</a>
+        <a href="#">Logout</a>
+    </h4>
+</div>
+
+<div id="menu"> # 5
+    <li><a href="#">Home</a></li>
+    <li><a href="#">Bookmark</a></li>
+    <li><a href="#">Blog</a></li>
+    <li><a href="#">Photo</a></li>
+    <li><a href="#">Add&bigtriangledown;</a>
+        <ul>
+            <li><a href="#">Bookmark</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Photo</a></li>
+        </ul>
+    </li>
+    <li><a href="#">Change&bigtriangledown;</a>
+        <ul>
+            <li><a href="#">Bookmark</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Photo</a></li>
+        </ul>
+    </li>
+    <li><a href="#">Archive</a></li>
+    <li><a href="#">Search</a></li>
+    <li><a href="#">Admin</a></li>
+</div>
+{% block content %}{% endblock %} # 6
+{% block footer %}{% endblock %} # 7
+</body>
+</html>
+```
+
+- 1 : HTML5 스팩을 준수하는 파일임을 나타냅니다.
+- 2 : {% static %} 템플릿 태그를 사용하기 위해서는 {% load staticfiles %} 문장으로 커스텀 태그 파일 staticfiles 를 로딩해야 합니다.
+- 3 : 이 파일에 스타일을 적용하기 위해 css/base.css 파일을 코딩합니다.
+- 4 : header 영역에는 사이트의 제목과 로그인 관련 기능이 들어 있습니다. makingfunk 자리는 로그인 아이디가 채워지는 자리입니다. `&amp;`는 HTML 특수문자(&)를 의미합니다.
+- 5 : menu 영역에는 사이트의 메뉴가 위치합니다. `<ul><li>`는 가로 메뉴와 드롭다운 메뉴를 구성합니다.
+- 6 : content 영역은 빈칸으로 하고, 각 앱에서 만드는 페이지로 채워집니다. 이 영역은 {% block %} 태그를 사용함으로써, 실제 내용은 전적으로 하위 템플릿 파일에서 결정됩니다.
+- 7 : footer 영역은 사이트의 꼬리말이 위치합니다. 이 영역 역시 {% block %} 태그를 사용함으로써, 실제 내용은 하위 템플릿에서 결정됩니다.
+
+이번 base.html 템플릿 파일에는 하위 템플릿 파일에서 재정의 할 수 있도록 다음 4가지 블록을 정의하고 있습니다.
+
+- **{% block title %}** : 하위 페이지마다 페이지 제목을 다르게 정의할 수 있습니다.
+- **{% block extrastyle %}** : base.html 에서 사용하는 base.css 파일 이외에, 하위 페이지에서 필요한 CSS 파일을 정의할 수 있습니다.
+- **{% block content %}** : 하위 페이지마다 실제 본문 내용을 정의할 수 있습니다.
+- ** {% block footer %}** : 하위 페이지마다 꼬리말을 다르게 정의할 수 있습니다.
+
+> #### {% block %} 정의 참고사항
+`{% block content %}{% endblock %}`을 `<div id="content">{% block content %}{% endblock %}</div>` 이라고 코딩한다면?  
+2 가지 방법 모두 사용 가능합니다. `<div>` 태그를 상위에 둘 것인지 하위에 둘 것인지의 차이인데, 이는 개발자의 취향에 따라 선택하면 됩니다.
+{% endraw %}
 
 ### 4.2.6 스타일시트 코딩하기 - base.css
 
