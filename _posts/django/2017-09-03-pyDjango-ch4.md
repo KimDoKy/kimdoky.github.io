@@ -314,14 +314,103 @@ td, th {
 }
 ```
 
-HoveView 클래스 뷰에서 template_name 을 home.html으로 지정했기 때문에 home.html 파일이 존재해야 합니다.
+HomeView 클래스 뷰에서 template_name 을 home.html으로 지정했기 때문에 home.html 파일이 존재해야 합니다.
 
 ### 4.2.7 템플릿 코딩하기 - home.html
 
 #### 테스트용 home.html 작성
+완전한 home.html을 구현하기 위해서는 home.html뿐만 아니라 home.css 파일도 코딩해야 합니다. 하지만 앞에서 구현한 파일들이 정상으로 동작하는지 확인하기 위해 간단한 임시 home.html을 먼저 만듭니다.  
+
+home.html 템플릿도 개별 애플리케이션 템플릿이 아니므로, base.html과 동일하게 프로젝트 템플릿 디렉터리에 생성합니다.
+
+- templates/home.html
+{% raw %}
+```html
+{% extends "base.html" %}
+
+{% block title %}home.html{% endblock %} # 1
+
+{% block content %} # 2
+<div id="content"> # 3
+This is CONTENT area.
+</div>
+{% endblock content %}
+
+{% block footer %} # 4
+<div id="footer">
+    This is FOOTER area.
+</div>
+{% endblock footer %}
+```
+{% endraw %}
+- 1 : title 블록을 재정의합니다. 즉, 페이지 title을 home.html이라고 정의합니다.
+- 2 : content 블록을 재정의합니다.
+- 3 : `<div>` 태그로 content 영역을 정의합니다. 참고로 이 영역에 대한 스타일은 base.css에서 정의하고 있습니다.
+- 4 : footer 블록을 재정의합니다.
+
+![]({{site.url}}/img/post/python/django/book_4_3.png)
+
+페이지의 제목과 우측의 로그인 관련 항목들, 메뉴 항목들이 정상 출력되고 있습니다. 메뉴의 Add, Change 메뉴의 드롭다운 메뉴도 제대로 출력되는지 확인해야합니다.
 
 #### home.html 완성
 
+- templates/home.html
+{% raw %}
+```html
+{% extends "base.html" %}
+
+{% block title %}home.html{% endblock %}
+
+{% load staticfiles %} # 1
+{% block extrastyle %}{% static "css/home.css" %}{% endblock %} # 2
+
+{% block content %}
+<div id="content"_home>
+    <div id="homeimg"> # 3
+        <a href="/"><img src="{% static 'img/django-actor-big.jpg' %}" style="height:256px;"/></a>
+        <h4 style="margin: 0;">This is Django powered web site.</h4>
+    </div>
+
+    <hr style="margin: 5px 0;">
+
+    <h2>Select Application</h2>
+
+    <table id="applist"> # 4
+        <tr>
+            <td><b><i><a href="#">Bookmark</a></i></b></td>
+            <td>You can write your own post and share to others. Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo</td>
+            <td class="Edit"><i><a href="#">Add</a></i></td>
+            <td class="Edit"><i><a href="#">Change</a></i></td>
+        </tr>
+        <tr>
+            <td><b><i><a href="#">Blog</a></i></b></td>
+            <td>You can write your own post and share to others. Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo</td>
+            <td class="Edit"><i><a href="#">Add</a></i></td>
+            <td class="Edit"><i><a href="#">Change</a></i></td>
+        </tr>
+        <tr>
+            <td><b><i><a href="#">Photo</a></i></b></td>
+            <td>You can write your own post and share to others. Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo</td>
+            <td class="Edit"><i><a href="#">Add</a></i></td>
+            <td class="Edit"><i><a href="#">Change</a></i></td>
+        </tr>
+    </table>
+</div>
+{% endblock content %}
+
+{% block footer %}
+<div id="footer">
+    &copy; makingfunk 2017 # 5
+</div>
+{% endblock footer %}
+```
+
+- 1 : {% static %} 템플릿 태그를 사용하기 위해서는 {% load staticfiles %} 문장으로 커스텀 태그 파일 staticfiles를 로딩해야 합니다.
+- 2 : extrastyle 블록을 재정의합니다. 즉, base.css 스타일시트 파일 외에 추가적으로 home.css 스타일시트를 지정합니다. home.css 파일은 home.html 템플릿에 사용되는 스타일을 정의하기 위한 스타일시트 파일로 다음절에 코딩합니다.
+- 3 : 이미지 영역의 id를 homeimg라고 설정하고, `<img>` 태그를 사용해 그림을 넣었습니다. {% static %} 템플릿 태그 기능에 의해 STATICFILES_DIRS 디렉터리 하위에서 img/django-actor-big.jpg 파일을 찾습니다.(static/img/이미지파일)
+- 4 : `<i>` 는 이텔릭체로 출력하는 HTML 태그입니다.
+- 5 : `&copy`는 copyright 마크를 표시하는 HTML 특수문자입니다.
+{% endraw %}
 ### 4.2.8 스타일시트 코딩하기 - home.css
 
 ## 4.3 지금까지의 작업 확인하기
