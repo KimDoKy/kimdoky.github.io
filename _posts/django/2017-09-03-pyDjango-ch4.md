@@ -90,11 +90,12 @@ class HomeView(TemplateView): # 1
 
 
 ### 4.2.5 템플릿 코딩하기 - base.html
+
 템플릿 상속은 보통 3단계로 구성합니다. 여기서는 복자반 편이 아니므로 2단계로 구성합니다. 최상위 템플릿은 사이트 전체의 룩앤필을 정의하는 것으로 보통은 파일명을 base.html로 합니다. 파일의 위치는 배결 애플리케이션 템플릿이 아니라 공통 템플릿이므로, 프로젝트 템플릿 디렉터리에 생성합니다.  
 
 프로젝트 템플릿 디렉터리는 settings.py 파일에 다음과 같이 정의해 두었습니다.
 
-```python
+```
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -177,6 +178,143 @@ base.html에 모든 페이지에서 공통을 사용하는 제목과 메뉴, 이
 {% endraw %}
 
 ### 4.2.6 스타일시트 코딩하기 - base.css
+CSS 파일명은 base.html 에서 지정한 base.css 입니다.  
+
+프로젝트 템플릿 디렉터리처럼 CSS 파일 등의 정적(static) 파일도 특정 디렉터리에 위치시켜야 장고가 찾을 수 있습니다.
+
+```python
+STATICFILES_DIRS =  [os.path.join(BASE_DIR, 'static')]
+```
+
+- static/css/base.css
+
+```css
+body {
+    font-family: "Lucida Grande", Verdana, Arial, sans-serif;
+    font-size: 12px;
+}
+
+/* PAGE STRUCTURE */
+div#header {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    height: 30px;
+    width: 100%;
+    display: table;
+    background: orange;
+}
+
+div#menu {
+    position: absolute;
+    top: 30px;
+    left: 0px;
+    height: 20px;
+    width: 100%;
+    display: table;
+    table-layout: fixed;
+    border-spacing: 40px 0px;
+    background: #ffa;
+    font-size: 8px;
+}
+
+div#contnet {
+    position: absolute;
+    top: 70px;
+    left: 50px;
+    right: 50px;
+}
+
+div#footer {
+    position: absolute;
+    bottom: 20px;
+    left: 50px;
+    right: 50px;
+    height: 30px;
+    border-top: 1px solid #ccc;
+}
+
+/* HEADER */
+.maintitle {
+    display: table-cell;
+    vertical-align: middle;
+    padding-left: 20px;
+    color: #ffc;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.welcome {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: right;
+    padding-right: 20px;
+    color: #ffc;
+    font-weight: normal;
+    font-size: 12px;
+}
+
+.welcome a:link, .welcome a:visited {
+    color: white;
+}
+
+/* MENU */
+div#menu a:link, div#menu a:visited {
+    color: #36c;
+}
+
+div#menu > li {
+    display: table-cell;
+    vertical-align: middle;
+    border: 2px solid #bbb;
+    border-radius: 25px;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* pulldown menu */
+div#menu li ul {
+    display: none;
+    position: absolute;
+    margin: 0;
+    padding: 10px 10px 5px 10px;
+    list-style: none;
+    border-right: 1px solid #ccc;
+    border-left: 1px solid #ccc;
+    border-bottom: 1px  solid #ccc;
+    background: white;
+    z-index: 1;
+}
+
+div#menu li:hover ul {
+    display: block;
+}
+
+/* LINK */
+a:link, a:visited {
+    color: #369;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* TABLE */
+table {
+    border-collapse: collapse;
+}
+
+td, th {
+    line-height: 18px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+    padding: 5px 15px;
+    font-family: "Lucida Grande", Verdana, Arial, sans-serif;
+}
+```
+
+HoveView 클래스 뷰에서 template_name 을 home.html으로 지정했기 때문에 home.html 파일이 존재해야 합니다.
 
 ### 4.2.7 템플릿 코딩하기 - home.html
 
