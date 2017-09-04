@@ -218,7 +218,7 @@ div#menu {
     font-size: 8px;
 }
 
-div#contnet {
+div#content {
     position: absolute;
     top: 70px;
     left: 50px;
