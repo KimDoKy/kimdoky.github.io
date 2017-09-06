@@ -66,3 +66,16 @@ pip install -U pip wheel setuptools
 ```
 
 ## 6.9 가상 환경의 InsecurePlatformWarning 해결하기
+장고 패키지를 설치하는 과정에서 InsecurePlatformWarning 경고가 발생할 수 있습니다. 이는 보안 프로토콜인 HTTPS 처리에 사용되는 OpenSSL 패키지에 관련 패키지를 추가호 설치해야 한다는 경고 메시지입니다.  
+
+만일 이러한 경고 메시지가 발생하면 다음 명령으로 해결하면 됩니다.
+
+```
+$ pip install pyopenssl ndg-httpsclient pyasn1
+```
+
+## 6.10 가상 환경에 설치된 패키지 확인하기
+
+```
+$ pip list
+```
