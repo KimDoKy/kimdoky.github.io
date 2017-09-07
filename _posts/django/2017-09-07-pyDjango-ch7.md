@@ -42,3 +42,80 @@ URLconf 코딩하기 | urls.py | URL 정의 추가
 뷰 코딩하기 | views.py | 뷰 로직 추가
 템플릿 코딩하기 |templates 디렉터리 | 템플릿 파일 추가
 그 외 코딩하기 | static 디렉터리 | 태그 클라우드용 tag.css 추가
+
+## 7.2 개발 코딩하기
+오픈 소스로부터 설치한 tagging 앱을 등록하고, tagging 앱에서 제공하는 기능을 사용하기 위해 관련 파일들을 수정합니다.
+
+### 7.2.1 뼈대 만들기
+django-tagging 패키지도 settings.py 파일에 애플리케이션으로 등록합니다. 주의할 점은 설정 파일에 등록할지 여부와 등록하는 경우 어떤 애플리케이션명으로 등록할지를 확인해야 합니다. django-tagging 패키지의 공식 문서를 보면, 애플리케이션명이 tagging 이라는 것을 확인할 수 있습니다. 그래서 'tagging'으로 등록해도 무방합니다.  
+
+그런데 django-tagging 패키지의 소스 디렉터리를 살펴보면, 앱 설정 파일인 apps.py 파일에 TaggingConfig 클래스가 정의되어 있습니다. 설정 클래스를 등록하는 것이 더 정확한 방법이므로 이를 등록합니다.
+
+```python
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'bookmark.apps.BookmarkConfig',
+    'blog.apps.BlogConfig',
+    'tagging.apps.TaggingConfig', #  추가
+]
+```
+
+### 7.2.2 모델 코딩하기
+기존 Post 테이블에 tag 필드만 추가합니다.
+
+- blog/models.py
+
+```python
+from tagging.fields import TagField # 1
+
+# Create your models here.
+class Post(models.Model):
+    title = models.CharField('TITLE', max_length=50)
+    slug = models.SlugField('SLUG', unique=True, allow_unicode=True, help_text='one word for title alias.')
+    descriptions = models.CharField('DESCRAIPTION', max_length=100, blank=True, help_text='simple description text')
+    content = models.TextField('CONTENT')
+    create_date = models.DateTimeField('CREATE DATE', auto_now_add=True)
+    modify_date = models.DateTimeField('MODIFY DATE', auto_now=True)
+    tag = TagField() # 2
+```
+
+- 1 : 새로 설치한 tagging 앱은 자체 필드인 TagField를 정의하고 있습니다. 이를 임포트합니다.
+- 2 : tag 컬럼을 TagField로 정의합니다. TagField 필드는 CharField 필드를 상속받아서 디폴트로 max_length=255, Blank=True 로 정의하고 있어서 tag 컬럼은 내용을 채우지 않아도 됩니다.
+
+> #### TagField() 정의  
+django-tagging 패키지에는 tagging 앱이 들어 있고, tagging 앱 디렉터리 하위의 fields.py 파일에 TagField() 클래스가 정의되어 있습니다.
+
+Post 테이블 정의가 변경되었으므로, 마이그레이션을 해줍니다.
+
+```
+~/Git/Book_Study/pyDjango/2nd(master) » python manage.py makemigrations
+Migrations for 'blog':
+  blog/migrations/0002_post_tag.py
+    - Add field tag to post
+(pyDjango) ------------------------------------------------------------
+~/Git/Book_Study/pyDjango/2nd(master*) » python manage.py migrate
+Operations to perform:
+  Apply all migrations: admin, auth, blog, bookmark, contenttypes, sessions, tagging
+Running migrations:
+  Applying blog.0002_post_tag... OK
+  Applying tagging.0001_initial... OK
+  Applying tagging.0002_on_delete... OK
+```
+
+유의할 점은 tagging 패키지에는 자체 테이블이 2개로 정의되어 있어서, makemigrations/migrate 명령을 실행하면 tag 컬럼만 추가되는 것이 아니라 새로운 2개의 테이블이 데이터베이스에 추가된다는 것입니다.
+
+이 사항을 Admin 사이트에서 UI 화면으로 확인할 수 있습니다. [Add] 버튼을 클릭해 테이블 모습을 확인합니다.
+
+tagging 앱의 테이블 - TaggedItem, Tag
+![]({{site.url}}/img/post/python/django/book_7_1.png)
+Post 테이블 - tag 컬럼 추가
+![]({{site.url}}/img/post/python/django/book_7_2.png)
+tagging 앱의 TaggedItem 테이블
+![]({{site.url}}/img/post/python/django/book_7_3.png)
+tagging 앱의 Tag 테이블
+![]({{site.url}}/img/post/python/django/book_7_4.png)
