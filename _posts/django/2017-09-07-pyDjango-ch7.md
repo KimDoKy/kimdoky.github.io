@@ -119,3 +119,58 @@ tagging 앱의 TaggedItem 테이블
 ![]({{site.url}}/img/post/python/django/book_7_3.png)
 tagging 앱의 Tag 테이블
 ![]({{site.url}}/img/post/python/django/book_7_4.png)
+
+### 7.2.3 URLconf 코딩하기
+
+- blog/urls.py
+
+```python
+
+    # ex: /today/
+    url(r'^today/$', PostTAV.as_view(), name='post_today_archive'),
+
+    # ex: /tag/
+    url(r'^tag/$', TagTV.as_view(), name='tag_cloud'), # 1
+
+    # ex: /tag/tagname/
+    url(r'^tag/(?P<tag>[^/]+(?u))/$', PostTOL.as_view(), name='tagged_object_list'), # 2
+]
+```
+
+- 1 : URL /tag/ 요청을 처리한 뷰 클래스를 TagTV로 지정합니다. URL 패턴의 이름은 이름공간을 포함해 'blog:tag_cloud'가 됩니다. TagTV 클래스형 뷰는 태그 클라우드를 보여주기 위한 뷰로써 템플릿 처리만 하면 되므로 TemplateView를 상속받아 정의할 것입니다.
+- 2 : URL /tag/tagname/ 요청을 처리할 뷰 클래스를 PostTOL로 지정합니다. URL 패턴의 이름은 이름공간을 포함해 'blog:tagged_object_list'가 됩니다. PostTOL 클래스형 뷰는 태그 단어를 인자로 받아서, 해당 태그가 달린 포스트들의 리스트를 보여줍니다. tagging 앱에서 정의하고 있는 TaggedObjectList(ListView) 클래스를 상속받아 정의할 예정입니다.
+
+### 7.2.4 뷰 코딩하기
+
+- blog/views.py
+
+```python
+from django.views.generic import ListView, DetailView, TemplateView # 1
+from tagging.models import Tag, TaggedItem # 2
+from tagging.views import TaggedObjectList # 3
+
+# Create your views here.
+
+#-- TemplateView
+class TagTV(TemplateView): # 4
+    template_name = 'tagging/tagging_cloud.html'
+
+#-- ListView
+class PostLV(ListView):
+    model = Post
+    template_name = 'blog/post_all.html'
+    context_object_name = 'posts'
+    paginate_by = 2
+
+class PostTOL(TaggedObjectList): # 5
+    model = Post
+    template_name = 'tagging/tagging_post_list.html'
+
+#-- DetailView
+```
+
+- 1 : TemplateView 클래스형 제네릭 뷰를 임포트합니다.
+- 2 : tagging 패키지에서 정의한 2개의 모델 클래스를 임포트합니다.
+- 3 : tagging 패키지에서 정의한 TaggedObjectList 뷰 클래스를 임포트합니다.
+- 4 : TemplateView 제네릭 뷰를 상속받아 PostTV 클래스형 뷰를 정의합니다. TemplateView 제네릭 뷰는 테이블 처리가 없이 단순히 템플릿 렌더링 처리만 하는 뷰입니다.
+- 5 : TaggedObjectList 클래스형 뷰를 상속받아 PostTOL 클래스형 뷰를 정의합니다. TaggedObjectList 클래스는 ListView를 상속받는 뷰입니다. TaggedObjectList 뷰는 tagging 패키지의 views.py 파일에 정의되어 있는데, 그 기능은 모델과 태그가 주어지면 그 태그가 달려 있는 모델의 객체 리스트를 보여줍니다.
