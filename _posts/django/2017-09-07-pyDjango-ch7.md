@@ -312,3 +312,25 @@ CSS 파일을 코딩합니다. 파일명은 tag_cloud.html에서 지정한 taggi
 
 - 1 : <div class="tag-cloud"> 영역에 대한 너비, 왼쪽 마진, 텍스트 정렬, 안쪽 여백, 테두리선, 배경색 등을 지정합니다.
 - 2 : <span class="tag{{tag.font-size}}"> 영역에 대한 폰트 크기를 지정합니다. tag.font_size 값에 따라서 태그의 폰트 크기가 달라집니다.
+
+## 7.3 지금까지의 작업 확인하기
+
+### 7.3.1 Admin에서 데이터 입력하기
+
+정상적으로 되었는지 확인하기 위해 더미 데이터를 입력합니다.  
+[Post] - [Change] 버튼을 클릭하면 포스트 리스트가 나옵니다. 임의이 포스트 몇개에 태그 데이터를 입력합니다. 태그 구분은 콤마(,)입니다.
+
+![]({{site.url}}/img/post/python/django/book_7_5.png)
+
+### 7.3.2 브라우저로 확인하기
+
+```
+http://127.0.0.1:8000/blog/
+```
+포스트를 클릭하여 하단에 태그 표시를 확인합니다.
+
+![]({{site.url}}/img/post/python/django/book_7_6.png)
+선택한 태그가 달린 포스트 리스트로 이동합니다.
+![]({{site.url}}/img/post/python/django/book_7_7.png)
+태그 클라우드로 이동합니다.
+![]({{site.url}}/img/post/python/django/book_7_8.png)
