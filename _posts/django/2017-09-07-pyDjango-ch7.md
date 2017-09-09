@@ -205,7 +205,7 @@ URL 설계에 따라 2개의 템플릿 파일이 추가로 필요합니다.
 - 2 : {% tags_for_object %} 커스텀 태그를 사용해 object 객체에 달려 있는 태그들의 리스트를 추출합니다. object 객체는 PostDV 클래스형 뷰에서 넘겨주는 컨텍스트 변수로써, 특정 Post 객체가 담겨 있습니다. 추출한 태그 리스트는 tags 템플릿 변수에 할당합니다.
 - 3 : 추출한 태그 리스트의 각 태그를 순회하면서 tag.name을 출력합니다.
 - 4 : tag.name에 연결된 링크는 'blog:tagged_object_list' URL 패턴에 tag.name 인자를 넘겨주어 지정합니다.
-- 5 : for 루프 이후에, 동일한 줄에 [TagCloud] 텍스트를 출력하고 'blog:tag_cloud' URL 패턴을 <a href>링크로 연결합니다.
+- 5 : for 루프 이후에, 동일한 줄에 [TagCloud] 텍스트를 출력하고 'blog:tag_cloud' URL 패턴을 `<a href>` 링크로 연결합니다.
 
 #### tagging_cloud.html
 
@@ -279,3 +279,36 @@ URL 설계에 따라 2개의 템플릿 파일이 추가로 필요합니다.
 - 3 : object_list 객체는 PostTOL 클래스형 뷰에서 넘겨주는 컨텍스트 변수로써, 특정 tag가 달려 있는 Post 리스트가 담겨 있습니다. object_list 객체의 내용을 순회하면서 Post 객체의 title, modify_date, descriptions 속성을 출력합니다.
 - 4 : modify_date 속성값을 "N d, Y" 포멧으로 출력합니다. (ex: July 05, 2017)
 {% endraw %}
+
+### 7.2.6 스타일시트 코딩하기
+CSS 파일을 코딩합니다. 파일명은 tag_cloud.html에서 지정한 tagging/tag.css 입니다.  
+
+템플릿 파일처럼 CSS 파일 등 static 파일도 적절한 디렉터리에 위치시켜야 장고가 찾을 수 있습니다. 정적 파일의 표준 위치는 템플릿 파일의 원리와 동일합니다. 각 애플리케이션에 소속된 정적 파일은 해당 애플리케이션의 하위 static/애플리케이션명 디렉터리에 위치시키고, 프로젝트 전체에 관련된 정적 파일은 settings.py 파일의 STATICFILES_DIRS 항목으로 지정한 디렉터리에 위치시킵니다.  
+
+- blog/static/tagging/tag.css
+
+```css
+.tag-cloud {  # 1
+    width: 30%;
+    margin-left: 30px;
+    text-align: center;
+    padding: 5px;
+    border: 1px solid orange;
+    background-color: #ffc;
+}
+
+.tag-1 {font-size: 12px;}  # 2
+
+.tag-2 {font-size: 14px;}
+
+.tag-3 {font-size: 16px;}
+
+.tag-4 {font-size: 18px;}
+
+.tag-5 {font-size: 20px;}
+
+.tag-6 {font-size: 24px;}
+```
+
+- 1 : <div class="tag-cloud"> 영역에 대한 너비, 왼쪽 마진, 텍스트 정렬, 안쪽 여백, 테두리선, 배경색 등을 지정합니다.
+- 2 : <span class="tag{{tag.font-size}}"> 영역에 대한 폰트 크기를 지정합니다. tag.font_size 값에 따라서 태그의 폰트 크기가 달라집니다.
