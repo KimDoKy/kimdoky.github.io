@@ -174,3 +174,108 @@ class PostTOL(TaggedObjectList): # 5
 - 3 : tagging 패키지에서 정의한 TaggedObjectList 뷰 클래스를 임포트합니다.
 - 4 : TemplateView 제네릭 뷰를 상속받아 PostTV 클래스형 뷰를 정의합니다. TemplateView 제네릭 뷰는 테이블 처리가 없이 단순히 템플릿 렌더링 처리만 하는 뷰입니다.
 - 5 : TaggedObjectList 클래스형 뷰를 상속받아 PostTOL 클래스형 뷰를 정의합니다. TaggedObjectList 클래스는 ListView를 상속받는 뷰입니다. TaggedObjectList 뷰는 tagging 패키지의 views.py 파일에 정의되어 있는데, 그 기능은 모델과 태그가 주어지면 그 태그가 달려 있는 모델의 객체 리스트를 보여줍니다.
+
+### 7.2.5 템플릿 코딩하기
+URL 설계에 따라 2개의 템플릿 파일이 추가로 필요합니다.
+
+또한 화면 UI 설계에 따르면 기존 post_detail.html 파일도 수정이 필요합니다. 화면 UI를 보면 post_detail.html에서 태그를 클릭해 tagging 화면을 보여주는 흐름이므로, post_detail.html 파일을 먼저 코딩합니다.
+
+#### post_detail.html
+{% raw %}
+- blog/post_detail.html
+
+```python
+<div class="body">
+    {{ object.content|linebreaks }}
+</div>
+<div>
+    <b>TAGS: </b>
+    {% load tagging_tags %} # 1
+    {% tags_for_object object as tags %} # 2
+    {% for tag in tags %} # 3
+    <a href="{% url 'blog:tagged_object_list' tag.name %}">{{ tag.name }}</a> # 4
+    {% endfor %}
+    <a href="{% url 'blog:tag_cloud' %}"><i>[ TagCloud ]</i></a> # 5
+</div>
+</div>
+{% endblock %}
+```
+
+- 1 : tagging 패키지에 정의된 커스텀 태그를 사용하기 위해 tagging_tags 모듈을 로딩합니다.
+- 2 : {% tags_for_object %} 커스텀 태그를 사용해 object 객체에 달려 있는 태그들의 리스트를 추출합니다. object 객체는 PostDV 클래스형 뷰에서 넘겨주는 컨텍스트 변수로써, 특정 Post 객체가 담겨 있습니다. 추출한 태그 리스트는 tags 템플릿 변수에 할당합니다.
+- 3 : 추출한 태그 리스트의 각 태그를 순회하면서 tag.name을 출력합니다.
+- 4 : tag.name에 연결된 링크는 'blog:tagged_object_list' URL 패턴에 tag.name 인자를 넘겨주어 지정합니다.
+- 5 : for 루프 이후에, 동일한 줄에 [TagCloud] 텍스트를 출력하고 'blog:tag_cloud' URL 패턴을 <a href>링크로 연결합니다.
+
+#### tagging_cloud.html
+
+태그 클라우드를 보여주는 템플릿 파일을 코딩합니다. 태그 클라우드란, 태그들에게 가중치를 부여해 위치나 글자 크기 등을 강조함으로써 태그들의 리스트를 효과적으로 시각화 한 것입니다.
+
+템플릿 파일은 blog/templates/tagging/ 디렉터리 하위에 둡니다.
+
+```python
+{% extends "base.html" %}
+
+{% block title %}tagging_cloud.html{% endblock %} # 1
+
+{% load staticfiles %}
+{% block extrastyle %}{% static "tagging/tag.css" %}{% endblock %}
+
+
+{% block content %}
+<div id="content">
+
+    <h1>Blog Tag</h1>
+
+    <dlv class="tag-cloud">
+        {% load tagging_tags %} # 2
+        {% tag_cloud_for_model blog.Post as tags with steps=6 min_count=1 distribution=log %} # 3
+        {% for tag in tags %}
+        <span class="tag-{{ tag.font_size }}"> # 4
+            <a href="{% url 'blog:tagged_object_list' tag.name %}">{{ tag.name }} ({{ tag.font_size }})</a> # 5
+        </span>
+        {% endfor %}
+    </dlv>
+</div>
+{% endblock %}
+```
+
+- 1 : title 블록을 재정의합니다. 페이지의 제목을 tagging_cloud.html로 지정합니다.
+- 2 : tagging 패키지에 정의된 커스텀 태그를 사용하기 위해 tagging_tags 모듈로 로딩합니다.
+- 3 : {% tag_cloud_for_model %} 커스텀 태그를 사용해 태그 클라우드 표현 방식을 정의합니다.
+  - **blog.Post** : 태그를 추출할 대상은 블로그 앱의 Post 모델입니다.
+  - **as tags** : 태그 리스트를 tags 라는 템플릿 변수에 담습니다.
+  - **with staps=6 min_count=1** : 태그 폰트 크기 범위를 1~6, 출력용 최소 사용 횟수를 1로 정합니다.
+  - **distribution=log** : 태그 폰트 크기를 할당할 때 수학 Logarithmic 알고리즘을 사용합니다.
+- 4 : 각 태그별로 디자인을 적용하기 위해 스타일시트 클래스를 .tag-3 형식으로 지정합니다. 스타일시트는 위에서 지정한 tag.css 파일에 정의되어 있습니다.
+- 5 : Django 형식으로 태그를 출력하고, 링크는 'blog:tagged_object_list' URL 패턴에 tag.name 인자를 넘겨주어 지정합니다.
+
+#### tagging_post_list.html
+
+태그 클라우드에서 특정 태그를 클릭했을 때, 그 태그가 걸려 있는 포스트의 리스트를 보여주는 템플릿 파일을 코딩합니다.
+
+- blog/templates/tagging/tagging_post_list.html
+
+```python
+{% extends "base.html" %}
+
+{% block title %}tagging_post_list.html{% endblock %} # 1
+
+{% block content %}
+<div id="content">
+    <h1>Posts for tag - {{ tag.name }}</h1> # 2
+
+    {% for post in object_list %} # 3
+    <h2><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></h2>
+    {{ post.modify_date|date:"N d, Y" }} # 4
+    <p>{{ post.descriptions }}</p>
+    {% endfor %}
+</div>
+{% endblock %}
+```
+
+- 1 : title 블록을 재정의합니다. 페이지의 제목은 tagging_post_list.html로 합니다.
+- 2 : Tag 모델의 필드는 id와 name 뿐입니다.
+- 3 : object_list 객체는 PostTOL 클래스형 뷰에서 넘겨주는 컨텍스트 변수로써, 특정 tag가 달려 있는 Post 리스트가 담겨 있습니다. object_list 객체의 내용을 순회하면서 Post 객체의 title, modify_date, descriptions 속성을 출력합니다.
+- 4 : modify_date 속성값을 "N d, Y" 포멧으로 출력합니다. (ex: July 05, 2017)
+{% endraw %}
