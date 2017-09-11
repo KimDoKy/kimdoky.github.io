@@ -97,7 +97,7 @@ from django.core.urlresolvers import reverse # 1
 class Post(models.Model):
     title = models.CharField('TITLE', max_length=50) # 2
     slug = models.SlugField('SLUG', unique=True, allow_unicode=True, help_text='one word for title alias.') # 3
-    descriptions = models.CharField('DESCRAIPTION', max_length=100, blank=True, help_text='simple description text')
+    description = models.CharField('DESCRAIPTION', max_length=100, blank=True, help_text='simple description text')
     content = models.TextField('CONTENT')
     create_date = models.DateTimeField('CREATE DATE', auto_now_add=True)
     modify_date = models.DateTimeField('MODIFY DATE', auto_now=True)
