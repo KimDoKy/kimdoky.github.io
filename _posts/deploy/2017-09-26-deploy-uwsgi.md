@@ -61,10 +61,14 @@ master = true
 pidfile = /tmp/app.pid
 ```
 설정파일의 시작은 `[uwsgi]`으로 시작해야하고 모든 설정은 이 섹션아래에 기술되어야 합니다.  
-`chdir` 에 프로젝트 경로, `module`는 프로젝트와 어떻게 상호작용할지를 설정합니다.(프로젝트에 있는 wsgi.py에서 'application'을 임포트합니다.)  
-`home`은 가상환경의 경로를 설정합니다.  
+`chdir` : 프로젝트 경로
+`module` : 프로젝트와 어떻게 상호 작용할지를 설정합니다.(프로젝트에 있는 wsgi.py에서 'application'을 임포트합니다.)  
+`home` : 가상환경의 경로를 설정합니다.  
+`uid` : user id . 사용자 식별자. 리눅스에서는 사용자를 식별하는데 유저 아이디로 구분합니다.
+`gid` : group id . 그룹 식별자. 리눅스에서는 그룹을 통해서 사용자를 묶을 수도 있습니다.
+`socket` : 모든 모듈이 하나의 서버에서 동작하기 때문에, 네트워크 포트 대신 유닉스소켓을 사용합니다.  
+`vacuum` : 서버가 멈추면 자동으로 소켓 파일이 삭제하는 옵션
 
-uWSGI가 어떻게 네트워크와 연결할지 설정해야합니다.
 가이드 따라해보기
 
 https://www.digitalocean.com/community/tutorials/how-to-set-up-uwsgi-and-nginx-to-serve-python-apps-on-ubuntu-14-04#definitions-and-concepts
