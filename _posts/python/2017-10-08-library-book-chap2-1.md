@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: Python Library - chap 2. 수치 처리하기 - 2.1
+title: Python Library - chap 2. 수치 처리하기 - 2.1 기본적인 수치 계산
 category: python
 tags: [ 'python' ]
 ---
