@@ -22,11 +22,16 @@ tags: [ 'tip' ]
 
 2. shift + f10 으로 커맨드창을 연다.
 
-3. diskpart - disk volume - exit
+3. diskpart - list volume - exit
+
+![]({{site.url}}/img/post/tip/window/1.jpg)
+![]({{site.url}}/img/post/tip/window/2.jpg)
 
 위 명령으로 usb가 어떤 경로로 잡혀있는지 확인한다.
 
 5. 프로그램이 있는 위치로 이동해서 프로그램을 실행한다.
+
+![]({{site.url}}/img/post/tip/window/3.jpg)
 
 ```
 etc:
