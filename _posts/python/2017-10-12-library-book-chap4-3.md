@@ -59,5 +59,5 @@ bisect 모듈에는 같은 이진 탐색이라도 다른 결과를 반환하는 
 
 형식 | insort_right(a, x, lo=0, hi=len(a)) <br> insort(a, x, lo=0, hi=len(a))
 ---|---
-설면 | insort_left()와 마찬가지로, 정렬된 시퀀스에 요소를 삽입한다. insort_right()는 삽입 위치를 bisect_right()로 구한다.
+설명 | insort_left()와 마찬가지로, 정렬된 시퀀스에 요소를 삽입한다. insort_right()는 삽입 위치를 bisect_right()로 구한다.
 인수 | a - 정렬된 시퀀스를 지정한다. <br> x - 검색할 값을 지정한다. <br> lo - 검색 시작 위치를 지정한다. 생략하면 맨 처음부터 검색한다. <br> hi - 검색 종료 위치를 지정한다. 생략하면 맨 끝까지 검색한다.

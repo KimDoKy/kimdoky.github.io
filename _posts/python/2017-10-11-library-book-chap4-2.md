@@ -34,8 +34,8 @@ IndexError: index out of range
 
 형식 | heappush(heap, item)
 ---|---
-인수 | 리스트 객체 heap에 item을 추가한다.
-반환값 | heap - heap으로 이용할 리스트 객체를 지정한다. <br> item - 등록할 객체를 지정한다.
+설명 | 리스트 객체 heap에 item을 추가한다.
+안수 | heap - heap으로 이용할 리스트 객체를 지정한다. <br> item - 등록할 객체를 지정한다.
 
 ### heappop() 함수
 
