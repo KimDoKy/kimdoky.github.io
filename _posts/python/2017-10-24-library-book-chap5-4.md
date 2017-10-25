@@ -59,11 +59,62 @@ add_help | -h 옵션을 parser에 추가할지 여부를 지정한다. | True
 ### 인수가 부족할 때
 
 ```python
-인수 없이 실행함.
--s는 필수 옵션이므로 실행 오류가 됨
+# 인수 없이 실행함.
+# -s는 필수 옵션이므로 실행 오류가 됨
 $ python repeat.py
 usage: repeat.py [-h] -s STRING [-n NUM]
 repeat.py: error: the following arguments are required: -s/--string
 ```
 
 인수 -s가 필요하다는 오류가 표시되었습니다. 이것은 parser.add_argument()로 인수를 정의할 때 -s가 필수(required=True)라고 지정했기 때문입니다.
+
+### -h를 지정할 때
+
+```python
+# 인수 -h를 붙여서 실행
+# 샘플 코드에서 명시적으로 정의하지 않았으나, 도움말이 표시된
+$ python repeat.py -h
+usage: repeat.py [-h] -s STRING [-n NUM]
+
+Example command
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s STRING, --string STRING
+                        string to display
+  -n NUM, --num NUM     number of time repeatedly display the string
+```
+
+-h를 지정하여 스크립트를 실행하면 자세한 명령어 사용법이 표시됩니다. 샘플 코드에는 인수 -h가 지정되어 있지 않으나, ArgumentParser는 기본 동작으로서 인수 정의로 도움말을 표시하는 인수 -h를 자동으로 생성합니다.  
+
+### 필요한 옵션을 지정할 때
+
+```python
+# 샘플 코드에서 정의한 -s와 -n에 적절한 값을 주고 실행함
+# 정산적으로 해석되어, 얻은 값을 사용해 처리가 진행됨
+$ python repeat.py -s hoge -n 10
+hogehogehogehogehogehogehogehogehogehoge
+```
+
+해석(parse)은 정상적으로 종료되고 코드의 끝에 기술된 디버그용 print가 동작하고 있습니다. 이처럼 argparse를 최소한만 작성해도 충분히 실용적으로 명령줄 옵션을 처리할 수 있습니다.  
+
+### ArgumentParser.add_argument()의 인수
+샘플 코드에서 다룬 것 외에도 add_argument()에는 명령줄 옵션을 유연하게 다룰 수 있는 기능이 준비되어 있습니다.
+
+인수 이름 | 설명 | 기본값
+---|---|---
+name of flags | 옵션의 이름 또는 옵션 문자열 리스트를 지정한다. | 없음
+action | 인수에 값이 주어질 때의 액션을 지정한다. 기본값은 단순히 값을 저장하는 'store'이다. | 'store'
+default | 값이 주어지지 않을 때의 기본값을 지정한다. | None
+type | 주어진 값을 지정한 형으로 변환한다. | 'str'
+choices | 인수로 허용되는 값을 저장한 컨테이너형(list,dict 등)의 값을 지정한다. | None
+required | 인수의 필수 여부를 지정한다. | False
+help | 인수를 설명하는 문자열을 지정한다. | None
+
+정확히 말하자면 add_argument()에는 함수 정의로서의 인수 기본값은 지정되어 있지 않지만, 표에서는 값을 주지 않을 때 처리 중에 사용되는 값을 기본값으로 기재하였습니다.
+
+### 실제 add_argument() 함수의 정의
+
+```python
+def add_argument(self, *arg, **kwargs):  # 모두 가변 인수로 받아 다루고 있다.
+```
