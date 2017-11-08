@@ -104,14 +104,58 @@ TimeStampedModel이 추상화 클래스가 아니었다면 core_timestampedmodel
 ## 6.2 장고 모델 디자인
 
 ### 6.2.1 정규화하기
+**데이터베이스 정규화(database normalization)** 에 익숙해져야 한다.
+
+- <https://en.wikipedia.org/wiki/DataBase_normalization>
+- <https://en.wikipedia.org/wiki/Relational_Database_Design/Normalization>
+
+장고 모델 디자인은 항상 정규화로부터 시작하자. 충분한 시간을 가지고 이미 모델에 포함된 데이터들이 중복되어 다시 다른 모델에 포함되지 않도록 신경써야 한다.  
+이 단계에서는 관계 필드에 대해 제약을 느끼지 않아도 된다. 일단 미숙하게 비정규화하는 것부터 피한다. 바로 데이터의 형태와 틀에 대한 지각이 필요하다.
 
 ### 6.2.2 캐시와 비정규화
+적절한 위치에서 캐시를 세팅하는 것은 모델을 비정규화할 때 발생하는 문제점들을 상당 부분 해결해 주기도 한다.
 
 ### 6.2.3 반드시 필요한 경우에만 비정규화를 하도록 하자
+비정규화가 프로젝트의 해답처럼 보일수도 있지만 곧 프로젝트 자체를 더욱 복잡하게 만들고 데이터를 손상시킬 수 있는 위험을 증가시킬 것이다. 비정규화를 생각하기 이전에 캐시에 대해 좀 더 연구할 필요가 있다.
 
 ### 6.2.4 언제 널을 쓰고 공백을 쓸 것인가
+모델 필드를 정의할 때 `null=True`와 `blank=True`를 설정하는 옵션을 선택할 수 있다. 기본값은 둘 다 False이다.  
+
+모델 필드 인자들에 대한 일반적인 가이드이다.
+
+필드 타입 | `null=True`로 설정하기 | `blank=True`로 설정하기
+---|---|---
+CharField, TextField, SlugField, EmailField, CommaSeparatedIntegerField, UUIDField | 이용하지 않는다. 장고 표준은 빈 값(empty value)을 빈 문자열(empty string)로 저장하는 것이다. 일관성을 위해 널값 또는 빈 값을 빈 문자열에 대해 반환하도록 한다. | 이용한다. 위젯이 빈 값을 허용하기를 원한다면 설정한다. 이렇게 설정하면 데이터베이스에서는 빈 값이 빈 문자열로 저장된다.
+FileField, ImageField | 이용하지 않는다. 장고는 MEDIA_ROOT의 경로를 CharField에 파일 또는 이미지로 저장한다. 따라서 같은 패턴이 FileField에도 적용된다. | 이용한다. CharField에 적용된 것과 같은 규칙이 적용된다.
+BooleanField | 이용하지 않는다. 대신 NullBooleanField를 이용한다. | 이용하지 않는다.
+IntegerField, FloatField, DecimalField, DurationField 등 | 해당 값이 데이터베이스에 NULL로 들어가도 문제가 없다면 이용한다. | 위젯에서 해당 값이 빈 값을 받아와도 문제가 없다면 이용한다. 그럴 경우 null=True와 같이 이용한다.
+DateTimeField, DateField, TimeField 등 | 데이터베이스에서 해당 값들을 NULL로 설정하는 게 가능하다면 이용한다. | 위젯에서 해당 값이 빈 값을 받아와도 문제가 없다거나 auto_now나 auto_now_add를 이용하고 있다면 이용한다. 그럴 경우 null=True와 같이 이용한다.
+ForeignKey, ManyToManyField, OneToOneField | 데이터베이스에서 해당 값들을 NULL로 설정하는게 가능하다면 이용한다. | 위젯에서 해당 값(예를 들어 셀렉트박스)이 빈 값을 받아 와도 괜찮다면 이용한다.
+GenericIPAddressField | 데이터베이스에서 해당 값들을 NULL로 설정하는게 가능하다면 이용한다. | 위젯에서 해당 값이 빈 값을 받아와도 괜찮다면 이용한다.
+IPAddressField | 이용하지 않는다. | 이용하지 않는다.
+
+> #### IPAddressField 대신에 GenericIPAddressField 이용하기  
+IP4와 IP6의 동시 지원을 포함한 여러 이유로 GenericIPAddressField가 IPAddressField보다 훨씬 선호된다. IPAddressField는 장고 1.7 이후로 사라질 것이기 때문에 GenericIPAddressField를 이용하는 것이 좋다.
 
 ### 6.2.5 언제 BinaryField를 이용할 것인가?
+BinaryField는 로우 바이너리 데이터(raw binary data) 또는 바이드(byte)를 저장하는 필드다. 해당 필드에서는 filter, exclude, 기타 SQL 액션들이 적용되지 않는다. BinaryField는 다음과 같은 내용을 저장하는데 쓰일 수 있다.
+
+![]({{site.url}}/img/post/django/two_scoops/6.2.png)
+> 일반적으로 우리가 헷갈리는 것  
+바닐라 맛은 널 제로(zero)일까? 빈 문자열일까?
+
+- 메시지팩 형식의 콘텐츠
+- 원본 센서 데이터
+- 압축된 데이터. 예를 들어 센트리(Sentry)가 블롭(BLOB)으로 저장했지만 레거시 이슈 등으로 base64로 인코딩된 데이터들의 형식
+
+이외에도 다양한 곳에 이용될 수 있다. 하지만 바이너리 데이터는 크기가 방대할 수도 있고 그로 인해 데이터베이스가 느려질 수 있다, 실제로 그런 경우가 발생해서 바이너리 데이터 저장이 병목 지점이 된다면 해당 데이터를 파일 형태로 저장하고 FileField에 레퍼런스만 저장하는 방법으로 해결할 수 있다.
+
+> #### BinaryField로부터 파일을 직접 서비스하는 것은 금물!  
+데이터베이스 필드에 파일을 직접 저장하는 것은 피해야한다. 데이터베이스 필드에 파일을 직접 저장하는 방법을 고려 중이라면 주변에 데이터베이스 전문가에세 조언을 구해야 한다.  
+PostgreSQL 전문가인 프랭크 와일스가 데이터베이스를 파일 저장소로 이용하는 것에 대한 문제점을 이야기한 사항은 다음과 같다.
+- 데이터베이스의 '읽기/쓰기' 속도는 항상 파일 시스템의 '읽기/쓰기' 속도보다 느리다.
+- 데이터베이스 백업에 드는 공간과 시간이 점점 증가하게 된다.
+- 파일 자체에 접근하는 데 앱(장고) 레이어와 데이터베이스 레이어 둘 다를 거쳐야만 한다.  
 
 ### 6.2.6 범용 관계 피하기
 
