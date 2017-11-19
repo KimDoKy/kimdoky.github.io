@@ -137,7 +137,7 @@ class TasteUpdateView(UpdateView):
 ```
 
 HTML 템플릿 안에서는 다음과 같다.
-
+{% raw %}
 ```html
 {% extends "base.html" %}
 
@@ -186,6 +186,7 @@ urlpatterns += [
 </p>
 {% endblock content %}
 ```
+{% endraw %}
 
 ### 8.4.3 검색, 업그레이드, 리팩터링을 쉽게 하기
 장고가 PEP-8에 매우 친화적인 프레임워크이기 때문에 tastings_detail 같은 코드나 이름은 검색에 용이하지 않다. 반면에 tastings:detail 과 같은 이름은 검색 결과를 좀 더 명확하게 해준다. 이는 새로운 서드 파티 라이브러리와 상호 연동 시에 프로젝트를 좀 더 쉽게 업그레이드 및 리팩터링하게 만들어 준다.
