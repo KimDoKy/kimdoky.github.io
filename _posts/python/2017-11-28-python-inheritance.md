@@ -45,3 +45,86 @@ class Ironman(Person):
 ```
 
 # MRO(Method Resolution Order)
+
+- 파이썬의 클래스 탐색순서는 MRO를 따릅니다.
+ - Class.**mro** 를 통해 확인 가능
+- MRO가 꼬이도록 클래스를 정의 ㅋ할 수는 없습니다.
+ - TypeError: Cannot create a consistent method resolution order(MRO)
+
+```Python
+>>> class A: pass
+...
+>>> A.mro()
+[<class '__main__.A'>, <class 'object'>]
+
+>>> class B(A): pass
+...
+>>> B.mro()
+[<class '__main__.B'>, <class '__main__.A'>, <class 'object'>]
+
+>>> class C(A): pass
+...
+>>> C.mro()
+[<class '__main__.C'>, <class '__main__.A'>, <class 'object'>]
+
+>>> class D(B,C): pass
+...
+>>> D.mro()
+[<class '__main__.D'>, <class '__main__.B'>, <class '__main__.C'>, <class '__main__.A'>, <class 'object'>]
+
+>>> class E(C,B): pass
+...
+>>> E.mro()
+[<class '__main__.E'>, <class '__main__.C'>, <class '__main__.B'>, <class '__main__.A'>, <class 'object'>]
+
+>>> class F(D,E): pass  # 정의 불가!!
+...
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: Cannot create a consistent method resolution
+order (MRO) for bases C, B
+```
+
+MRO를 정확히 이해하고 있어야 다중상속을 이용하는 어떻게 이루어지는지 명확히 알 수 있습니다.
+(django의 CBV를 이해하기 위해 필수)
+
+## 부모의 함수 호출
+
+- 내장함수 `super`를 통해 부모의 함수 호출
+ - D의 mro()순서는 D > B > C > A
+ - D().fn()의 실행결과로서 A, C, B, D가 출력
+- super 호출 시에 MRO에 기반하여 호출
+
+```Python
+>>> class A:
+...     def fn(self):
+...         print('A')
+...
+>>> class B(A):
+...     def fn(self):
+...         super().fn()
+...         print('B')
+...
+>>> class C(A):
+...     def fn(self):
+...         super().fn()
+...         print('C')
+...
+>>> class D(B, C):
+...     def fn(self):
+...         super().fn()
+...         print('D')
+>>> A().fn()
+A
+>>> B().fn()
+A
+B
+>>> C().fn()
+A
+C
+>>> D().fn()
+A  # A는 B와 C 모두의 부모이므로 B,C보다 앞서면 안된다.
+C  
+B  # B 다음에 B의 직계부모 A가 나오면 C보다 앞서므로 조건이 충족되지 않는다.
+D
+```
