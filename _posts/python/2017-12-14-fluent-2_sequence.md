@@ -42,3 +42,70 @@ tuple, str, bytes 형
 지능형 리스트(리스트형의 경우)나 제네레이터 표현식(그 외 시퀀스의 경우)을 사용하면 시퀀스를 간단히 생성할 수 있습니다. (지능형 리스트는 컴프리핸션을 말하는 것 같다.)
 
 > tip. 파이썬 프로그래머들은 종종 지능형 리스트를 **listcomp** , 제네레이터 표현식을 **genexp** 으로 표기한다.
+
+### 2.2.1 지능형 리스트와 가독성
+
+```Python
+>>> symbols = 'ø∆åˆ¬∫©∂'
+>>> codes = []
+>>> for symbol in symbols:
+...     codes.append(ord(symbol))
+...
+>>> codes
+[248, 8710, 229, 710, 172, 8747, 169, 8706]
+```
+
+```Python
+>>> symbols = 'ø∆åˆ¬∫©∂'
+>>> codes = [ord(symbol) for symbol in symbols]
+>>> codes
+[248, 8710, 229, 710, 172, 8747, 169, 8706]
+```
+
+위의 코드가 읽기 쉽지만 지능형 리스트을 안다면 뒤의 코드가 읽기 좋게 느껴질 수 있습니다.
+
+생성된 리스트를 사용하지 않을 거라면 지능형 리스트 구문을 사용하지 말아야 합니다. 그리고 코드를 짧게 만들어야 합니다. 지능형 리스트 구문이 두 줄 이상 넘어가는 경우에는 코드를 분할하거나 for문을 이용해서 작성하는 것이 낫습니다. 정답은 없기 때문에 상식적으로 판단해야 합니다.
+> tip. 파이썬에선 [], {}, () 안에서의 개행이 무시된다. 따라서 줄을 넘기기 위해 역슬래시(\\)를 사용하지 않고도 여러 줄에 걸쳐 리스트, 지능형 리스트, 제네레이터 표현식, 딕셔너리를 작성할 수 있습니다.
+
+### 2.2.2 지능형 리스트와 map()/filter() 비교
+`map()`과 `filter()` 함수를 이용해서 수행할 수 있는 작업은 기능적으로 문제가 있는 파이썬 람다(lambda)를 억지로 쓰지 않고도 지능형 리스트를 이용해서 모두 구현할 수 있습니다.
+
+```Python
+>>> symbols = 'ø∆åˆ¬∫©∂'
+>>> beyond_ascii = [ord(s) for s in symbols if ord(s) > 200]
+>>> beyond_ascii
+[248, 8710, 229, 710, 8747, 8706]
+
+>>> beyond_ascii = list(filter(lambda c: c > 200, map(ord, symbols)))
+>>> beyond_ascii
+[248, 8710, 229, 710, 8747, 8706]
+````
+아래 코드로 지능형 리스트와 map()/filter() 조합의 속도를 간단히 비교할 수 있습니다.
+
+```python
+import timeit
+
+TIMES = 10000
+
+SETUP = """
+symbols = '$¢£¥€¤'
+def non_asc  ii(c):
+    return c > 127
+"""
+
+def clock(label, cmd):
+    res = timeit.repeat(cmd, setup=SETUP, number=TIMES)
+    print(label, *('{:.3f}'.format(x) for x in res))
+
+clock('listcomp        :', '[ord(s) for s in symbols if ord(s) > 127]')
+clock('listcomp + func :', '[ord(s) for s in symbols if non_ascii(ord(s))]')
+clock('filter + lambda :', 'list(filter(lambda c: c > 127, map(ord, symbols)))')
+clock('filter + func   :', 'list(filter(non_ascii, map(ord, symbols)))')
+```
+위 코드의 결과입니다.
+```
+listcomp        : 0.017 0.015 0.019
+listcomp + func : 0.023 0.025 0.028
+filter + lambda : 0.023 0.025 0.026
+filter + func   : 0.025 0.022 0.023
+```
