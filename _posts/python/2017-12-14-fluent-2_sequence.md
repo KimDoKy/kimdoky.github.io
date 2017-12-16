@@ -170,3 +170,183 @@ white m
 white l
 # 제네레이터 표현식은 한 번에 하나의 항목을 생성합니다. 6개의 티셔츠 종류를 담고 있는 리스트를 만들지 않습니다.
 ```
+
+## 2.3 튜플은 단순한 불변 리스트가 아니다
+튜플은 '불변 리스트'으로 설명들 하지만, 필드명이 없는 레코드로 사용할 수도 있습니다.
+
+### 2.3.1 레코드로서의 튜플
+튜플은 레코드를 담고 있습니다. 튜플의 각 항목은 레코드의 필드 하나를 의미하며 항목의 위치가 의미를 결정합니다.  
+
+튜플은 단지 불변 리스트로 사용한다면 항목의 크기와 순서가 중요하지 않을 수도 있습니다. 하지만 튜플을 필드의 집합으로 사용하는 경우, 항목 수가 고정되어 있고 항목의 순서가 중요합니다.  
+
+아래의 코드는 튜플을 레코드로 사용하는 경우입니다. 튜플 안에서 항목의 위치가 항목을 위미하기 때문에 튜플을 정렬하면 정보가 파괴되는 점을 주의해야 합니다.
+
+```Python
+>>> lax_coordinates = (33.9425, -188.408056)
+# 로스엔젤레스 국제공항의 위도와 경도
+>>> city, year, pop, chg, area = ('Tokyo', 2017, 32450, 0.66, 8014)
+# 도쿄에 대한 데이터(지명, 년도, 백만 단위 인구수, 인수 변화율, 제곱킬로미터 단위 면적)
+>>> traveler_ids = [('USE', '31195855'), ('BRA', 'CE342567'), ('ESP', 'XDA205856')]
+# (국가 코드, 여권 변호) 형태의 튜플로 구성된 리스트
+>>> for passport in sorted(traveler_ids):
+# 리스트를 반복할 때 passport 변수가 각 튜플로 바인딩된다.
+...     print('%s/%s' % passport)
+# 퍼센트 포멧 연산자는 튜플을 이해하고 각 항목을 하나의 필드로 처리한다.
+...
+BRA/CE342567
+ESP/XDA205856
+USE/31195855
+>>> for country, _ in traveler_ids:
+...     print(country)
+# for 루프는 튜플의 각 항목을 어떻게 가져와야 하는지 알고 있습니다.(이 과정을 '언패킹'이라고 합니다.) 여기서 두 번째 항목에는 관심이 없으므로 더미 변수(dummy variable)를 나타내는 언더바(_)에 할당했습니다.
+...
+USE
+BRA
+ESP
+```
+튜플은 언패킹 메커니즘 덕분에 레코드로도 잘 작동합니다.
+
+### 2.3.2 튜플 언패킹
+위 코드의 단 하나의 문장에서 city, year, pop, chg, area 변수에 `{'Tokyo', 2017, 32450, 0.66, 8014}`를 할당했습니다. 그리고 퍼센트(%) 연산자는 print() 함수의 인수로 전달한 포맷 문자열의 각 슬록에 passport 튜플의 각 할목을 할당했습니다. 이 두 가지 예는 **튜플 언패킹(tuple unpacking)** 방법입니다.
+> tip. 튜플 언패킹은 반복 가능한 객체라면 어느 객체든 적용할 수 있습니다. 초과된 항목을 잡기 위해 * 를 사용한 경우가 아니라면 반복 가능한 객체는 한 번에 하나의 항목을 생성한다는 점만 기억하면 됩니다. **튜플 언패킹** 이라는 용어를 널리 사용하고 있지만 공식문서엔 **반복형 언패킹(iterable unpacking)** 이라는 용어를 사용하고 있습니다.
+
+튜플 언패킹은 **병렬 항당(parallel assignment)** 을 할 때 가장 빛을 발합니다. 다음 코드는 반복형 데이터를 변수로 구성된 튜플에 할당합니다.
+
+```Python
+>>> lax_coordinates = (33.9425, -188.408056)
+>>> latitude, longitude = lax_coordinates # 튜플 언패킹
+>>> latitude
+33.9425
+>>> longitude
+-188.408056
+```
+
+튜플 언패킹을 이용하면 임시 변수를 사용하지 않고도 두 변수의 값을 서로 교환할 수 있습니다.
+
+```Python
+>>> b, a = a, b
+```
+
+함수를 호출할 때 인수 앞에 * 를 붙여 튜플 언패킹을 할 수 있습니다.
+
+```Python
+>>> divmod(20, 8)
+(2, 4)
+>>> t = (20, 8)
+>>> divmod(*t)
+(2, 4)
+>>> quotient, remainder = divmod(*t)
+>>> quotient, remainder
+(2, 4)
+```
+
+위 코드는 튜플 언패킹의 또 다른 사용법을 보여줍니다. 함수에서 호출자에 여러 값을 간단히 반환하는 기능입니다. 예를 들어 os.path.split() 함수를 이용해서 파일 시스템 경로에서 경로명과 파일멸을 가져올 수 있습니다.
+
+```Python
+>>> import os
+>>> _, filename = os.path.split('/home/doky/.ssh/idrsa.pub')
+>>> filename
+'idrsa.pub'
+>>> _
+'/home/doky/.ssh'
+```
+'\_'와 같은 더미 변수를 플레이스홀더로 사용해서 관심 없는 부분은 언패킹할 때 무시할 수 있습니다.
+
+### 초과 할목을 잡기 위해 `*` 사용하기
+함수 매개변수에 `*`를 연결해서 초과됨 인수를 가져오는 방법은 파이썬의 고전적인 기능입니다.
+
+```Python
+>>> a, b, *rest = range(5)
+>>> a, b, rest
+(0, 1, [2, 3, 4])
+>>> a, b, *rest = range(3)
+>>> a, b, rest
+(0, 1, [2])
+>>> a, b, *rest = range(2)
+>>> a, b, rest
+(0, 1, [])
+```
+병렬 할당의 경우 `*`는 단 하나의 변수에만 적용할 수 있지만, 어떠한 변수에도 젹용할 수 있습니다.
+
+```Python
+>>> a, *body, c, d = range(5)
+>>> a, body, c, d
+(0, [1, 2], 3, 4)
+>>> *head, b, c, d = range(5)
+>>> head, b, c, d
+([0, 1], 2, 3, 4)
+```
+튜플 언패킹은 내포된 구조체에도 적용할 수 있습니다.
+
+### 2.3.3 내포된 튜플 언패킹
+언패킹할 표현식을 받는 튜플은 (a, b, (c, d))처럼 다른 튜플을 내포할 수 있고, 파이썬은 표현식이 내포된 구조체에 일치하면 제대로 처리합니다.
+
+```Python
+# longitude에 접근하기 위해 내포된 튜플 언패킹하기
+metro_areas = [
+    # 각 튜플은 4개의 필드로 구성된 레코드를 담고 있으며, 마지막 필드는 좌표쌍이다.
+    ('Tokyo', 'JP', 36.933, (35.689722, 139.691667)),
+    ('Delhi NCR', 'IN', 21.935, (28.613889, 77.208889)),
+    ('Mexico City', 'MX', 20.142, (19.433333, -99.133333)),
+    ('New York-Newark', 'US', 20.104, (40.808611, -74.020386)),
+]
+
+print('{:15} | {:^9} | {:^9}'.format('', 'let', 'long'))
+fmt = '{:15} | {:^9.4f} | {:^9.4f}'
+# 마지막 필드를 튜플에 할당함으로써 좌표를 언패킹합니다.
+for name, cc, pop, (latitude, longitude) in metro_areas:
+    # 이 조건문은 경우가 음수인 서빈구 도시만 출력하게 만듭니다.
+    if longitude <= 0:
+        print(fmt.format(name, latitude, longitude))
+```
+실행 결과입니다.
+```python
+|    let    |   long
+Mexico City     |  19.4333  | -99.1333
+New York-Newark |  40.8086  | -74.0204
+```
+튜플은 편리하지만 레코드로 사용하기엔 아직 부족합니다. 때로는 필드에 이름을 붙일 필요가 있는데 `namedtuple()`함수가 고안되어 있습니다.
+
+### 2.3.4 명명된 튜플
+`collections.namedtuple()`함수는 필드명과 클래스명을 추가한 튜플의 서브 클래스를 생성하는 팩토리 함수로써, 디버깅할 때 유용합니다.
+> note. 필드명이 클래스에 저장되므로 namedtuple()로 생성한 객체는 튜플과 동일한 크기의 메모리만 사용한다. 속성을 객체마다 존재하는 `__dict__`에 저장하지 않으므로 일반적인 객체보다 메모리를 적게 사용한다.
+
+```Python
+>>> from collections import namedtuple
+# 명명된 튜플을 정의하려면 클래스명과 필드명의 리스트 등 총 2개의 매개변수가 필요합니다. 필드명의 리스트는 반복형 문자열이나 공백으로 구문된 하나의 문자열을 이용해서 지정합니다.
+>>> City = namedtuple('City', 'name country population coordinates')
+# 데이터는 위치를 맞추고 콤마로 구분해서 생성자에 전달해야 합니다.
+>>> tokyo = City('Tokyo', 'JP', 36.933, (35.689722, 139.691667))
+>>> tokyo
+City(name='Tokyo', country='JP', population=36.933, coordinates=(35.689722, 139.691667))
+# 필드명이나 위치를 이용해서 필드에 접근할 수 있습니다.
+>>> tokyo.population
+36.933
+>>> tokyo.coordinates
+(35.689722, 139.691667)
+>>> tokyo[1]
+'JP'
+```
+명명된 튜플(named tuple)은 튜플에서 상속받은 속성 외에 몇가지 속성을 더 가지고 있습니다. `_fields`클래스 속성, `_make(iterable)`클래스 메서드, `_asdict()`객체 메서드가 있습니다.
+
+```Python
+# 명명된 튜플의 속성과 메서드
+
+# _fields틑 클래스의 필드명을 담고 있는 튜플입니다.
+>>> City._fields
+('name', 'country', 'population', 'coordinates')
+>>> LatLong = namedtuple('LatLong', 'lat long')
+>>> delhi_data = ('Delhi NCR', 'IN', 21.935, LatLong(28.613889, 77.208889))
+# _make()는 반복형 객체로부터 명명된 튜플을 만듭니다. City(*delhi_data)를 호출하는 코드와 동일한 역할을 수행합니다.
+>>> delhi = City._make(delhi_data)
+# _asdict()는 명명된 튜플 객체에서 만들어진 collections.OrderedDict 객체를 반환합니다. 이 메서드를 이용해 데이터를 보기 좋게 가공할 수 있습니다.
+>>> delhi._asdict()
+OrderedDict([('name', 'Delhi NCR'), ('country', 'IN'), ('population', 21.935), ('coordinates', LatLong(lat=28.613889, long=77.208889))])
+>>> for key, value in delhi._asdict().items():
+...     print(key + ':', value)
+...
+name: Delhi NCR
+country: IN
+population: 21.935
+coordinates: LatLong(lat=28.613889, long=77.208889)
+```
