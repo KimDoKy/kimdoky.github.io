@@ -109,3 +109,31 @@ listcomp + func : 0.023 0.025 0.028
 filter + lambda : 0.023 0.025 0.026
 filter + func   : 0.025 0.022 0.023
 ```
+
+### 2.2.3 데카르트 곱
+지능형 리스트는 두 개 이상의 반복 가능한 자료형의 데카르트 곱을 나타내는 일련의 리스트를 만들 수 있습니다. 데카르트 곱 안에 들어 있는 각 항목은 입력으로 받은 반복 가능한 데이터의 각 요소에서 만들어진 튜플로 구성됩니다. 생성된 리스트의 길이는 입력으로 받은 반복 가능한 데이터의 길이와 같습니다.
+
+![]({{site.url}}/img/post/python/fluent/2.2.png)
+
+예를 들어 2가지 색과 3가지 티셔츠 리스트를 지능형 리스트를 이용해 생성해봅니다.
+
+```Python
+>>> colors = ['black', 'white']
+>>> sizes = ['s', 'm', 'l']
+>>> tshirts = [(color, size) for color in colors for size in sizes]
+>>> tshirts
+[('black', 's'), ('black', 'm'), ('black', 'l'), ('white', 's'), ('white', 'm'), ('white', 'l')]
+
+>>> for color in colors:
+...     for size in sizes:
+...         print((color, size))
+...
+('black', 's')
+('black', 'm')
+('black', 'l')
+('white', 's')
+('white', 'm')
+('white', 'l')
+```
+
+지능형 리스트는 단지 리스트를 만들 뿐입니다. 다른 종류의 시퀀스를 채우려면 제네레이터 표현식을 사용해야 합니다.
