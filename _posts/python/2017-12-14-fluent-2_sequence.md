@@ -617,3 +617,135 @@ s[a] += b 표현식에 대해 파이썬이 생성한 바이트코드를 보면 �
 # 이 예는 파이썬에서 정렬 알고리즘으로 사용하는 팀정렬(Timsort)이 안정적인지(즉, 비교해서 동일한 항목들이 상대적인 순서르 유지하는지) 보여주는데도 사용된다.
 ```
 일단 시퀀스를 정렬한 후에는 아주 효율적으로 검색할 수 있습니다. 다행히 파이썬 표준 라이브러리의 bisect 모듈에서 이미 표준 이진 검색 알고리즘을 제공하고 있습니다.
+
+## 2.8 정렬된 시퀀스를 bisect로 관리하기
+bisect 모듈은 `bisect()`와 `insort()` 함수를 제공합니다. `bisect()`는 이진 검색 알고리즘을 이용해서 검색하고, `insort()`는 정렬된 시퀀스 안에 항목을 삽입합니다.
+
+### 2.8.1 `bisect()`로 검색하기
+`bisect(haystack, needle)`은 정렬된 시퀀스인 haystack 안에서 오름차순 정렬 상태를 유지한 채로 needle을 추가할 수 있는 위치를 찾아냅니다. `bisect(haystack, needle)`의 결과값을 인덱스로 사용해서 `haystack.insert(index, needle)`을 호출하면 needle을 추가할 수 있지만, `insort()`함수는 이 두 과정을 더 빨리 처리합니다.
+
+> tip. bisect 모듈을 사용하지만 이런 함수들을 따로 사용하는 것보다 쉽게 정렬할 수 있는 SortedCollection 비법도 있다.
+
+```python
+# 정렬된 시퀀스에서 항목을 추가할 위치를 나타내는 bisect
+import bisect
+import sys
+
+HAYSTACK = [1, 4, 5, 6, 8, 12, 15, 20, 21, 23, 23, 26, 29, 30]
+NEEDLES = [0, 1, 2, 5, 8, 10, 22, 23, 29, 30, 31]
+
+ROW_FMT = '{0:2d} @ {1:2d}    {2}{0:<2d}'
+
+def demo(bisect_fn):
+    for needle in reversed(NEEDLES):
+        # 삽입 위치를 찾아내기 위해 선택한 bisect 함수를 만듭니다.
+        position = bisect_fn(HAYSTACK, needle)
+        # 간격(offset)에 비례해서 수직 막대 패턴을 만듭니다.
+        offset = position * '  |'
+        # needle과 삽입 위치를 보여주는 포맷된 행을 출력합니다.
+        print(ROW_FMT.format(needle, position, offset))
+
+if __name__ == '__main__':
+    # 마지막 명령행 인수에 따라 사용할 bisect 함수를 선택합니다.
+    if sys.argv[-1] == 'left':
+        bisect_fn = bisect.bisect_left
+    else:
+        bisect_fn = bisect.bisect
+    # 선택된 함수명을 헤더에 출력합니다.
+    print('DEMO:', bisect_fn.__name__)
+    print('haystack ->', ' '.join('%2d' % n for n in HAYSTACK))
+    demo(bisect_fn)
+```
+
+```
+# bisect를 이용해서 위 코드를 실행한 결과. 각 행은 needle @ position 형태로 시작하며 needle을 삽입할 haystack 위치에 needle 값을 한 번 더 보여줍니다.
+
+fluent(master*) » python 2_17.py
+DEMO: bisect
+haystack ->  1  4  5  6  8 12 15 20 21 23 23 26 29 30
+31 @ 14      |  |  |  |  |  |  |  |  |  |  |  |  |  |31
+30 @ 14      |  |  |  |  |  |  |  |  |  |  |  |  |  |30
+29 @ 13      |  |  |  |  |  |  |  |  |  |  |  |  |29
+23 @ 11      |  |  |  |  |  |  |  |  |  |  |23
+22 @  9      |  |  |  |  |  |  |  |  |22
+10 @  5      |  |  |  |  |10
+ 8 @  5      |  |  |  |  |8
+ 5 @  3      |  |  |5
+ 2 @  1      |2
+ 1 @  1      |1
+ 0 @  0    0
+```
+
+bisect의 행동은 두 가지 방식으로 조절할 수 있습니다.  
+
+1. 선택 인수인 lo와 hi를 사용하면 삽입할 때 검색할 시퀀스 영역을 좁힐 수 있습니다. lo의 기본값은 0, hi의 기본값은 시퀀스의 len()입니다.
+
+2. bisect는 실제로 bisect_right() 함수의 별명이며, 이 함수의 자매 함수로 bisect_left()가 있습니다. 이 두 함수는 리스트 안의 항목이 needle과 값이 같을 때만 차이가 납니다. bisect_right()는 기존 항목 바로 뒤를 삽입 위치로 반환하며, bisect_left()는 기존 항목 위치를 삽입 위치로 반환하므로 기존 항목 바로 앞에 삽입됩니다. int와 같은 단순한 자료형의 경우엔 차이가 없지만, 객체를 담고 있는 시퀀스 안에서는 동일하다고 판단되지만 서로 다른 객체가 들어 있으므로 이 두 함수 간에 약간의 차이가 발생합니다. 예를 들어 1과 1.0은 다르지만 1 == 1.0음 참입니다.
+
+```
+# bisect_left를 사용해서 실행한 결과. 앞의 결과와 비교해보면 1,8, 23, 29, 30을 haystack 안의 동일 숫자 왼쪽에 삽입하는 것을 알 수 있다.
+
+fluent(master*) » python 2_17.py left
+DEMO: bisect_left
+haystack ->  1  4  5  6  8 12 15 20 21 23 23 26 29 30
+31 @ 14      |  |  |  |  |  |  |  |  |  |  |  |  |  |31
+30 @ 13      |  |  |  |  |  |  |  |  |  |  |  |  |30
+29 @ 12      |  |  |  |  |  |  |  |  |  |  |  |29
+23 @  9      |  |  |  |  |  |  |  |  |23
+22 @  9      |  |  |  |  |  |  |  |  |22
+10 @  5      |  |  |  |  |10
+ 8 @  4      |  |  |  |8
+ 5 @  2      |  |5
+ 2 @  1      |2
+ 1 @  0    1
+ 0 @  0    0
+ ```
+
+ bisect를 사용하면 수치형 값으로 테이블을 참조할 수 있으므로, 아래 코드처럼 시험 점수를 등급 문자로 변환할 수 있습니다.
+
+ ```python
+ >>> def grade(score, breakpoints = [60, 70, 80, 90], grades='FDCBA'):
+...     i = bisect.bisect(breakpoints, score)
+...     return grades[i]
+...
+
+>>> [grade(score) for score in [33, 99, 77, 70, 89, 90, 100]]
+['F', 'A', 'C', 'C', 'B', 'A', 'A']
+```
+
+이 함수들은 검색뿐만 아니라 정렬된 시퀀스 안에 항목을 삽입할 때도 사용됩니다.
+
+### 2.8.2 `bisect.insort()`로 삽입하기
+정렬은 값비싼 연산이므로 시퀀스를 일단 정렬한 후에는 정렬 상태를 유지하는 것이 좋습니다. 그래서 `bisect.insort()` 함수가 만들어졌습니다.  
+
+`insort(seq, item)`은 seq를 오름차순으로 유지한 채로 item을 seq에 삽입합니다.
+
+```python
+# 시퀀스를 항상 정렬된 상태로 유지하는 insort()
+import bisect
+import random
+
+SIZE = 7
+
+random.seed(1729)
+
+my_list = []
+for i in range(SIZE):
+    new_item = random.randrange(SIZE*2)
+    bisect.insort(my_list, new_item)
+    print('%2d ->' % new_item, my_list)
+```
+
+```
+fluent(master*) » python 2_19.py
+10 -> [10]
+ 0 -> [0, 10]
+ 6 -> [0, 6, 10]
+ 8 -> [0, 6, 8, 10]
+ 7 -> [0, 6, 7, 8, 10]
+ 2 -> [0, 2, 6, 7, 8, 10]
+10 -> [0, 2, 6, 7, 8, 10, 10]
+```
+bisect 함수와 마찬가지로 insort 함수도 선택적으로 lo와 hi 인수를 받아 시퀀스 안에서 검색할 범위르 제한합니다. 그리고 삽입 위치를 검색하기 위해 bisect_left() 함수를 사용하는 insort_left() 함수도 있습니다.  
+
+지금까지 다룬 내용은 리스트나 튜플뿐만 아니라 시퀀스에도 적용됩니다. 많은 프로그래머들이 리스트형을 남용하지만, 숫자들로 구성된 리스트를 다룬다면 배열을 사용하는 것이 좋습니다.
