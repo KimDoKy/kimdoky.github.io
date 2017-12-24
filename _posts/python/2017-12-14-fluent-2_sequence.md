@@ -1,4 +1,4 @@
- ---
+---
 layout: post
 section-type: post
 title: Fluent Python - part2_chap2. 데이터 구조체 - 시퀀스
