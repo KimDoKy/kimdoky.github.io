@@ -2,8 +2,8 @@
 layout: post
 section-type: post
 title: HTTP - The Definitive Guide
-category: django
-tags: [ 'django' ]
+category: http
+tags: [ 'http' ]
 ---
 
 웹 프로그래밍에 있어서 필수적으로 사용하고 알아야 하는것이 HTTP입니다.
