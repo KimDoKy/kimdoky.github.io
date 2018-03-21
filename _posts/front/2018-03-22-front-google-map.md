@@ -43,6 +43,7 @@ def get_gps(photo):
 - 한 페이지에 여러 구글맵 삽입하기 : 한 페이지에 여러 구글맵을 여러개 넣기 위해 `map` 뒤에 id를 추가하여 각기 다른 이름으로 정의해주었습니다.
 - 마커를 원하는 사진으로 교체하기 : `google.maps.MarkerImage`을 이용하면 됩니다. 여기서는 `IconImage` 라는 변수로 이미지를 정의합니다. 다른 방법들을 시도하여봤지만, 이 함수가 만족할 만한 결과를 보여주었습니다.(원하는 이미지, 원하는 사이즈, 등)
 
+{% raw %}
 ```html
 <body>
 <script async defer src="https://maps.googleapis.com/maps/api/js?key=API_KEY&callback=initMap">
@@ -106,5 +107,5 @@ def get_gps(photo):
 {% endfor %}
 </body>
 ```
-
+{% endraw %}
 반드시 `<body>` 태그 안에 넣어주어야 합니다.
