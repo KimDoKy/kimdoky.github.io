@@ -109,3 +109,15 @@ def get_gps(photo):
 ```
 {% endraw %}
 반드시 `<body>` 태그 안에 넣어주어야 합니다.
+
+### 구글맵이 에러가 난다면?
+크롬에서 개발자 도구 - 콘솔을 통해 에러 내용을 확인합니다. 해당 에러에 대한 설명은 <https://developers.google.com/maps/documentation/javascript/error-messages#referer-not-allowed-map-error>애서 자세히 설명하고 있습니다.
+#### RefererNotAllowedMapError
+우선 현재 개발하고 있는 페이지의 주소에서 사용할 수 있도록 [API setting](https://console.developers.google.com/apis/credentials/key/)에서 사이트를 등록하여 권한을 줍니다.
+
+#### API KEY를 변경했는데 브라우저에서 예전 키가 계속 불려져올때는?
+장고 서버를 리부트해야 적용됩니다.
+
+#### 여러 개의 구글맵이 출력되지 않고 하나만 나온다면?
+
+템플릿 for 문을 스크립트의 `function initMap()` 안쪽에 선언해야 합니다. for 문이 `function initMap()` 밖에 있다면 계속 초기화하여 마지막에 반복된 함수만이 유효하여 마지막꺼만 지도가 출력이 됩니다. 
