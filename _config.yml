@@ -56,8 +56,7 @@ start-delay: 200
 delete-delay: 5000
 lines: # You can add HTML Tags in the Text
   - text: "Python, Django Web Developer 입니다."
-  - text: "공부는 정말 끝이 없네요..."
-  - text: "열공 합시다!!"
+  - text: "공부한 것들을 기록하는 Blog입니다."
 
 me-img: "/img/jetpacktocat.png"
 
