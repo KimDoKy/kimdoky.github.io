@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: EFFECTIVE PYTHON - 한 슬라이스에 start, end, stride 를 함께 쓰디 말자
+title: EFFECTIVE PYTHON - 한 슬라이스에 start, end, stride 를 함께 쓰지 말자
 category: python
 tags: [ 'python' ]
 ---
@@ -43,7 +43,7 @@ tags: [ 'python' ]
 >>> c = b[1:-1] # ['c', 'e']
 ```
 
-슬라이싱부터 하고 스트라이딩을 하면 첫 번째 연산 결과로 얕은 복사본이 나오는데 이 크기를 최대한 줄여야 한다. 프로드램에서 두 과정에 필요한 시간과 메모리가 충분하지 않다면 내장 모듈 `itertools`의 `islice` 메서드를 사용하자. `islice` 메서드는 start, end, stride에 음수 값을 허용하지 않는다.
+슬라이싱부터 하고 스트라이딩을 하면 첫 번째 연산 결과로 얕은 복사본이 나오는데 이 크기를 최대한 줄여야 한다. 프로그램에서 두 과정에 필요한 시간과 메모리가 충분하지 않다면 내장 모듈 `itertools`의 `islice` 메서드를 사용하자. `islice` 메서드는 start, end, stride에 음수 값을 허용하지 않는다.
 
 
 ## 핵심 정리
