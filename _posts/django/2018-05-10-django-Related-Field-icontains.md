@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: Django - Related Field has invalid lookup: icontains
+title: Django - Related Field has invalid lookup - contains
 category: django
 tags: [ 'django' ]
 ---
