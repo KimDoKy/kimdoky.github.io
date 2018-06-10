@@ -456,3 +456,59 @@ Daffy Duck says It's rabbit season!
 >>> who_says(brook)
 Brook says Babble
 ```
+
+## 6.12 특수 메서드
+
+### 비교 연산을 위한 마법 메서드
+
+메서드 | 동작
+---|---
+__eq__(self, other) | self == other
+__ne__(self, other) | self != other
+__lt__(self, other) | self < other
+__gt__(self, other) | self > other
+__le__(self, other) | self <= other
+__ge__(self, other) | self >= other
+
+### 산술 연산을 위한 마법 메서드
+
+메서드 | 동작
+---|---
+__add__(self, other) | self + other
+__sub__(self, other) | self - other
+__mul__(self, other) | self * other
+__floordiv__(self, other) | self // other
+__truediv__(self, other) | self / other
+__mod__(self, other) | self % other
+__pow__(self, other) | self ** other
+
+### 기타 마법 메서드
+
+메서드 | 동작
+---|---
+__str__(self) | str(self)
+__repr__(self) | repr(self)
+__len__(self) | len(self)
+
+`__str__`이나 `__repr__`을 정의하지 않으면 객체의 기존 문자열을 출력한다.
+
+
+```Python
+class Word():
+    def __init__(self, text):
+        self.text = text
+    def __eq__(self, words):
+        return self.text.lower() == words.text.lower()
+    def __str__(self):
+        return self.text
+    def __repr__(self):
+        return "Word('" + self.text + "')"
+```
+
+```Python
+>>> first = Word('ha')
+>>> first  # __repr__ 호출
+Word('ha')
+>>> print(first)  # __str__ 호출
+ha
+```
