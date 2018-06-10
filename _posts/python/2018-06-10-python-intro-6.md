@@ -299,7 +299,7 @@ AttributeError: can't set attribute
 
 직접 속성을 접근하는 것보다 프로퍼티를 통해서 접근하면, 속성의 정의가 바뀌면 모든 호출자도 자동으로 적용된다.
 
-## 6.9 private 네임 맹글링
+## 6.9 private 네임 맹글링(name mangling)
 
 파이썬은 클래스 정의 외부에서 볼 수 없도록 속성에 대한 네이밍 컨벤션(naming convention)이 있다. (속성 이름 앞에 더블 언더스코어(`__`)를 붙인다.)
 
@@ -346,3 +346,113 @@ AttributeError: 'Duck' object has no attribute '__name'
 'Donald'
 ```
 inside the getter를 출력하지 않았다. 이것은 속성을 완벽하게 보호하지는 않지만, 네임 맹글링은 속성의 의도적인 직접 접근을 어렵게 만든다.
+
+## 6.10 메서드 타입
+
+클래스 정의에서 메서드의 첫 번째 인자가 self라면 이 메서드는 **인스턴스 메서드** 이다. 일반적인 클래스를 생성할 때의 메서드 타입니다. 인스턴스 메서드의 첫 번째 매개변수는 self이고, 파이썬은 이 메서드를 호출할 때 객체를 전달한다.  
+
+클래스 정의에서 함수에 `@classmethod` 데코레이터이 있다면 이건 클래스 메서드다. **클래스 메서드** 는 클래스 전체에 영향을 미친다. 클래스에 대한 어떤 변화는 모든 객체에 영향을 미친다. 또한 이 메서드의 첫 번째 매개변수는 클래스 자신이다. 파이썬에서는 이 클래스의 매개변수를 `cls`로 쓴다. `class`는 예약어라 사용할 수 없다.
+
+```Python
+# A 클래스에서 객체 인스턴스가 얼마나 만들어졌는지에 대한 클래스 메서드를 정의
+class A():
+    count = 0
+    def __init__(self):
+        A.count += 1
+    def exclaim(self):
+        print("I'm an A!")
+    @classmethod
+    def kids(cls):
+        print("A has", cls.count, "little objects")
+
+>>> easy_a = A()
+>>> breezy_a = A()
+>>> wheezy_a = A()
+>>> A.kids()
+A has 3 little objects
+```
+
+self.count(객체 인스턴스 속성)를 참조하기보단 A.count(클래스 속성)를 참조했다. kids() 메서드에서 A.count를 사용할 수 있지만 cls.count를 사용했다.  
+
+클래스 정의에서 메서드의 세 번째 타입은 클래스나 객체에 영향을 미치지 못한다. 단지 편의를 위해 존재한다. **정적 메서드** 는 `@staticmethod` 데코레이터가 붙어있고, 첫 번째 매개변수로 `self`나 `cls`가 없다.
+
+```Python
+class CoyoteWeapon():
+    @staticmethod
+    def commercial():
+        print('This CoyoteWeapon gan been brought to you by Acme')
+
+# 이 메서드를 접근하기 위해 클래스의 객체를 생성할 필요가 없다.
+>>> CoyoteWeapon.commercial()
+This CoyoteWeapon gan been brought to you by Acme
+```
+
+## 6.11 덕 타이핑(duck typing)
+
+> "오리처럼 꽥꽥거리고 걷는다면, 그것은 오리다" - 현명한 사람
+
+파이썬은 **다형성** 을 느슨하게 구현했다. 즉, 클래스에 상관없이 같은 동작을 다른 객체에 적용할 수 있다는 의미이다.  
+
+ex) Quote 클래스에서 같은 __init__() 이니셜라이저를 사용해 본다. 클래스에 두 메서드를 추가한다.
+
+- who() : 저장된 person 문자열의 값을 반환
+- says() : 특정 구두점과 함께 저장된 words 문자열을 반환
+
+```python
+class Quote():
+    def __init__(self, person, words):
+        self.person = person
+        self.words = words
+    def who(self):
+        return self.person
+    def says(self):
+        return self.words + '.'
+
+class QuestionQuote(Quote):
+    def says(self):
+        return self.words + '?'
+
+class ExclamationQuote(Quote):
+    def says(self):
+        return self.words + '!'
+```
+
+QuestionQuote와 ExclamationQuote 클래서에서 초기화 함수를 쓰지 않았다. 즉 부모의 `__init__()`메서드를 오버라이드하지 않는다. 파이썬은 자동으로 부모 클래스의 `__init__()`메서드를 호출해서 인스턴스 변수 person과 words를 저장한다. 그러므로 서브클래스 QuestionQuote와 ExclamationQuote에서 생성된 객체의 self.words에 접근할 수 있다.
+
+```Python
+>>> hunter = Quote('Elmer Fudd', "I'm hunting wabbits")
+>>> print(hunter.who(), 'says:', hunter.says())
+Elmer Fudd says: I'm hunting wabbits.
+>>> hunted1 = QuestionQuote('Bugs Bunny', "What's up, doc")
+>>> print(hunted1.who(), 'says:', hunted1.says())
+Bugs Bunny says: What's up, doc?
+>>> hunted2 = ExclamationQuote('Daffy Duck', "It's rabbit season")
+>>> print(hunted2.who(), 'says:', hunted2.says())
+Daffy Duck says: It's rabbit season!
+```
+
+세 개의 서로 다른 says() 메서드는 세 클래스에 대해 서로 다른 동작을 한다. 이것이 객체 지향 언어의 다형성의 특징이다. 파이썬은 who()와 says() 메서드를 갖고 있는 모든 객체(동일 클래스를 통해 생성된)에서 이 메서드들을 실행할 수 있다.
+
+```Python
+class BabblingBrook():
+    def who(self):
+        return 'Brook'
+    def says(self):
+        return 'Babble'
+
+brook = BabblingBrook()
+```
+
+```Python
+def who_says(obj):
+    print(obj.who(), 'says', obj.says())
+
+>>> who_says(hunter)
+Elmer Fudd says I'm hunting wabbits.
+>>> who_says(hunted1)
+Bugs Bunny says What's up, doc?
+>>> who_says(hunted2)
+Daffy Duck says It's rabbit season!
+>>> who_says(brook)
+Brook says Babble
+```
