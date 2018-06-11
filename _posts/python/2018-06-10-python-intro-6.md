@@ -512,3 +512,112 @@ Word('ha')
 >>> print(first)  # __str__ 호출
 ha
 ```
+
+## 6.13 컴포지션
+
+자식 클래스가 부모 클래스처럼 행동하고 싶을때, 상속은 좋은 기술이다. 프로그래머는 상속 계층구조의 사용에 유혹될 수 있지만, **컴포지션(composition) 또는 어그리게이션(aggregation)** 의 사용이 더 적절한 경우도 있다.
+
+```Python
+class Bill():
+    def __init__(self, description):
+        self.description = description
+
+class Tail():
+    def __init__(self, length):
+        self.length = length
+
+class Duck():
+    def __init__(self, bill, tail):
+        self.bill = bill
+        self.tail = tail
+    def about(self):
+        print('This duck has a', self.bill.description, 'bill and a', self.tail.length, 'tail')
+```
+
+```Python
+>>> tail = Tail('long')
+>>> bill = Bill('wide orange')
+>>> duck = Duck(bill, tail)
+>>> duck.about()
+This duck has a wide orange bill and a long tail
+```
+
+## 6.14 클래스와 객체, 그리고 모듈은 언제 사용할까?
+
+코드에서 클래스와 모듈의 사용 기준
+
+- 비슷한 행동(메서드)을 하지만 내부 상태(속성)가 다른 개별 인스턴스가 필요할 때, 객체는 매우 유용하다.
+- 클래스는 상속을 지원하지만, 모듈은 상속을 지원하지 않는다.
+- 어떤 한 가지 일만 수행한다면 모듈이 가장 좋은 선택이다. 프로그램에서 파이썬 모듈이 참조된 횟수에 상관없이 단 하나의 복사본만 불러온다.(자바나 C++의 싱글턴)
+- 여러 함수에 인자로 전달될 수 있는 여러 값을 포함한 여러 변수가 있다면, 클래스를 정의하는 것이 더 좋다.
+- 가장 간단한 문제 해결 방법을 사용한다. 딕셔너리, 리스트, 튜플은 모듈보다 더 작고, 간단하며, 빠르다. 일반적으로 모듈은 클래스보다 더 간단하다.
+
+> "자료구조를 과하게 엔지니어링하는 것을 피하라. 객체보다 튜플이 더 낫다.(네임드 튜플) getter/setter 함수보다 간단한 필드(field)가 더 낫다. ... 내장된 데이터 타입은 우리의 친구다. 숫자, 문자열, 튜플, 리스트, 셋, 딕셔너리를 사용하다. 또한 데크와 같은 컬렉션 라이브러리를 활용하라" - 귀도 반 로섬
+
+### 6.14.1 네임드 튜플
+
+네임드 튜플은 튜플의 서브 클래스다. 이름(`.name`)과 위치(`[offset]`)로 값에 접근할 수 있다.
+
+- 불변하는 객체처럼 행동한다.
+- 객체보다 공간 효율성과 시간 효율성이 더 좋다.
+- 딕셔너리 형식의 괄호(`[]`) 대신, 점(`.`) 표기법으로 속성을 접근할 수 있다.
+- 네임드 튜플을 딕셔너리의 키처럼 쓸 수 있다.
+
+```python
+>>> from collections import  namedtuple
+>>> Duck = namedtuple('Duck', 'bill tail')
+>>>d uck = Duck('wide orange', 'long')
+>>> duck
+Duck(bill='wide orange', tail='long')
+```
+
+```python
+>>> duck.bill
+'wide orange'
+```
+
+```python
+>>> duck.tail
+'long'
+```
+
+```python
+# 딕셔너리에서 네임드 튜플을 만들 수 있다.
+>>> parts = {'bill': 'wide orange', 'tail':'long'}
+>>> duck2 = Duck(**parts)  # 키워드 인자. 딕셔너리에서 키와 값을 추출하여 인자로 제공
+>>> duck2
+Duck(bill='wide orange', tail='long')
+```
+
+```python
+duck2 = Duck(bill = 'wide orange', tail = 'long')
+```
+
+```python
+# 네임드 튜플은 불변이다. 필드를 바꿔서 또 다른 네임드 튜플을 반환할 수 있다.
+>>> duct3 = duck2._replace(tail='magnificent', bill='crushing')
+>>> duct3
+Duck(bill='crushing', tail='magnificent')
+```
+
+```python
+# 딕셔너리로 정의한다.
+>>> duck_dict = {'bill':'wide orange', 'tail':'long'}
+>>> duck_dict
+{'bill': 'wide orange', 'tail': 'long'}
+```
+
+```python
+# 딕셔너리에 필드를 추가한다.
+>>> duck_dict['color'] = 'green'
+>>> duck_dict
+{'bill': 'wide orange', 'tail': 'long', 'color': 'green'}
+```
+
+```python
+>>> duck.color = 'green'  # 딕셔너리는 네임드 튜플이 아니다.
+Traceback (most recent call last)
+<ipython-input-92-eecc5df363d5> in <module>()
+----> 1 duck.color = 'green'
+AttributeError: 'Duck' object has no attribute 'color'
+```
