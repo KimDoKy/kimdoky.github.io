@@ -274,3 +274,64 @@ UnicodeDecodeError: 'ascii' codec can't decode byte 0xc3 in position 3: ordinal 
 >>> '%*.*d %*.*f %*.*s' % (10, 4, n, 10, 4, f, 10, 4, s)
 '      0042     7.0300       stri'
 ```
+
+#### 새로운 스타일의 포매팅  : {}와 format
+
+```Python
+# 기본 사용법
+>>> '{} {} {}'.format(n, f, s)
+'42 7.03 string'
+
+# 새로운 스타일에서 순서 지정
+# 0은 첫 번째 인자인 부동소수점수 f, 1은 문자열 s, 2는 마지막 인자인 정수 n을 참조
+>>> '{2} {0} {1}'.format(f, s, n)
+'42 7.03 string'
+
+# 인자는 딕셔너리 혹은 이름을 지정한 인자가 될 수 있다.
+>>> '{n} {f} {s}'.format(n=42, f=7.03, s='string')
+'42 7.03 string'
+
+# 0은 딕셔너리 전체, 1은 딕셔너리 다음에 오는 문자열
+>>> d = {'n':42, 'f':7.03, 's':'string'}
+'{0[n]} {0[f]} {0[s]} {1}'.format(d, 'other')
+'42 7.03 string other'
+
+# 타입 지정자는 ':' 다음에 입력한다.
+>>> '{0:d} {1:f} {2:s}'.format(n, f, s)
+'42 7.030000 string'
+
+>>> '{n:d} {f:f} {s:s}'.format(n=42, f=7.03, s='stirng')
+'42 7.030000 stirng'
+
+# 다른 옵션(최소 필드 길이, 최대 문자 길이, 정렬 등)
+# 최소 필드 길이 10, 오른쪽 정렬(기본값)
+# 문자열은 왼쪽 정렬이 기본값인듯 하다.
+>>> '{0:10d} {1:10f} {2:10s}'.format(n, f, s)
+'        42   7.030000 string    '
+# '>'는 오른쪽 정렬을 더 명확히 한다.
+>>> '{0:>10d} {1:>10f} {2:>10s}'.format(n, f, s)
+'        42   7.030000     string'
+# 왼쪽 정렬
+>>> '{0:<10d} {1:<10f} {2:<10s}'.format(n, f, s)
+'42         7.030000   string    '
+
+# 중앙 정렬
+>>> '{0:^10d} {1:^10f} {2:^10s}'.format(n, f, s)
+'    42      7.030000    string  '
+
+# 정밀(percision)값은 예 스타일과 같이 소수부 숫자의 자릿수와 문자열의 최대 문자수를 의미
+# 새로운 스타일에서는 이것을 정수에 사용할 수 없다.
+>>> '{0:>10.4d} {1:>10.4f} {2:10.4s}'.format(n, f, s)
+ValueError                                Traceback (most recent call last)
+<ipython-input-55-f52a97892439> in <module>()
+----> 1 '{0:>10.4d} {1:>10.4f} {2:10.4s}'.format(n, f, s)
+
+ValueError: Precision not allowed in integer format specifier
+
+>>> '{0:>10d} {1:>10.4f} {2:>10.4s}'.format(n, f, s)
+'        42     7.0300       stri'
+
+# ':' 이후에, 정렬(>,<,^) 혹은 길이 지정자 이전에 채워 넣고 싶은 문자를 입력
+>> '{0:!^20s}'.format('BIGGG')
+'!!!!!!!BIGGG!!!!!!!!'
+ ```
