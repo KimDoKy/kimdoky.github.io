@@ -335,3 +335,61 @@ ValueError: Precision not allowed in integer format specifier
 >> '{0:!^20s}'.format('BIGGG')
 '!!!!!!!BIGGG!!!!!!!!'
  ```
+
+### 7.1.3 정규표현식
+
+정규표현식은 표준 모듈 `re`를 사용한다. 원하는 문자열 **패턴** 을 정의하여 소스 문자열과 일치하는지 비교한다.
+
+```Python
+>>> import re
+# match의 첫 번째 인자는 패턴이고, 두 번째 인자는 문자열 소스이다.
+>>> result = re.match('You', 'Young Frankenstein')
+>>> print(result)
+<_sre.SRE_Match object; span=(0, 3), match='You'>
+# 추후에 패턴 확인을 빠르게 하기 위해 패턴을 먼저 컴파일할 수 있다.
+>>> youpattern = re.compile('You')
+>>> result = youpattern.match('Young Frankenstein')
+>>> print(result)
+<_sre.SRE_Match object; span=(0, 3), match='You'>
+```
+
+#### 다른 메서드들
+
+- search() : 첫 번째 일치하는 객체를 반환한다.
+- findall() : 중첩에 상관없이 모두 일치하는 문자열 리스트를 반환한다.
+- split() : 패턴에 맞게 소스를 쪼갠 후 문자열 조각의 리스트를 반환한다.
+- sub() : 대체 인자를 하나 더 받아서 패턴과 일치하는 모든 소스 부분을 대체 인자로 변경한다.
+
+##### 시작부터 일치하는 패턴 찾기: match()
+
+```Python
+>>> import re
+>>> source = 'Young Frankenstein'
+# match는 소스의 시작부터 패턴이 일치하는지 확인한다.
+>>> m = re.match('You', source)
+>>> if m:  # match는 객체를 반환한다. 무엇이 일치하는지 보기 위한 작업이다.
+>>>     print(m.group())
+You
+# 문자열이 You로 시작하는지 확인한다.
+>>> m = re.match('^You', source)
+>>> if m:
+>>>     print(m.group())
+You
+# match()는 패턴이 소스의 처음에 있는 경우에만 작동하기 때문에, Frank는 작동하지 않는다.
+>>> m = re.match('Frank', source)
+>>> if m:
+>>>     print(m.group())
+# search()는 패턴이 아무데나 있어도 작동한다.
+>>> m = re.search('Frank', source)
+>>> if m:
+>>>     print(m.group())
+Frank
+# 패턴을 바꿔서 작동 시키기
+>>> m = re.match('.*Frank', source)
+>>> if m:
+>>>     print(m.group())
+Young Frank
+# .는 **한 문자** 를 의미한다.
+# *는 이전 패턴이 여러 개 올 수 있다는 것을 의미한다.
+# *는 0회 이상의 문자가 올 수 있다는 것을 의미한다.
+```
