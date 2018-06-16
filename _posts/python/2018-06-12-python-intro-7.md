@@ -393,3 +393,101 @@ Young Frank
 # *는 이전 패턴이 여러 개 올 수 있다는 것을 의미한다.
 # *는 0회 이상의 문자가 올 수 있다는 것을 의미한다.
 ```
+
+#### 첫 번째 일치하는 패턴 찾기: search()
+`.*` 와일드카드 없이 'Young Frankenstein' 소스 문자열에서 'Frank' 패턴을 찾기 위해 `search()`를 사용할 수 있다.
+
+```Python
+>>> m = re.search('Frank', source)
+>>> if m:
+>>>     print(m.group())
+Frank
+```
+
+#### 일치하는 모든 패턴 찾기: findall()
+
+```Python
+# 문자열에서 n의 갯수 찾기
+>>> m = re.findall('n', source)
+>>> m
+['n', 'n', 'n', 'n']
+>>> print('Found', len(m), 'matches')
+Found 4 matches
+# n 다음 문자가 오는지 찾기
+# .은 한 문자를 의미
+# ?는 0 또는 1회를 의미
+# .? 는 하나의 문자가 0 또는 1회 올 수 있다는 의미
+>>> m = re.findall('n.', source)
+>>> m
+['ng', 'nk', 'ns'] # 마지막 n이 포함되지 않는다.
+>>> m = re.findall('n.?', source)
+>>> m
+['ng', 'nk', 'ns', 'n']
+```
+
+#### 패턴으로 나누기: split()
+지정한 패턴으로 문자열을 리스트로 나눈다.
+
+```Python
+>>> m = re.split('n', source)
+>>> m
+['You', 'g Fra', 'ke', 'stei', '']
+```
+
+#### 일치하는 패턴 대체하기: sub()
+
+문자열 `replace()` 메서드와 비슷하지만, 리터럴 문자열이 아닌 패턴을 사용한다.
+
+```Python
+>>> m = re.sub('n', '?', source)
+>>> m
+'You?g Fra?ke?stei?'
+```
+
+#### 패턴: 특수 문자
+
+- 리터럴은 모두 비특수 문자와 일치한다.
+
+패턴 | 일치 / 설명
+---|---
+. | \n을 제외한 하나의 문자
+* | 0회 이상
+? | 0 또는 1회
+\d | 숫자
+\D | 비숫자
+\w | 알파벳 문자
+\W | 비알파벳 문자
+\s | 공백 문자
+\S | 비공백 문자
+\b | 단어 경계(\w와 \W 또는 \W와 \w 사이의 경계)
+\B | 비단어 경계
+
+string 모듈의 printable에는 알파벳 대/소문자, 숫자, 공백, 구두점을 포함한 100가지 아스키 문자가 포함되어 있다.
+
+```Python
+>>> import string
+>>> printable = string.printable
+>>> len(printable)
+100
+>>> printable[0:50]
+'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN'
+>>> printable[50:]
+'OPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n\r\x0b\x0c'
+# 숫자
+>>> re.findall('\d', printable)
+['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+# 숫자, 문자, 언더스코어
+>>> re.findall('\w', printable)
+['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd','e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E','F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_']
+# 공백 문자
+ >>> re.findall('\s', printable)
+ [' ', '\t', '\n', '\r', '\x0b', '\x0c']
+```
+
+\d는 아스키 문자 '0'에서 '9'뿐만 아니라 유니코드가 정의하는 숫자도 될 수 있다.
+
+```Python
+>>> x = 'abc' + '-/*' + '\u00ea' + '\u0115'
+>>> re.findall('\w', x)
+['a', 'b', 'c', 'ê', 'ĕ']
+```
