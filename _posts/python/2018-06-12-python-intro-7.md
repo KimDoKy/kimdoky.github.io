@@ -491,3 +491,110 @@ string 모듈의 printable에는 알파벳 대/소문자, 숫자, 공백, 구두
 >>> re.findall('\w', x)
 ['a', 'b', 'c', 'ê', 'ĕ']
 ```
+
+#### 패턴: 지정자
+
+패턴 | 일치
+---|---
+abc | 리터럴 abc
+( expr ) | expr
+expr1 \| expr2 | expr1 또는 expr2
+. | \n을 제외한 모든 문자
+^ | 소스 문자열의 시작
+$ | 소스 문자열의 끝
+prev ? | 0 또는 1회의 prev
+prev* | 0회 이상의 최대 prev
+prev*? | 0회 이상의 최소 prev
+prev+ | 1회 이상의 최대 prev
+prev+? | 1회 이상의 최소 prev
+prev {m} | m회의 prev
+prev {m, n} | m에서 n회의 최대 prev
+prev {m, n}? | m에서 n회의 최소 prev
+[abc] | a 또는 b 또는 c
+[^abc] | (a 또는 b 또는 c)가 아님
+prev (?=next) | 뒤에 next가 오면 prev
+prev (?!next) | 뒤에 next가 오지 않으면 prev
+(?<=prev) next | 전에 prev가 오면 next
+(?<!prev) next | 전에 prev가 오지 않으면 next
+
+> expr은 표현식, prev는 이전 토큰, next는 다음 토큰을 의미한다.
+
+```Python
+# 테스트 할 문자열을 지정
+>>> source = '''I wish I may, I wish I might
+            Have a dish of fish tonight.'''
+# wish 찾기
+>>> re.findall('wish', source)
+['wish', 'wish']
+# wish 또는 fish 찾기
+>>> re.findall('wish|fish', source)
+['wish', 'wish', 'fish']
+# wish로 사작하는지 찾기
+>>> re.findall('^wish', source)
+[]
+# I wish로 시작하는지 찾기
+>>> re.findall('^I wish', source)
+['I wish']
+# fish로 끝나는지 찾기
+>>> re.findall('fish$', source)
+[]
+# fish tonight. 으로 끝나는지 찾기
+>>> re.findall('fish tonight.$', source)
+['fish tonight.']
+
+# `^`와 `$`는 **앵커(anchor)** 라고 한다.
+# `^`는 검색 문자열의 시작 위치에, `$`는 검색 문자열의 마지막 위치에 고정한다.
+# `.$`는 가장 마지막에 있는 한 문자와 `.`을 매칭한다 더 정확하게 하려면 문자 그대로 매칭하기 위해 `.`에 이스케이프 문자를 붙여야 한다.
+>>> re.findall('fish tonight\.$', source)
+['fish tonight.']
+# w 또는 f 다음에 ish가 오는 단어 찾기
+>>> re.findall('[wf]ish', source)
+['wish', 'wish', 'fish']
+# w,s,h가 하나 이상인 단어 찾기
+>>> re.findall('[wsh]+', source)
+['w', 'sh', 'w', 'sh', 'h', 'sh', 'sh', 'h']
+# ght 다음에 비알파벳 문자가 나오는 단어 찾기
+>>> re.findall('ght\W', source)
+['ght\n', 'ght.']
+# wish 이전에 나오는 I 찾기
+>>> re.findall('I (?=wish)', source)
+['I ', 'I ']
+# I 다음에 나오는 wish 찾기
+>>> re.findall('(?<=I) wish', source)
+[' wish', ' wish']
+```
+
+정규표현식 패턴이 파이썬 문자열 규칙과 충돌하는 경우들이 있다.
+
+```Python
+>>> re.findall('\bfish', source)
+[]
+```
+파이썬은 문자열에 대해 몇 가지 특별한 이스케이프 문자를 사용한다. 예를 들어 `\b`는 백스페이스를 의미하지만, 정규표현식에서는 단어의 시작 부분을 의미한다. 정규표현식의 패턴을 입력하기 전에 항상 문자 `r`(raw string)을 입력해야 한다. 그러면 파이썬의 이스케이프 문자를 사용할 수 없게되어 충돌을 피할 수 있다.
+
+```python
+>>> re.findall(r'\bfish', source)
+['fish']
+```
+
+#### 패턴: 매칭 결과 지정하기
+
+`match()` 또는 `search()`를 사용할 때 모든 매칭을 m.group()과 같이 객체 m으로부터 결과를 반환한다. 만약 패턴을 괄호로 둘러싸는 경우, 매칭은 그 괄호만의 그룹으로 저장된다. `m.groups()`를 사용하여 그룹의 튜플을 출력한다.
+
+```Python
+>>> m = re.search(r'(. dish\b).*(\bfish)', source)
+>>> m.group()
+'a dish of fish'
+>>> m.groups()
+('a dish', 'fish')
+# (?P< name > expr ) 패턴을 사용한다면, 표현식(expr)이 매칭되고, 그룹 이름(name)의 매칭 내용이 저장된다.
+>>> m = re.search(r'(?P<DISH>. dish\b).*(?P<FISH>\bfish)', source)
+>>> m.group()
+'a dish of fish'
+>>> m.groups()
+('a dish', 'fish')
+>>> m.group('DISH')
+'a dish'
+>>> m.group('FISH')
+'fish'
+```
