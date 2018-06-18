@@ -598,3 +598,52 @@ prev (?!next) | 뒤에 next가 오지 않으면 prev
 >>> m.group('FISH')
 'fish'
 ```
+
+## 7.2 이진 데이터
+
+이진 데이터를 다루기 위해 **엔디안(endian. 컴퓨터 프로세서가 데이터를 바이트로 나누는 방법)**와 정수에 대한 **사인 비트(sign bit)** 개념을 알아야 한다. 그리고 데이터를 추출하거나 변경하는 바이너리 파일 형식과 네트워크 패킷을 배워야 한다. (여기서는 이진 데이터에 대한 기초만 살펴본다.)
+
+### 7.2.1 바이트와 바이트 배열
+
+- **바이트(byte)**는 바이트의 튜플처럼 불변한다.
+- **바이트 배열(byte array)**은 바이트의 리스트처럼 변경 가능하다.
+
+```Python
+# blist : 리스트 변수
+# the_bytes : 바이트 변수
+# the_byte_array : 바이트 배열 변수
+>>> blist = [1,2,3,255]
+>>> the_bytes = bytes(blist)
+>>> the_bytes
+b'\x01\x02\x03\xff'
+>>> the_byte_array = bytearray(blist)
+>>> the_byte_array
+bytearray(b'\x01\x02\x03\xff')
+
+# 바이트 변수는 불변
+>>> the_bytes[1] = 127
+Traceback (most recent call last)
+<ipython-input-3-ae169b50bd40> in <module>()
+      1 # 바이트 변수는 불변
+----> 2 the_bytes[1] = 127
+
+TypeError: 'bytes' object does not support item assignment
+
+# 바이트 배열 변수는 변경 가능
+>>> the_byte_array = bytearray(blist)
+>>> the_byte_array
+bytearray(b'\x01\x02\x03\xff')
+>>> the_byte_array[1] = 127
+>>> the_byte_array
+bytearray(b'\x01\x7f\x03\xff')
+```
+
+```Python
+# 0에서 255까지의 결과를 생성
+>>> the_bytes = bytes(range(0, 256))
+>>> the_byte_array = bytearray(range(0, 256))
+
+# 바이트 혹은 바이트 배열 데이터를 출력할 때, 파이썬은 출력할 수 없는 바이트에 대해서는 \xxx를 사용하고, 출력할 수 있는 바이트에 대해서는 아스키코드 값을 사용한다.
+>>> the_bytes
+b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\x7f\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff'
+```
