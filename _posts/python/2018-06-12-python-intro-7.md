@@ -647,3 +647,109 @@ bytearray(b'\x01\x7f\x03\xff')
 >>> the_bytes
 b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\x7f\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff'
 ```
+
+### 7.2.2 이진 데이터 변환하기: struct
+
+파이썬 표준 라이브러리는 C와 C++의 구조체와 유사한, 데이터를 처리하는 `struct` 모듈이 있다. `struct`를 사용하면 이진 데이터를 파이썬 데이터 구조로 바꾸거나 파이썬 데이터 구조를 이진 데이터로 바꿀 수 있다.
+
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/O_Reilly_Media_logo.svg/1920px-O_Reilly_Media_logo.svg.png)
+
+PNG 데이터에서 이미지의 가로와 세로의 길이를 추출하는 프로그램으로 데이터를 어떻게 처리하는지 다룬다.
+
+```Python
+>>> import struct
+>>> png = open('chap7_oreilly.png', 'rb')
+>>> png.read()
+b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x07\x80\x00\x00\x01\xa1\x08\x06\x00\x00\x00\x80\x82\xa9o\x00\x00\x00\x06bKGD\x00\xff\x00\xff ...
+>>> png.close()
+>>> valid_png_header = b'\x89PNG\r\n\x1a\n'
+>>> data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR' +
+ b'\x00\x00\x07\x80\x00\x00\x01\xa1\x08'
+>>> if data[:8] == valid_png_header:
+...     width, height = struct.unpack('>LL', data[16:24])
+...     print('Valid PNG, width', width, 'height', height)
+... else:
+...     print('Not a valid PNG')
+Valid PNG, width 1920 height 417
+```
+
+- data는 PNG 파일의 첫 30바이트를 포함한다.
+- valid_png_header는 유효한 PNG 파일의 시작을 표시하는 8바이트의 시퀀스를 포함한다.
+- width는 16~20바이트에서 추출하고, height는 21~24바이트에서 추출되었다.
+
+`unpack()`에서 `>LL`은 입력한 바이트 시퀀스를 해석하고, 파이썬의 데이터 형식으로 만들어주는 형식 문자열이다.
+
+- `>`는 정수가 **빅엔디안** 형식으로 저장되었다는 것을 의미한다.
+- 각각의 `L`은 4바이트의 부호 없는 긴 정수를 지정한다.
+
+각 4바이트 값을 직접 볼 수 있다.
+
+```Python
+>>> data[16:20]
+b'\x00\x00\x07\x80'
+>>> data[20:24]
+b'\x00\x00\x01\xa1'
+```
+
+빅엔디안 정수는 왼쪽에서부터 최상위 바이트가 저장된다. 255 이상이므로 뒤에서 두 번째 바이트와 일치한다.
+
+```Python
+# 16진수 값이 예상한 10진수 값과 맞는지 확인
+>>> 0x0780
+1920
+>>> 0x01a1
+417
+# struct 모듈의 pack() 함수로 파이썬 데이터를 바이트로 변환할 수 있다.
+>>> import struct
+>>> struct.pack('>L', 1920)
+b'\x00\x00\x07\x80'
+>>> struct.pack('>L', 417)
+b'\x00\x00\x01\xa1'
+```
+
+##### 엔디안 지정자
+
+지정자 | 바이트 순서
+---|---
+< | 리틀엔디안
+> | 빅엔디안
+
+##### 형식 지정자
+
+지정자 | 설명 | 바이트
+---|---|---
+x | 1바이트 건너뜀 | 1
+b | 부호 있는 바이트 | 1
+B | 부호 없는 바이트 | 1
+h | 부호 있는 짧은 정수 | 2
+H | 부호 없는 짧은 정수 | 2
+i | 부호 있는 정수 | 4
+I | 부호 없는 정수 | 4
+l | 부호 있는 긴 정수 | 4
+L | 부호 없는 긴 정수 | 4
+Q | 부호 없는 아주 긴 정수 | 8
+f | 단정도 부동소수점수 | 4
+d | 배정도 부동소수점수 | 8
+p | 문자수(count)와 문자 | 1 + count
+s | 문자 | count
+
+타입 지정자는 엔지안 문자를 따른다. 어떤 지정자는 문자수를 가리키는 숫자가 선행될 수 있다.(ex. 5B -> BBBBB)
+
+`>LL`을 count로 선행하여 `>2L`으로 지정할 수 있다.
+
+```Python
+>>> struct.unpack('>2L', data[16:24])
+(1920, 417)
+```
+
+`x` 지정자를 사용하여 필요없는 부분을 건너뛸 수 있다.
+
+```Python
+>>> struct.unpack('>16x2L6x', data)
+(1920, 417)
+```
+
+- 빅엔디안 정수 형식 사용함(>)
+- 16바이트를 건너뜀(16x)
+- 두 개의 부호 없는 긴 정수의 8바이트를 읽음(2L)
+- 마지막 6바이트를 건너뜀(6x)
