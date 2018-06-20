@@ -663,7 +663,7 @@ PNG 데이터에서 이미지의 가로와 세로의 길이를 추출하는 프�
 b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x07\x80\x00\x00\x01\xa1\x08\x06\x00\x00\x00\x80\x82\xa9o\x00\x00\x00\x06bKGD\x00\xff\x00\xff ...
 >>> png.close()
 >>> valid_png_header = b'\x89PNG\r\n\x1a\n'
->>> data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR' +
+>>> data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR' + \
  b'\x00\x00\x07\x80\x00\x00\x01\xa1\x08'
 >>> if data[:8] == valid_png_header:
 ...     width, height = struct.unpack('>LL', data[16:24])
@@ -753,3 +753,77 @@ s | 문자 | count
 - 16바이트를 건너뜀(16x)
 - 두 개의 부호 없는 긴 정수의 8바이트를 읽음(2L)
 - 마지막 6바이트를 건너뜀(6x)
+
+### 7.2.3 기타 이진 데이터 도구
+
+이진 데이터를 정의하고 추출하는 써드파티 오픈소스 패키지
+
+- bitstring
+- construct
+- hachoir
+- binio
+
+construct의 예제이다.
+> 책의 예제에 있는 construct의 버전과 현재의 버전 차이가 많이 나서 예제에 나온 메서드들은 대부분 사라졌다.
+
+```Python
+>>> from construct import Const, Int8ub, Array, this, Byte, Struct
+
+>>> fmt = Struct(
+...     "signature" / Const(b"BMP"),
+...     "width" / Int8ub,
+...     "height" / Int8ub,
+...     "pixels" / Array(this.width * this.height, Byte),
+... )
+>>> data = format.build(dict(width=3,height=2,pixels=[7,8,9,11,12,13]))
+>>> print(data)
+b'BMP\x03\x02\x07\x08\t\x0b\x0c\r'
+>>> fmt.parse(data)
+>>> Container(signature=b'BMP', width=3, height=2, pixels=ListContainer([7, 8, 9, 11, 12, 13]))
+>>> result = fmt.parse(data)
+>>> print(result)
+Container:
+    signature = b'BMP' (total 3)
+    width = 3
+    height = 2
+    pixels = ListContainer:
+        7
+        8
+        9
+        11
+        12
+        13
+```
+
+### 7.2.4 바이트/문자열 변환하기: binascii()
+
+표준 binascii 모듈은 이진 데이터와 다양한 문자열 표현(16진수, 64진수, uuencodede 등)을 서로 변환할 수 있는 함수를 제공한다.
+
+```Python
+# 아스키코드의 호낳ㅂ과 바이트 변수를 보여주기 위해 사용했던 \x xx 이스케이프 대신 16진수의 시퀀스인 8바이트의 PNG 헤더를 출력
+>>> import binascii
+>>> valid_png_header = b'\x89PNG\r\n\x1a\n'
+>>> print(binascii.hexlify(valid_png_header))
+b'89504e470d0a1a0a'
+# 반대도 가능
+>>> print(binascii.unhexlify(b'89504e470d0a1a0a'))
+b'\x89PNG\r\n\x1a\n'
+```
+
+### 7.2.5 비트 연산자
+
+파이썬은 C 언어와 유사한 비트단위 정수 연산을 제공한다.
+
+연산자 | 설명 | 예제 | 10진수 결과 | 2진수 결과
+---|---|---|--6-|---
+& | AND | a & b | 1 | 0b0001
+\\| | OR | a \| b | 5 | 0b0101
+^ | 배타적 OR | a ^ b | 4 | 0b0010
+~ | NOT | ~a | -6 | 정수의 크기에 따라 이진 표현이 다름
+<< | 비트 왼쪽 이동 | a << 1 | 10 | 0b1010
+>> | 비트 오른쪽 이동 | a >> 1 | 2 0b0010
+
+`^` 연산자는 두 인자의 비트가 서로 다를때 1을 반환한다.  
+`~` 연산자는 1은 0으로, 0은 1로 비트를 반전시킨다.(부호도 반전시킨다.)
+모든 현대 컴퓨터에 사용되는 2의 보수 연산에서 최상위 비트는 부호(1 = 음수)를 나타내기 때문이다.
+`<<`, `>>` 연산자는 비트를 이동시킨다. 한 비트 왼쪽 이동을 2를 곱한 것과 같고, 오른쪽 이동은 2로 나눈 것과 같다.
