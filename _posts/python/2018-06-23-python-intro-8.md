@@ -242,3 +242,36 @@ When I'm feeling sad
 I simply remember my favorite things
 And then I don't feel so bad
 ```
+
+### 8.1.3 이진 파일 쓰기: write()
+
+**모드** 에 `b`를 포함시키면 파일을 이진 모드로 연다. 이 경우 문자열 대신 바이트를 읽고 쓸 수 있다.
+
+```Python
+# 0에서 255까지 256바이트 값을 생성
+>>> bdata = bytes(range(0, 256))
+>>> len(bdata)
+256
+
+# 이진 모드로 파일을 열어서 한 번에 데이터 기록
+>>> fout = open('bfile', 'wb')
+>>> fout.write(bdata)
+256
+>>> fout.close()
+
+# 텍스트 파일처럼 특정 단위로 이진 데이터 기록
+>>> fout = open('bfile', 'wb')
+>>> size = len(bdata)
+>>> offset = 0
+>>> chunk = 100
+>>> while True:
+...     if offset > size:
+...         break
+...     fout.write(bdata[offset:offset+chunk])
+...     offset += chunk
+...
+100
+100
+56
+>>> fout.close()
+```
