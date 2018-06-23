@@ -337,11 +337,11 @@ And then I don't feel so bad
 
 ```python
 >>> import os
->>> os.SEEK_SET
+>>> os.SEEK_SET  # 파일의 시작
 0
->>> os.SEEK_CUR
+>>> os.SEEK_CUR  # 현재 위치
 1
->>> os.SEEK_END
+>>> os.SEEK_END  # 파일의 끝
 2
 ```
 
@@ -381,3 +381,114 @@ And then I don't feel so bad
 ```
 
 이 함수들은 이진 파일에서 위치를 이동할 때 유용하게 쓰인다. 텍스트 파일에서도 사용가능하나, 아스키코드가 아니라면 오프셋을 계산하기 힘드므로 텍스트 파일은 비추.
+
+## 8.2 구조화된 텍스트 파일
+
+간단한 텍스트 파일은 라인으로 구성되어 있다. 어떤 프로그램에서 데이터를 저장하거나 이를 다른 프로그램으로 보낼 때는, 구조화된 데이터가 필요하다.  
+
+구조화된 텍스트 파일 형식은 많지만 그 중 몇 가지이다.
+
+- CSV(Comma-Separated Value) : 탭('\t'), 콤마(','), 수직 바('|')와 같은 구분자(separator)로 사용한다.
+- XML(eXtensible markup), HTML(HyperText Markup Language) : 태그를 '>'와 '<'로 둘러싼다.
+- JSON(JavaScript Object Notaion) : 구두점을 사용한다.
+- YAML(YAML Ain't Markup Language) : 들여쓰기를 사용한다.
+- 프로그램 설정 파일과 같은 여러 가지 형식을 사용한다.
+
+### 8.2.1 CSV
+
+구조된 파일은 스프레드시트와 데이터베이스의 데이터 교환 형식으로 자주 사용된다.  
+수동으로 CSV 파일을 한 번에 한 라인씩 읽어서, 콤마로 구분된 필드를 분리할 수 있다.  
+그 결과를 리스트와 딕셔너리 같은 자료구조에 넣을 수 있다.  
+파일 구문 분석이 생각보다 복잡할 수 있기 때문에 **표준 csv 모듈** 사용을 권장한다.
+
+- 어떤 것은 콤마 대신 수직 바('|')나 탭('\t') 문자를 사용한다.
+- 어떤 것을 이스케이프 시퀀스를 사용한다. 만일 필드 내에 구분자를 포함하고 있다면, 전체 필드는 인용 부호로 둘러싸여 있거나 일부 이스케이프 문자가 앞에 올 수 있다.
+- 파일은 운영체제에 따라 줄바꿈 문자가 다를수 있다. 유닉스는 '\n', 마이크로소프트는 '\r\n', 애플은 '\n'을 사용한다.
+- 열(column)이름이 첫 번째 라인에 올 수 있다.
+
+```Python
+# 리스트를 읽어서 CSV 형식의 파일을 작성
+>>> import csv
+>>> villains = [
+...     ['Doctor', 'No'],
+...     ['Rosa', 'Klebb'],
+...     ['Mister', 'Big'],
+...     ['Auric', 'Goldfinger'],
+...     ['Ernst', 'Blofeld'],
+... ]
+...
+>>> with open('villains', 'wt') as fout:
+...     csvout = csv.writer(fout)
+...     csvout.writerows(villains)
+```
+
+```
+Doctor,No
+Rosa,Klebb
+Mister,Big
+Auric,Goldfinger
+Ernst,Blofeld
+```
+위 내용의 villains 파일이 생성한다.
+
+```Python
+# 다시 파일을 읽기
+>>> import csv
+>>> with open('villains', 'rt') as fin:
+...     cin = csv.reader(fin)
+...     villains = [row for row in cin]
+...
+>>> print(villains)
+[['Doctor', 'No'], ['Rosa', 'Klebb'], ['Mister', 'Big'], ['Auric', 'Goldfinger'], ['Ernst', 'Blofeld']]
+```
+
+`reader()`함수를 사용하여 CSV 형식의 파일을 쉽게 읽을 수 있다. 이 함수는 for 문에서 cin 객체의 행을 추출할 수 있게 한다.
+
+기본값으로 `reader()`와 `writer()`함수를 사용하면, 열을 콤마로 나누어지고, 행은 줄바꿈 문자로 나누어진다.  
+
+리스트의 리스트가 아닌 딕셔너리의 리스트로 데이터를 만들 수 있다.
+
+```python
+# DictReader()함수를 사용하여 열 이름을 지정
+>>> import csv
+>>> with open('villains', 'rt') as fin:
+...     cin = csv.DictReader(fin, fieldnames=['first', 'last'])
+...     villains = [row for row in cin]
+...
+>>> print(villains)
+[OrderedDict([('first', 'Doctor'), ('last', 'No')]), OrderedDict([('first', 'Rosa'), ('last', 'Klebb')]), OrderedDict([('first', 'Mister'), ('last', 'Big')]), OrderedDict([('first', 'Auric'), ('last', 'Goldfinger')]), OrderedDict([('first', 'Ernst'), ('last', 'Blofeld')])]
+
+# DictWriter()함수를 사용하여 CSV 파일을 재작성
+# CSV 파일의 첫 라인에 열 이름을 사용하기 위해 writeheader() 함수를 호출
+# 헤더 라인과 함께 villains 파일을 생성
+>>> import csv
+>>> villains = [
+...     {'first': 'Docter', 'last':'No'},
+...     {'first': 'Rosa', 'last':'Klebb'},
+...     {'first': 'Mister', 'last':'Big'},
+...     {'first': 'Auric', 'last':'Goldfinger'},
+...     {'first': 'Ernst', 'last':'Blofild'},
+... ]
+...
+>>> with open('villains', 'wt') as fout:
+...     cout = csv.DictWriter(fout, ['first', 'last'])
+...     cout.writeheader()
+...     cout.writerows(villains)
+first,last
+Docter,No
+Rosa,Klebb
+Mister,Big
+Auric,Goldfinger
+Ernst,Blofild
+```
+
+```python
+# DictReader() 호출에서 필드 이름의 인자를 빼면, 첫 번째 라인(first, last)의 값은 딕셔너리의 키로 사용된다.
+>>> import csv
+>>> with open('villains', 'rt') as fin:
+...     cin = csv.DictReader(fin)
+...     villains = [row for row in cin]
+...
+>>> print(villains)
+[OrderedDict([('first', 'Docter'), ('last', 'No')]), OrderedDict([('first', 'Rosa'), ('last', 'Klebb')]), OrderedDict([('first', 'Mister'), ('last', 'Big')]), OrderedDict([('first', 'Auric'), ('last', 'Goldfinger')]), OrderedDict([('first', 'Ernst'), ('last', 'Blofild')])]
+```
