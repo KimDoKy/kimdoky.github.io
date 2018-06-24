@@ -15,9 +15,11 @@ tags: [ 'django' ]
 
 
 템플릿에서는 아래처럼 링크를 걸어준다.
+{% raw %}
 ```html
 <a href="{{ request.META.HTTP_REFERER }}">Go back</a>
 ```
+{% endraw %}
 
 링크를 걸기전에 `TEMPLATE_CONTEXT_PROCESSORS` 설정을 `django.core.context_processors.request` 를 지정해주어야 한다.  
 
