@@ -434,9 +434,9 @@ Ernst,Blofeld
 ```Python
 # 다시 파일을 읽기
 >>> import csv
->>> with open('villains', 'rt') as fin:
+>>> with open('villains', 'rt') as fin:  # 콘텍스트 매니저
 ...     cin = csv.reader(fin)
-...     villains = [row for row in cin]
+...     villains = [row for row in cin]  # 리스트 컴프리헨션
 ...
 >>> print(villains)
 [['Doctor', 'No'], ['Rosa', 'Klebb'], ['Mister', 'Big'], ['Auric', 'Goldfinger'], ['Ernst', 'Blofeld']]
@@ -492,3 +492,74 @@ Ernst,Blofild
 >>> print(villains)
 [OrderedDict([('first', 'Docter'), ('last', 'No')]), OrderedDict([('first', 'Rosa'), ('last', 'Klebb')]), OrderedDict([('first', 'Mister'), ('last', 'Big')]), OrderedDict([('first', 'Auric'), ('last', 'Goldfinger')]), OrderedDict([('first', 'Ernst'), ('last', 'Blofild')])]
 ```
+
+### 8.2.2 XML
+
+구분된 파일은 행과 열의 2차원 구조로 구성되어 있다. 프로그램간에 자료구조를 교환하기 위해 텍스트를 계층구조, 시퀀스, 셋 또는 다른 자료구조로 인코딩해야 한다.
+
+XML은 가장 잘 알려진 **마크업** 형식이다. XML은 데이터를 구분하기 위해 **태그** 를 사용한다.
+
+```XML
+<?xml version="1.0"?>
+<menu>
+ <breakfast hours="7-11">
+  <item price="$6.00">breakfast burritos</item>
+  <item price="$4.00">pancakes</item>
+ </breakfast>
+ <lunch hours="11-3">
+  <item price="$5.00">hamburger</item>
+ </lunch>
+ <dinner hours="3-10">
+  <item price="8.00">spaghetti</item>
+ </dinner>
+</menu>
+```
+
+##### XML의 중요한 특징
+
+- 태그는 `<` 문자로 시작한다. menu.xml의 태그는 menu, breakfast, lunch, dinner, item이다.
+- 공백은 무시된다.
+- 일반적으로 `<menu>`와 같은 시작 태그는 다른 내용이 따라온다. 그러고 나서 `</menu>`와 같은 끝 태그가 매칭된다.
+- 태그 안에 태그를 중첩할 수 있다. 예제에서 item 태그틑 breakfast, lunch, dinner 태그의 자식이다. 또한 이 태그들은 `menu` 태그의 자식이다.
+- 옵션 속성은 시작 태그에 나올 수 있다. 예제의 price는 item의 속성이다.
+- 태그는 값을 가질 수 있다. 예제의 각 item은 값을 가진다. 예를 들어 두 번째 breakfast의 item은 pancakes 값을 가진다.
+- thing이라는 태그에 값이나 자식이 없다면, `<thing></thing>`과 같은 시작 태그와 끝 태그가 아닌 `</thing>`과 같은 단일 태그로 표현할 수 있다.
+- 속성, 값, 자식 태그의 데이터를 어디에 넣을 것인가에 대한 선택은 다소 임의적이다. 예를 들어 마지막 item 태그를 `<item price="$8.00" food="spaghetti"/>`형식으로 쓸 수 있다.
+
+XML은 데이터 피드(data feed)와 메시지 전송에 많이 사용된다. 그리고 RSS(Rich Site Summary)와 아톰(atom)같은 하위 형식이 있다. 일부는 금융 분야에 같은 특화된 XML 형식을 가진다.
+
+XML의 두드러진 유연성은 접근법과 능력이 다른 여러 파이썬 라이브러리에 영향을 미쳤다.  
+
+##### XML을 하싱하는 간단한 방법 : ElementTree 모듈
+
+```Python
+# menu.xml을 파싱하여 태그와 속성을 출력하는 작은 프로그램
+>>> import xml.etree.ElementTree as et
+>>> tree = et.ElementTree(file='menu.xml')
+>>> root = tree.getroot()
+>>> root.tag
+'menu'
+>>> for child in root:
+...     print('tag:', child.tag, 'attributes:', child.attrib)
+...     for grandchild in child:
+...         print('\ttag:', grandchild.tag, 'attributes:', grandchild.attrib)
+...
+tag: breakfast attributes: {'hours': '7-11'}
+	tag: item attributes: {'price': '$6.00'}
+	tag: item attributes: {'price': '$4.00'}
+tag: lunch attributes: {'hours': '11-3'}
+	tag: item attributes: {'price': '$5.00'}
+tag: dinner attributes: {'hours': '3-10'}
+	tag: item attributes: {'price': '8.00'}
+>>> len(root)  # menu의 하위 태그 수
+3
+>>> len(root[0])  # breakfast의 item 수
+2
+```
+
+중첩된 리스트와 각 요소에 대해 tag는 태그 문자열이고, attrib는 속성의 딕셔너리다. ElementTree 모듈은 XML에서 파생된 데이터를 검색하고 수정할 수 있는 다양한 방법을 제공한다. 심지어 XML 파일을 쓸 수 있다.
+
+##### 기타 표준 파이썬 XML 라이브러리
+
+- xml.dom : 자바스크립트 개방자에게 친숙한 DOM(Document Object Model)은 웹 문서를 계층구조로 나타낸다. 이 모듈은 전체 XML 파일을 메모리에 로딩하여 XML의 모든 항목을 접근할 수 있게 한다.
+- xml.sax : SAX(Simple API for XML)는 즉석 XML을 파싱한다. 즉, 한번에 전체 XML 파일에 메모리에 로딩하지 않는다. 그러므로 매우 큰 XML 스트림을 처리해야 한다면 이 모듈을 비추.
