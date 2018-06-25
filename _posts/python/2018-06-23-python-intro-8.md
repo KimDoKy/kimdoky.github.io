@@ -563,3 +563,105 @@ tag: dinner attributes: {'hours': '3-10'}
 
 - xml.dom : 자바스크립트 개방자에게 친숙한 DOM(Document Object Model)은 웹 문서를 계층구조로 나타낸다. 이 모듈은 전체 XML 파일을 메모리에 로딩하여 XML의 모든 항목을 접근할 수 있게 한다.
 - xml.sax : SAX(Simple API for XML)는 즉석 XML을 파싱한다. 즉, 한번에 전체 XML 파일에 메모리에 로딩하지 않는다. 그러므로 매우 큰 XML 스트림을 처리해야 한다면 이 모듈을 비추.
+
+### 8.2.3 HTML
+웹의 기본 문서 형식으로 엄청난 양의 데이터가 HTML(Hypertext Markup Language)로 저장되어 있다. 문제는 대부분의 HTML 파일이 규칙을 따르지 않아 파싱이 어려울 수 있다. 또한 HTML의 대부분은 데이터를 교환하기보다는 결과를 표현하는 형태로 더 많이 사용한다.
+
+### 8.2.4 JSON
+JSON(JavaScript Object Notaion)은 데이터를 교환하는 인기 있는 형식이다. JSON은 자바스크립트의 서브셋이자, 유효한 파이썬 구문이다. 파이썬과 JSON은 궁합이 좋다.  
+
+JSON은 json 모듈을 이용하면 된다. 이 모듈은 JSON 문자열로 인코딩(dumps)하고, JSON 문자열을 다시 데이터로 디코딩(loads)할 수 있다.
+
+```JSON
+menu = {
+    "breakfast": {
+        "hours": "7-11",
+        "items": {
+            "breakfast burritos": "$6.00",
+            "pancakes": "$4.00"
+        }
+    },
+    "lunch": {
+        "hours": "11-3",
+        "items": {
+            "hamburger": "$5.00"
+        }
+    },
+    "dinner": {
+        "hours": "3-10",
+        "items": {
+            "spaghetti": "$8.00"
+        }
+    }
+}
+```
+
+```Python
+# dumps()를 사용하여 자료구조(menu)를 JSON 문자열(menu_json)로 인코딩한다.
+>>> import json
+>>> menu_json = json.dumps(menu)
+>>> menu_json
+'{"breakfast": {"hours": "7-11", "items": {"breakfast burritos": "$6.00", "pancakes": "$4.00"}}, "lunch": {"hours": "11-3", "items": {"hamburger": "$5.00"}}, "dinner": {"hours": "3-10", "items": {"spaghetti": "$8.00"}}}'
+
+# loads()를 사용하여 JSON 문자열(menu_json)을 자료구조(menu2)로 디코딩
+# menu와 menu2는 같은 키와 값을 가진 딕셔너리이다.
+>>> menu2 = json.loads(menu_json)
+>>> menu2
+{'breakfast': {'hours': '7-11',
+  'items': {'breakfast burritos': '$6.00', 'pancakes': '$4.00'}},
+ 'lunch': {'hours': '11-3', 'items': {'hamburger': '$5.00'}},
+ 'dinner': {'hours': '3-10', 'items': {'spaghetti': '$8.00'}}}
+
+# datetime과 같은 모듈을 사용하여 객체를 인/디코딩시 도중에 예외가 발생한다.
+# 표준 JSON 모듈에서 날짜 또는 시간 타입을 정의하지 않았기 때문에 예외가 발생.
+>>> import datetime
+>>> now = datetime.datetime.utcnow()
+>>> now
+ datetime.datetime(2018, 6, 25, 4, 19, 45, 410339)
+
+>>> json.dumps(now)
+ Traceback (most recent call last)
+<ipython-input-12-f164a08299e1> in <module>()
+----> 1 json.dumps(now)
+...
+TypeError: Object of type 'datetime' is not JSON serializable
+
+# JSON이 이행할 수 있는 타입으로 변환(datetime 객채를 문자열과 에포치(epoch)값 같이 변환)
+>>> now_str = str(now)
+>>> json.dumps(now_str)
+'"2018-06-25 04:19:45.410339"'
+>>> from time import mktime
+>>> now_epoch = int(mktime(now.timetuple()))
+>>> json.dumps(now_epoch)
+'1529867985'
+
+# JSON 문자열로 인코딩하는 방법은 상속을 통해 수정할 수 있다.
+# JSONEncoder의 자식 클래스
+# datetime 값을 처리하기 위해 default() 메서드만 오버라이드 한다.
+>>> class DTEncoder(json.JSONEncoder):
+...     def default(self, obj):
+...         # isinstance()는 obj의 타입을 확인한다.
+...         if isinstance(obj, datetime.datetime):
+...             return int(mktime(obj.timetuple()))
+...         # obj가 datetime 타입이 아니라면 기본 JSON 문자열로 인코딩한다.
+...         return json.JSONEncoder.default(self, obj)
+>>> json.dumps(now, cls=DTEncoder)
+'1529867985'
+
+# isinstance()함수는 obj 객체가 datetime.datetime 클래스의 인스턴스인지 확인.
+# isinstance()함수는 어느 곳에서든 작동한다.
+>>> type(now)
+datetime.datetime
+>>> isinstance(now, datetime.datetime)
+True
+>>> type(234)
+int
+>>> isinstance(234, int)
+True
+>>> type('hey')
+str
+>>> isinstance('hey', str)
+True
+```
+
+> 자료구조에 대해 모르는 상태에서 JSON과 다른 구조화된 텍스트 형식의 파일을 자료구조로 불러 올 수 있다. isinstance()와 타입에 적잘한 메서드를 사용하여 구조를 파악한 후 값을 볼 수 있다. 딕셔너리의 경우 `key(), values(), items()` 메서드로 내용을 추출할 수 있다.
