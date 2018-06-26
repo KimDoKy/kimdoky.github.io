@@ -717,3 +717,120 @@ poems:
 ```
 
 > PyYAML은 문자열에서 파이썬 객체를 불러올 수 있으나 위험하다. 신뢰할 수 없는 YAML을 불러온다면 `load()` 대신 `safe_load()`를 사용하다. 아직은 **항상** `safe_load()`를 사용하는 것이 좋다.
+
+### 8.2.6 보안 노트
+
+객체를 어떤 파일로 저장하고, 파일에서 객체로 읽어오는 과정에서 보안 문제가 발생할 수 있다.
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE lolz [
+ <!ENTITY lol "lol">
+ <!ENTITY lol1 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">
+ <!ENTITY lol2 "&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;">
+ <!ENTITY lol3 "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;">
+ <!ENTITY lol4 "&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;">
+ <!ENTITY lol5 "&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;">
+ <!ENTITY lol6 "&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;">
+ <!ENTITY lol7 "&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;">
+ <!ENTITY lol8 "&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;">
+ <!ENTITY lol9 "&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;">
+]>
+<lolz>&lol9;</lolz>
+```
+
+위 XML 코드는 위키디피아의 billion laughs인데, 10개의 엔티티가 있다. 각 엔티티는 하위 레벨로 10배씩 확장되어 총 10억개로 확장된다.  
+
+위 XML 코드는 모든 XML 라이브러리를 뚫어버린다. [Defused XML](https://bitbucket.org/tiran/defusedxml)은 파이썬 라이브러리의 취약한 부분은 물론이고 billion laughs와 다른 공격을 나열하고 있다. 이러한 문제를 방지하기 위해 라이브러리의 설정을 변경하는 방법도 제공한다. 다른 라이브러리에 대한 프론트엔드 보안으로 `defusedxml` 라이브러리를 사용할 수 있다.
+
+### 8.2.7 설정 파일
+
+대부분의 프로그램은 다양한 옵션이나 설정을 제공한다. 동적인 것은 프로그램의 인자를 통해 제공되지만, 정적인 것은 어딘가에 유지되어야 한다. 대부분의 직접 만든 설정 파일은 지저분하고 그렇게 빠르지도 않다. writer 프로그램과 reader 프로그램(파서) 모두 관리해야 한다.
+
+
+예로 윈도우 스타일의 .ini 파일을 처리하는 'configparser' 모듈을 사용한다. 이 파일은 **키=값** 형식의 섹션이다.
+
+```
+[english]
+greeting = Hello
+
+[french]
+greeting = Bonjour
+
+[files]
+home = /usr/local
+# 간편한 보간법 사용
+bin = %(home)s/bin
+```
+
+```python
+# 설정 파일을 읽어서 자료구조로 변환
+>>> import configparser
+>>> cfg = configparser.ConfigParser()
+>>> cfg.read('settings.cfg')
+['settings.cfg']
+>>> cfg
+<configparser.ConfigParser at 0x1047703c8>
+>>> cfg['french']
+<Section: french>
+>>> cfg['french']['greeting']
+'Bonjour'
+>>> cfg['files']['bin']
+'/usr/local/bin'
+```
+
+만약 두 단계보다 더 깊은 중첩 설정이 필요한 경우 YAML이나 JSON 파일 형식을 사용한다.
+
+### 8.2.8 기타 데이터 교환 형식
+
+- MsgPack
+- Protocol Buffers
+- Avro
+- Thrift
+
+위 이진 데이터 교환 형식은 일반적으로 더 간결하고 XML이나 JSON보다 빠르다. 이진 형식이기 떄문에 텍스트 편집기로 쉽게 편집할 수 없다.
+
+### 8.2.9 직렬화하기: pickle
+
+자료구조(객체)를 파일로 저장하는 것을 직렬화(serialization)라고 한다. JSON과 같은 형식은 파이썬 프로그램에서 모든 데이터 타입을 직렬화하는 컨버터가 필요하다. 'pickle' 모듈은 바이너리 형식으로 된 객체를 저장/복원할 수 있다. datetime 객체를 인코딩할 때도 문제가 되지 않는다.
+
+```Python
+>>> import pickle
+>>> import datetime
+>>> now1 = datetime.datetime.utcnow()
+>>> pickled = pickle.dumps(now1)
+>>> now2 = pickle.loads(pickled)
+>>> now1
+datetime.datetime(2018, 6, 26, 4, 12, 43, 622795)
+>>> now2
+datetime.datetime(2018, 6, 26, 4, 12, 43, 622795)
+```
+
+'pickle'은 직접 만든 클래스와 객체에서도 작동한다.
+
+```Python
+# 'tiny' 문자열을 반환하는 Tiny 클래스
+>>> import pickle
+>>> class Tiny():
+...     def __str__(self):
+...         return 'tiny'
+...
+>>> obj1 = Tiny()
+>>> obj1
+<__main__.Tiny at 0x1047ab6a0>
+>>> str(obj1)
+'tiny'
+# 직렬화된 obj1 객체의 이진 문자열
+>>> pickled = pickle.dumps(obj1)
+>>> pickled
+b'\x80\x03c__main__\nTiny\nq\x00)\x81q\x01.'
+>>> obj2 = pickle.loads(pickled)
+>>> obj2
+<__main__.Tiny at 0x1047a5518>
+>>> str(obj2)
+'tiny'
+```
+
+obj1의 복사본을 만들기 위해 pickled를 다시 역직렬화하여 obj2 객체로 변환했다. `dump()`로 직렬화하고, `load()`로 역직렬화한다.
+
+> pickle은 파이썬 객체를 만들 수 있기 때문에 보안 문제가 발생할 수 있다. 신뢰할 수 없는 것은 역직렬화하지 않는 것을 추천
