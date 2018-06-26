@@ -834,3 +834,82 @@ b'\x80\x03c__main__\nTiny\nq\x00)\x81q\x01.'
 obj1의 복사본을 만들기 위해 pickled를 다시 역직렬화하여 obj2 객체로 변환했다. `dump()`로 직렬화하고, `load()`로 역직렬화한다.
 
 > pickle은 파이썬 객체를 만들 수 있기 때문에 보안 문제가 발생할 수 있다. 신뢰할 수 없는 것은 역직렬화하지 않는 것을 추천
+
+## 8.3 구조화된 이진 파일
+
+일부 파일 형식은 특정 자료구조를 저장하기 위해 설계되었지만, 관계형 데이터베이스나 NoSQL 데이터베이스는 그렇지 않다.
+
+### 8.3.1 스프레드시트
+
+엑셀과 같은 스프레드시트는 광범위한 이진 데이터 형식이다.  
+스프레드시트를 CSV 파일로 저장하면 'csv'모듈을 사용하여 읽는다. xls 파일이라면 써드파트 패키지 'xlrd'를 사용하면 된다.
+
+### 8.3.2 HDF5
+
+HDF5(Hierarchical Data Format)는 다차원 혹은 계층적 수치 데이터를 위한 이진 데이터 형식이다. 주로 아주 큰 데이터 집합(기가~테라 바이트)에 대한 빠른 임의적인 접근이 필요한 과학 분야에 주로 사용된다. 어떤 경우에는 데이터베이스의 좋은 대안이 될 수도 있다. 쓰기 충돌에 대한 데이터베이스의 보호가 필요하지 않은 웜(WORM:Write Once/Read Many.디스크에 데이터를 단 한번만 쓸 수 있고, 그 후에는 데이터가 삭제되지 않도록 보호하는 데이터 저장 기술) 애플리케이션에 적합하다.
+
+- h5py는 완전한 기능을 갖춘 저수준의 인터페이스다.
+- PyTables는 약간 고수준의 인터페이스로, 데이터베이스와 같은 기능을 지원한다.
+
+HDF5의 모범 예는 HDF5 형식으로 곡을 내려받을 수 있는 데이터를 가진 [Million Song Dataset](https://labrosa.ee.columbia.edu/millionsong/)이다.
+
+## 8.4 관계형 데이터베이스
+
+데이터베이스가 제공하는 기능들.
+
+- 다수의 동시 사용자가 데이터에 접근
+- 사용자에 의한 데이터 손상으로부터의 보호
+- 데이터를 저장하고 검색하는 효율적인 방법
+- **스키마(schema)** 에 의해 정의된 데이터와 **제약조건(constraint)** 에 한정되는 데이터
+- 다양한 데이터 타입과의 관계(relationship)를 계산하는 **조인(join)**
+- (명령형(imperative) 이기보다는) 서술적인(declarative) 질의 언어: **SQL(Structured Query Language)**
+
+다양한 종류의 데이터 간의 관계를 **테이블(table)** 형태로 표시하기 때문에 **관계형** 이라고 부른다.
+
+일반적으로 하나의 열 또는 열의 그룹은 테이블의 **기본키(primary key)** 다. 기본키 값은 테이블에서 반드시 유일해야 한다. 이는 테이블에 동일한 데이터를 추가하는 것을 방지한다. 이 키는 질의를 빠르게 찾을 수 있도록 **인덱싱(indexing)** 되어 있다.  
+
+파일이 디렉터리 안에 있는 것처럼, 각 테이블은 상위 **데이터베이스** 내에 존재한다. 이러한 두 가지 수준의 계층구조는 더 나은 조직을 유지할 수 있도록 해준다.  
+
+키가 아닌 열값으로 행을 찾으려면, 그 열에 부차적인 **인덱스** 를 정의한다. 그렇지 않으면 데이터베이스 서버는 열값과 일치하는 모든 행을 무차별 검색한다.(**테이블스캔**)  
+
+테이블은 **외래키(foreign key)** 와 서로 연관될 수 있으므로 열값은 이러한 외래키에 대한 제약이 있을 수 있다.
+
+### 8.4.1 SQL
+
+SQL은 **원하는** 결과를 질의하는 서술형 **언어** 다. SQL 질의는 클라이언트에서 데이터베이스 서버로 전송하는 텍스트 문자열이다.  
+
+다양한 SQL들이 데이터베이스 회사들에 의해 생겨났지만, 관계형 데이터베이스를 저장할 때 SQL은 호환성을 제공한다. 하지만 다양한 SQL과 운영에 대한 차이는 데이터를 또 다른 타입의 데이터베이스로 옮기기 어렵게 만든다.
+
+SQL은 두 개의 주요 카테고리가 있다.
+
+- DDL(Data Definition Language.데이터 정의어) : 테이블, 데이터베이스, 사용자에 대한 생성, 삭제, 제약조건(constraint), 권한(permission)을 다룬다.
+- DML(Data Manipulation Language.데이터 조작어) : 데이터의 조회, 삽입, 갱신, 삭제를 다룬다.
+
+##### 기본 SQL DDL 명령어
+
+명령 | SQL 패턴 | SQL 예제
+---|---|---
+데이터베이스 생성 | CREATE DATABASE dbname | CREATE DATABASE d
+현재 데이터베이스 선택 | USE dbname | USE d
+데이터베이스와 해당 테이블 삭제 | DROP DATABASE dbname | DROP DATABASE d
+테이블 생성 | CREATE TABKE tbname (coldefs) | CREATE TABLE t (id INT, count INT)
+테이블 삭제 | DROP TABLE tbname | DROP TABLE t
+테이블의 모든 행 삭제 | TRUNCATE TABLE tbname | TRUNCATE TABLE t
+
+관계형 데이터베이스의 메인 DML 명령어는 CRUD이다.
+
+- 생성(create): INSERT
+- 조회(read): SELECT
+- 갱신(update): UPDATE
+- 삭제(delete): DELETE
+
+##### 기본 SQL DML 명령어
+
+명령 | SQL 패턴 | SQL 예제
+---|---|---
+행 추가 | INSERT INTO tbname VALUES(...) | INSERT INTO t VALUES(7, 40)
+모든 행과 열 조회 | SELECT * FROM tbname | SELECT * FROM t
+모든 행과 특정 열 조회 | SELECT cols FROM tbname | SELECT id, count FROM t
+특정 행과 열 조회 | SELECT cols FROM tbname WHERE condition | SELECT id, count FROM t WHERE count > 5 AND id =9
+특정 열의 행값 변경 | UPDATE tbname SET col = value WHERE condition | UPDATE t SET count=3 WHERE id=5
+행 삭제 | DELETE FROM tbname WHERE condition | DELETE FROM t WHERE count <=10 OR id=16
