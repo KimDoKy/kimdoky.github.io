@@ -665,3 +665,55 @@ True
 ```
 
 > 자료구조에 대해 모르는 상태에서 JSON과 다른 구조화된 텍스트 형식의 파일을 자료구조로 불러 올 수 있다. isinstance()와 타입에 적잘한 메서드를 사용하여 구조를 파악한 후 값을 볼 수 있다. 딕셔너리의 경우 `key(), values(), items()` 메서드로 내용을 추출할 수 있다.
+
+### 8.2.5 YAML
+
+JSON과 유사하게 YAML은 키와 값을 가지고 있지만, 날짜와 시간 같은 데이터 타입을 더 많이 처리한다. 'yaml'이라는 써드파티 라이브러리를 사용하여 이용할 수 있다. `load()`는 YAML 문자열을 파이썬 데이터로, `dump()`는 그 반대 기능을 수행한다.
+
+
+예로 사용될 yaml 파일 내용이다.(캐나다 시인 제임스 매킨타이어의 정보)
+
+```YAML
+name:
+  first: James
+  last: McIntyre
+dates:
+  birth: 1828-05-25
+  death: 1906-03-31
+details:
+  bearded: true
+  themes: [cheese, Canada]
+books:
+  url: http://www.gutenberg.org/files/36068/36068-h/36068-h.htm
+poems:
+  - title: 'Motto'
+    text: |
+      Politeness, perseverance and pluck,
+      To their possessor will bring good luck.
+  - title: 'Canadian Charms'
+    text: |
+      Here industry is not in vain,
+      For we have bounteous crops of grain,
+      And you behold on every field
+      Of grass and roots abundant yield,
+      But after all the greatest charm
+      Is the snug home upon the farm,
+      And stone walls now keep cattle warm.
+```
+
+`true`, `false`, `on`, `off`와 같은 bool형으로 변환된다. 정수와 문자열도 파이썬의 타입으로 변환된다. 다른 구문들은 리스트와 딕셔너리를 생성한다.
+
+```Python
+>>> import yaml
+>>> with open('mcintyre.yaml', 'rt') as fin:
+...     text = fin.read()
+>>> data = yaml.load(text)
+>>> data['details']
+{'bearded': True, 'themes': ['cheese', 'Canada']}
+>>> len(data['poems'])
+2
+>>> data['poems'][1]['title']
+'Canadian Charms'
+```
+
+> PyYAML은 문자열에서 파이썬 객체를 불러올 수 있으나 위험하다. 신뢰할 수 없는 YAML을 불러온다면 `load()` 대신 `safe_load()`를 사용하다. 아직은 **항상** `safe_load()`를 사용하는 것이 좋다.
