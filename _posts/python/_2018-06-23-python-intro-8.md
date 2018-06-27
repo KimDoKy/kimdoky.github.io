@@ -1020,3 +1020,77 @@ PostgreSQL 드라이버
 ---|---|---|---
 psycopg2 | psycopg2 | psycopg2 | PostgreSQL 클라이언트 도구의 pg_config 필요
 py-postgresql | py-postgresql | py-postgresql
+
+### 8.4.6 SQLAlchemy
+
+##### 설치
+
+```
+>>> pip install sqlalchemy
+```
+
+##### SQLAlchemy 사용 수준
+
+- 가장 낮은 수준에서 데이터베이스 커넥션 풀을 처리. SQL 명령을 실행하고 그 결과를 반환한다. DB-API와 가장 근접
+- 다음 수준은 SQL 표현 언어, 즉 파이써닉한 SQL 빌더다.
+- 가장 높은 수준은 SQL 표현 언어를 사용하고, 관계형 자료 구조와 애플리케이션 코드를 바인딩하는 ORM이다.
+
+SQLAlchemy는 데이터베이스 드라이버와 함께 작동하는데 따로 임포트할 필요는 없다. SQLAlchemy에서 제공하는 최초의 연결 문자열에서 드라이버를 선택한다.
+
+```
+dialect + driver :// user : password @ host : post / dbname
+# dialect : 데이터베이스 타입
+# dirver : 사용하고자 하는 데이터베이스의 특정 드라이버
+# user, password : 데이터베이스 인증 문자열. 사용자와 비밀번호
+# dbname : 서버에 연결할 데이터베이스 이름
+```
+
+데이터베이스 | 드라이버
+---|---
+sqlite | pysqlite(또는 생략)
+mysql | mysqlconnector, pymysql, oursql
+postgresql | psycopg2, pypostgresql
+
+#### 엔진 레이어
+
+가장 낮은 수준. 기본으로 제공하는 DB-API보다 좀 더 많은 기능이 있다.  
+
+(여기서 SQLite의 연결에 대한 문자열 인자 host, port, user, password는 생략.)  
+dbname은 데이터베이스를 어떤 파일에 저장할지 SQLite에 알려준다. dbname을 생략하면 SQLite는 메모리에 데이터베이스를 만든다. `/`로 시작하면 절대 경로 파일이름이다.(리눅스와 맥에만 해당. 윈도우는 `C://`로 시작) `/`로 시작하직 않으면 상대 경로다.
+
+```Python
+# 모듈 임포트
+# as : alias
+# sa : SqlAlchemy
+>>> import sqlalchemy as sa
+# 데이터베이스 연결하고, 메모리에 스토리지 생성
+>>> conn = sa.create_engine('sqlite://')
+# 새 열에 있는 데이터베이스 테이블 zoo를 생성
+>>> conn.execute('''CREATE TABLE zoo
+... (critter VARCHAR(20) PRIMARY KEY,
+... count INT,
+... damages FLOAT)''')
+<sqlalchemy.engine.result.ResultProxy at 0x110f35518>
+# conn.execute()는 ResultProxy라는 SQLAlchemy 객체를 반환
+>>> ins = 'INSERT INTO zoo (critter, count, damages) VALUES (?, ?, ?)'
+# 빈 테이블에 3개의 데이터를 삽입
+>>> conn.execute(ins, 'duck', 10, 0.0)
+<sqlalchemy.engine.result.ResultProxy at 0x110f35860>
+>>> conn.execute(ins, 'bear', 2, 1000.0)
+<sqlalchemy.engine.result.ResultProxy at 0x110f35a58>
+>>> conn.execute(ins, 'weasel', 1, 2000.0)
+<sqlalchemy.engine.result.ResultProxy at 0x110f35b70>
+# 데이터베이스 테이블에 입력한 값이 있는지 확인
+>>> rows = conn.execute('SELECT * FROM zoo')
+# SQLAlchemy에서 row는 리스트가 아닌 ResultProxy 객체다
+>>> print(rows)
+<sqlalchemy.engine.result.ResultProxy object at 0x110f35c18>
+# 리스트처럼 순회하여 row를 얻을 수 있다.
+>>> for row in rows:
+...     print(row)
+('duck', 10, 0.0)
+('bear', 2, 1000.0)
+('weasel', 1, 2000.0)
+```
+
+SQLAlchemy가 연결 문자열에서 데이터베이스 타입을 알아내기 떄문에 코드 앞 부분에 데이터베이스 드라이버를 임포트하지 않아도 된다. 또 다른 장점은 [**커넥션 풀링(connection pooling)**](http://docs.sqlalchemy.org/en/latest/core/pooling.html) 이다. 문서 참고.
