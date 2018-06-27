@@ -1001,3 +1001,22 @@ SQLite는 가벼운 오픈소스의 관계형 데이터베이스다. 표준 파�
 >>> curs.close()
 >>> conn.close()
 ```
+
+### 8.4.4 MySQL
+
+MySQL에 접근하기 위한 드라이버
+
+이름 | Pypi 패키지 | 임포트 | 비고
+---|---|---|---
+MySQL Connecter |  mysql-connetor-python | mysql.connecter
+PYMySQL | pymysql | pymysql
+oursql | oursql | oursql | MySQL C 클라이언트 라이브러리 필요
+
+### 8.4.5 PostgreSQL
+
+PostgreSQL 드라이버
+
+이름 | Pypi 패키지 | 임포트 | 비고
+---|---|---|---
+psycopg2 | psycopg2 | psycopg2 | PostgreSQL 클라이언트 도구의 pg_config 필요
+py-postgresql | py-postgresql | py-postgresql
