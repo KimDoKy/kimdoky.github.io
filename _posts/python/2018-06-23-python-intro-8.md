@@ -913,3 +913,91 @@ SQL은 두 개의 주요 카테고리가 있다.
 특정 행과 열 조회 | SELECT cols FROM tbname WHERE condition | SELECT id, count FROM t WHERE count > 5 AND id =9
 특정 열의 행값 변경 | UPDATE tbname SET col = value WHERE condition | UPDATE t SET count=3 WHERE id=5
 행 삭제 | DELETE FROM tbname WHERE condition | DELETE FROM t WHERE count <=10 OR id=16
+
+### 8.4.2 DB-API
+
+DB-API는 관계형 데이터베이스에 접근하기 위한 파이썬의 표준 API다. DB-API를 사용하면 여러 종류의 데이터베이스를 동작하기 위한 별도의 프로그램 없이, 하나의 프로그램만 작성하면 된다.
+
+##### 메인 함수
+
+- connect()
+ - 데이터베이스의 연결을 만든다. 이 함수는 사용자 이름, 비밀번호, 서버 주소 등의 인자를 포함한다.
+- cursor()
+ - 질의를 관리하기 위한 **커서** 객체를 만든다.
+- execute(), executemany()
+ - 데이터베이스에 하나 이상의 SQL 명령을 실행한다.
+- fetchone(), fetchmany(), fetchall()
+ - 실행 결과를 얻는다.
+
+###  8.4.3 SQLite
+
+SQLite는 가벼운 오픈소스의 관계형 데이터베이스다. 표준 파이썬 라이브러리로 구현되어 있고, 일반 파일처럼 데이터베이스를 저장한다. 그리고 서로 다른 컴퓨터와 운영체제에 대한 호환이 가능하다.  
+간단한 관계형 데이터베이스 애플리케이션에 대한 호환성이 아주 뛰어나다. 하지만 MySQL, PostgreSQL처럼 완벽하진 않다. 그러나 SQL을 지원하고, 동시에 여러 사용자를 관리할 수 있다. 웹 브라우저, 스마트폰, 애플리케이션에서 SQLite를 임베디드 데이터베이스처럼 사용한다.
+
+사용하거나 생성하고자 하는 로컬 SQLite 데이터베이스 파일을 `connect()`로 연결하는 것으로 시작한다. 이 파일은 다른 서버에서 데이블을 고나리하는 디렉터리 구조와 유사한 **데이터베이스** 다. 특수한 문자열 `:memory:`는 메모리에서만 데이터베이스를 생성한다. 빠르고, 테스트에 유용하지만, 프로그램이 종료되거나 컴퓨터를 끄면 데이터가 사라진다.
+
+```Python
+# critter : 가변 길이 문자열. 동물 이름(기본 키)
+# count : 정수, 현재 동물 수
+# damaged : 부동소수점, 관람객으로부터 받은 상처 등 동물의 손실 금액
+>>> import sqlite3
+>>> conn = sqlite3.connect('enterprise.db')
+>>> curs = conn.cursor()
+>>> curs.execute('''CREATE TABLE zoo
+... (critter VARCHAR(20) PRIMARY KEY,
+... count INT,
+... damages FLOAT)''')
+<sqlite3.Cursor at 0x110a525e0>
+
+3중 인용 부호(''')는 SQL 질의와 같은 긴 문자열을 생성하는데 편리하다.
+
+```Python
+>>> curs.execute('INSERT INTO zoo VALUES("duck", 5, 0.0)')
+<sqlite3.Cursor at 0x110b1aea0>
+>>> curs.execute('INSERT INTO zoo VALUES("bear", 2, 1000.0)')
+<sqlite3.Cursor at 0x110b1aea0>
+```
+
+플레이스홀더를 사용하여 데이터를 안전하게 넣을 수 있다.
+
+```Python
+>>> ins = 'INSERT INTO zoo (critter, count, damages) VALUES(?, ?, ?)'
+>>> curs.execute(ins, ('weasel', 1, 2000.0))
+<sqlite3.Cursor at 0x110b1aea0>
+```
+
+`?`는 삽입할 예정이라는 표시이다. 플레이스홀더를 사용함으로써 인용 부호를 억지로 넣을 필요가 없어졌다.  
+플레이스홀더는 웹에서 악의적인 SQL 명령을 삽입하는 외부 공격(SQL 인젝션)으로부터 시스템을 보호한다.
+
+```Python
+# 모든 동물을 조회
+>>> curs.execute('SELECT * FROM zoo')
+<sqlite3.Cursor at 0x110b1aea0>
+>>> rows = curs.fetchall()
+>>> print(rows)
+[('duck', 5, 0.0), ('bear', 2, 1000.0), ('weasel', 1, 2000.0)]
+
+# 오름차순으로 정렬하여 조회
+>>> curs.execute('SELECT * FROM zoo ORDER BY count')
+<sqlite3.Cursor at 0x110b1aea0>
+>>> curs.fetchall()
+[('weasel', 1, 2000.0), ('bear', 2, 1000.0), ('duck', 5, 0.0)]
+
+# 내림차순으로 정렬하여 조회
+>>> curs.execute('SELECT * FROM zoo ORDER BY count DESC')
+<sqlite3.Cursor at 0x110b1aea0>
+>>> curs.fetchall()
+[('duck', 5, 0.0), ('bear', 2, 1000.0), ('weasel', 1, 2000.0)]
+
+# 특정 조건 조회
+# 한 마리당 가장 많은 비용이 드는 동물
+>>> curs.execute('''SELECT * FROM zoo WHERE
+>>> damages = (SELECT MAX(damages) FROM zoo)''')
+<sqlite3.Cursor at 0x110b1aea0>
+>>> curs.fetchall()
+[('weasel', 1, 2000.0)]
+
+# 데이터베이스 연결과 커서를 열었으면 각각 닫아주어야 한다.
+>>> curs.close()
+>>> conn.close()
+```
