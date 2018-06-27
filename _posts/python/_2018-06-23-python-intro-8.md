@@ -1128,3 +1128,71 @@ SQLAlchemy가 연결 문자열에서 데이터베이스 타입을 알아내기 �
 >>> print(rows)
 [('bear', 2, 1000.0), ('weasel', 1, 2000.0), ('duck', 10, 0.0)]
 ```
+
+#### ORM
+
+SQLAlchemy의 최상위 레이어에서 ORM은 SQL 표현 언어를 사용하지만, 실제 데이터베이스의 메커니즘을 숨긴다. ORM 클래스를 정의하여 데이터베이스의 데이터 입출력을 처리한다. '객체-관계 매핑'이라는 복잡한 단어 구분 속의 기본 아이디어는 여전히 관계형 데이터베이스를 허용하면서, 코드의 객체를 참조하여 파이썬처럼 작동하게 하는 것이다.
+
+```Python
+# 필요 모듈 임포트
+>>> import sqlalchemy as sa
+>>> from sqlalchemy.ext.declarative import declarative_base
+# 데이터베이스 연결
+>>> conn = sa.create_engine('sqlite:///zoo.db')
+# SQLAlchemy의 ORM사용
+# Zoo 클래스 정의, 테이블의 열과 속성 연결
+>>> Base = declarative_base()
+>>> class Zoo(Base):
+...     __tablename__ = 'zoo'
+...     critter = sa.Column('critter', sa.String, primary_key=True)
+...     count = sa.Column('count', sa.Integer)
+...     damages = sa.Column('damages', sa.Float)
+...     def __init__(self, critter, count, damages):
+...         self.critter = critter
+...         self.count = count
+...         self.damages = damages
+...     def __repr__(self):
+...         return "<Zoo({}, {}, {})>".format(self.critter, self.count, self.damages)
+# 데이터베이스와 테이블을 생성
+>>> Base.metadata.create_all(conn)
+# 파이썬 객체를 생성하여 데이터를 삽입
+>>> first = Zoo('duck', 10, 0.0)
+>>> second = Zoo('bear', 2, 1000.0)
+>>> third = Zoo('weasel', 1, 2000.0)
+>>> first
+<Zoo(duck, 10, 0.0)>
+# ORM을 SQL로 내보내기
+# 데이터베이스와 대화할 수 있는 세션을 생성
+>>> from sqlalchemy.orm import sessionmaker
+>>> Session = sessionmaker(bind=conn)
+>>> session = Session()
+# 데이터베이스에 생성한 새 객체를 세션 내에 작성
+# add() 함수는 하나의 객체를 추가하고, add_all()은 리스트를 추가한다.
+>>> session.add(first)
+>>> session.add_all([second, third])
+# 모든 작업을 (강제적으로) 완료한다.
+>>> session.commit()
+```
+
+터미널에서 실행
+
+```terminal
+$ sqlite3 zoo.db
+SQLite version 3.16.0 2016-11-04 19:09:39
+Enter ".help" for usage hints.
+sqlite> .tables
+zoo
+sqlite> select * from zoo;
+duck|10|0.0
+bear|2|1000.0
+weasel|1|2000.0
+```
+
+튜토리얼을 진행해본다면 다음과 같은 수준을 결정할 수 있다.
+
+- 이전 SQLite 절과 같은 일반적인 DB-API
+- SQLAlchemy 엔진
+- SQLAlchemy 표현 언어
+- SQLAlchemy ORM
+
+ORM은 SQL을 추상화한 것이고, 추상화된 것은 어느 시점에선가 문제가 발생할 수 있다. ORM은 주로 간단한 애플리케이션에서 드물게 사용해야 한다.
