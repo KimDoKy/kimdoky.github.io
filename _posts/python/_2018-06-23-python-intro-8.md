@@ -1228,3 +1228,91 @@ b'green'
 b'yellow'
 ```
 키와 값은 바이트로 저장된다. 데이터베이스 객체 DB를 순회할 순 없지만, `len()`으로 키의 갯수를 얻을 수 있다. `get()`과 `setdefault()`는 딕셔너리의 함수처럼 동작한다.
+
+### 8.5.2 Memcached
+
+Memcached는 민첩한 인메모리 키-값의 캐시 서버다. 주로 데이터베이스 앞단에 놓이거나 웹 서버의 세션 데이터를 저장하는데 사용한다.  
+
+Memcached를 사용하려면 Memcached 서버와 파이썬 드라이버가 필요하다.
+
+```
+$ pip install python-memcached
+```
+
+memcached 서버에 연결하면 다음과 같은 일을 할 수 있다.
+
+- 키에 대한 값을 설정하고 얻는다.
+- 값을 증가하거나 감소시킨다.
+- 키를 삭제한다.
+
+데이터는 **지속되지 않아서,** 이전에 쓴 데이터가 사라질 수 있다. 캐시 서버의 memcached에 대한 특징이다. 이는 오래된 데이터를 제거하여 메모리 부족을 방지한다.
+
+여러 memcached 서버를 동시에 연결할 수 있다.
+
+```Python
+# 실습 실패.
+>>> import memcache
+>>> db = memcache.Client(['127.0.0.1:11211'])
+>>> db.set('marco', 'polo')
+>>> db.get('marco')
+>>> db.set('ducks', 0)
+>>> db.get('ducks')
+>>> db.incr('ducks', 2)
+>>> db.get('ducks')
+```
+
+### 8.5.3 Redis
+
+Redis는 **자료구조 서버** 다. Redis 서버에 있는 모든 데이터는 memcached처럼 메모리에 맞아야 한다.(디스크에 데이터를 저장할 수 있는 옵션이 있다) memcached와 달리 Redis는 다음과 같은 일이 가능하다.
+
+- 서버의 재시작과 신뢰성을 위해 데이터를 디스크에 저장한다.
+- 기존 데이터를 유지한다.
+- 간단한 문자열 이상의 자료구조를 제공한다.
+
+Redis 데이터 타입은 파이썬 데이터 타입에 가깝기 때문에, Redis 서버는 여러 파이썬 애플리케이션에서 데이터를 공유하기 위한 중계 역할로 매우 유용하다.
+
+##### 설치
+
+```
+$ pip install redis
+```
+
+https://redislabs.com/lp/python-redis/
+
+일단 문서를 먼저 살펴봐야 책의 내용도 넘어갈 수 있다.  
+
+일단 한번 읽어보고 나중에 실습해 보는걸로..
+
+#### 문자열
+#### 리스트
+#### 해시
+#### 셋
+#### 정렬된 셋
+#### 비트
+#### 캐시와 만료
+
+### 8.5.4 기타 NoSQL
+
+데이터베이스 | 파이썬 API
+---|---
+Cassandra | pycassa
+CouchDB | couchdb-python
+HBase | happybase
+Kyoto Cabinet | Kyotocabinet
+MongoDB | Mongodb
+Riak | riak-python-client
+
+위 NoSQL 서버는 메모리보다 큰 데이터를 처리하고, 이들 중 대다수는 여러 대의 컴퓨터를 사용한다.
+
+## 8.6 풀텍스트 데이터베이스
+
+**풀텍스트** 검색을 위한 풀텍스트 데이터베이스
+
+데이터베이스 | 파이썬 API
+---|---
+Lucene | Pylucene
+Solr | SolPython
+ElasticSearch | Pyes
+Sphinx | Sphinxapi
+Xapian | Xappy
+Whoosh | 파이썬으로 작성된. API 포함
