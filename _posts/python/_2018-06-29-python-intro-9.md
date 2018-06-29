@@ -47,17 +47,26 @@ Escape character is '^]'.
 일반적인 HTTP 명령은 GET이다. 이는 HTML파일과 같은 지정된 리소스의 내용을 검색하여 클라이언트에 반환한다. 테스트는 HTTP의 HEAD 메서드를 사용한다. HEAD 메서드는 리소스에 대해 몇 가지 기본 정보를 검색한다.
 
 ```
-HEAD / HTTP/1.1
+HEAD / HTTP/1.1  # 엔터를 두 번 입력해야 한다.
 ```
 
 `HEAD /`는 홈페이지(/)에 대한 정보를 얻기 위해 HTTP HEAD 동사(명령)를 보낸다. 그리고 캐리지 리턴을 추가하여 빈 라인을 보낸다.
 
 ```
-HTTP/1.0 400 Bad Request      #  .. T^T
-Content-Type: text/html; charset=UTF-8
-Referrer-Policy: no-referrer
-Content-Length: 1555
-Date: Thu, 28 Jun 2018 12:17:38 GMT
+HTTP/1.1 200 OK
+Date: Fri, 29 Jun 2018 03:56:37 GMT
+Expires: -1
+Cache-Control: private, max-age=0
+Content-Type: text/html; charset=ISO-8859-1
+P3P: CP="This is not a P3P policy! See g.co/p3phelp for more info."
+Server: gws
+X-XSS-Protection: 1; mode=block
+X-Frame-Options: SAMEORIGIN
+Set-Cookie: 1P_JAR=2018-06-29-03; expires=Sun, 29-Jul-2018 03:56:37 GMT; path=/; domain=.google.com
+Set-Cookie: NID=133=lS_QRsGGZVxe3T-7Dd8Xkv_oBZOwgGyHjKUfJdhvduVJcrt9IfAqQx-3yq38Cwn-h0PxaRnsIqEeMTLU5p03NtfXXu-4ZCh8tz_6FPq05luPGTxjI8Z4aPLE04wrTbzg; expires=Sat, 29-Dec-2018 03:56:37 GMT; path=/; domain=.google.com; HttpOnly
+Transfer-Encoding: chunked
+Accept-Ranges: none
+Vary: Accept-Encoding
 ```
 
 HTTP 응답 헤더와 헤더값이다. Date와 Content-Type 같은 헤더는 꼭 응답이 온다. 그리고 Set-Cookie 같은 헤더는 사용자의 여러 방문 활동을 추적하는데 사용된다.
@@ -165,3 +174,74 @@ $ pip install requests
 ```
 
 'urllib.request.urlopen' 모듈과 사용한 것과 차이는 없지만, 코드가 더 간편하다.
+
+
+## 9.2 웹 서버
+
+파이썬은 웹 서버와 서버 사이트 프로그램을 작성하는데 뛰어나다.
+
+웹 프레임워크는 웹사이트를 구축할 수 있는 기능(라우팅(서버 함수의 URL), 템플릿(HTML을 동적으로 생성), 디버깅 등)을 제공한다.  
+
+### 9.2.1 간단한 파이썬 웹 서버
+
+순수한 파이썬 HTTP 서버를 구현한다.
+
+```
+$ python -m http.server
+Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
+```
+
+`0.0.0.0`은 **모든 TCP 주소** 를 의미한다. 그래서 웹 클라이언트는 서버가 어떤 주소를 가졌든 접근할 수 있다.  
+
+현재 디렉터리에 대한 상대 경로로 파일을 요청할 수 있다. 그럼 요청한 파일이 반환된다.
+웹 브라우저 주소창에 'http://localhost:8000/'를 요청하면, 서버를 실행한 경로의 디력터리의 리스트가 출력되고, 아래의 로그가 출력된다.
+
+```
+127.0.0.1 - - [29/Jun/2018 13:04:09] "GET / HTTP/1.1" 200 -
+```
+
+- '127.0.0.1'와 'localhost'는 **로컬 컴퓨터** 에 대한 TCP 동의어다.(클라이언트의 IP 주소)
+- 첫 번째 '-'는 원격 사용자 이름이다.(발견된 경우)
+- 두 번째 '-'는 로그인 사용자 이름이다.(요구한 경우)
+- '[29/Jun/2018 13:04:09]'는 접근한 날짜와 시간이다.
+- "GET / HTTP/1.1"는 웹 서버로 보내는 명령이다.
+ - HTTP 메서드(GET)
+ - 리소스 요청(/)
+ - HTTP 버전(HTTP/1.1)
+- 200은 웹 서버로부터 반환된 HTTP 상태 코드다.
+
+브라우저에서 파일을 클릭하면, 브라우저는 포맷을 인식하여 보여준다(HTML, PNG 등). 서버는 요청에 대한 로그를 기록한다.
+
+```
+127.0.0.1 - - [29/Jun/2018 13:09:23] "GET /intoro_python/chap7_oreilly.png HTTP/1.1" 200 -
+```
+
+기본 포트는 8000이지만, 다른 포트로 지정할 수 있다.
+
+```
+$ python -m http.server 9999
+```
+
+이 기본 서버는 실제 웹사이트에서 사용하면 안된다. 매개변수를 받아서 동적인 콘텐츠를 처리하는 일을 수행할 수 없다. 아파치나 엔지닉스 등을 사용하면 정적 파일을 더 빠르게 제공한다.
+
+### 9.2.2 웹 서버 게이트웨이 인터페이스
+
+웹 초기 시절, **공용 게이트웨이 인터페이스(CGI.Common Gateway Interface)** 는 클라이언트를 위해 웹 서버가 외부 프로그램을 실행하고, 그 결과를 반환하도록 설계되었다. CGI는 클라이언트에서 받은 입력 인자를 서버를 통해 처리하여 외부 프로그램으로 전달하는데 프로그램은 각 클라이언트의 접근을 위해 처음부터 다시 시작된다. 이런 접근 방식은 작은 프로그램도 시작하는데 상당한 시간이 걸려 확장성이 떨어진다.  
+
+이러한 시동 지연을 피하기 위해 웹 서버에 인터프리터를 두었다. 아파치는 mod_php 모듈 내에서는 PHP, mod_perl 모듈 내에서는 펄, mod_python 모듈 내에서는 파이썬을 실행한다. 이런 동적 언어의 코드는 장기적으로 작동하는 아파치 프로세스 내에서 실행된다.  
+
+또 다른 방법은 별도의 장기적으로 작동하는 프로그램 내에서 동적 언어를 실행하고, 웹 서버와 통신하는 것이다.(FastCGI, SCGI)  
+
+파이썬 웹 개발은 파이썬 웹 애플리케이셔과 웹 서버 간의 범용적인 API인 **웹 서버 게이트웨이 인터페이스(WSGI.Web Server Gateway Interface)** 의 정의에서부터 시작되었다.
+
+
+### 9.2.3 프레임워크
+
+웹 서버는 HTTP와 WSGI의 세부사항을 처리하지만 **웹 프레임워크** 를 사용하면 파이썬 코드를 작성하여 강력한 웹 사이트를 만들 수 있다.
+
+웹 프레임워크는 최소한 클라이언트의 요청과 서버의 응답을 처리한다.
+
+- 라우트(route) : URL을 해석하여 해당 서버의 파일이나 파이썬 코드를 찾아준다.
+- 템플릿(template) : 서버 사이드의 데이터를 HTML 페이지에 병합한다.
+- 인증(authentication) 및 권한(authorization) : 사용자 이름과 비밀번호, 퍼미션(permission:허가)을 처리한다.
+- 세션(session) : 웹사이트에 방문하는 동안 사용자의 임시 데이터를 유지한다.
