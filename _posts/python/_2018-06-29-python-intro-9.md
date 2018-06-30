@@ -245,3 +245,91 @@ $ python -m http.server 9999
 - 템플릿(template) : 서버 사이드의 데이터를 HTML 페이지에 병합한다.
 - 인증(authentication) 및 권한(authorization) : 사용자 이름과 비밀번호, 퍼미션(permission:허가)을 처리한다.
 - 세션(session) : 웹사이트에 방문하는 동안 사용자의 임시 데이터를 유지한다.
+
+### 9.2.4 Bottle
+
+Bottle은 하나의 파이썬 파일로 구성되어 있어서 쉽게 배포할 수 있다.
+
+##### 설치
+
+```
+$ pip install bottle
+```
+
+간단히 웹서버를 실행해본다. bottle1.py 파일을 생성하여 아래 코드를 저장한다.
+
+```Python
+# bottle1.py
+from bottle import route, run
+
+@route('/')
+def home():
+    return 'Hello World'
+
+run(host='localhost', port=9999)
+````
+
+파일을 실행하고 'http://localhost:9999'로 접속하면 'Hello World'를 볼 수 있다.
+
+`run()` 함수는 bottle의 내장된 파이썬 테스트 웹 서버를 실행한다. bottle 프로그램에 사용할 필요는 없지만, 초기 개발 및 테스트에 유용하다.
+
+```HTML
+# index.html
+My <b>new</b> and <i>improved</i> home page!!
+````
+
+```Python
+# bottle2.py
+from bottle import route, run, static_file
+
+@route('/')
+def main():
+    return static_file('index.html', '.')  # .은 현재 디렉처리를 의미
+
+run(host='localhost', port=9999)
+````
+
+My **new** and <i>improved</i> home page!!
+
+```Python
+# bottle3.py
+from bottle import route, run, static_file
+
+@route('/')
+def home():
+    return static_file('index.html', '.')
+
+@route('/echo/<thing>')
+def echo(thing):
+    return "Say hello to my little friend: %s!" % thing
+
+run(host='localhost', root=9999)
+```
+http://localhost:9999/echo/Makingfunk 으로 요청을 보내면
+'Say hello to my little friend: Makingfunk!'을 확인 할 수 있다.
+
+requests와 같은 클라이언트 라이브러리를 사용하여 잘 작동하는지 확인할 수 있다.
+
+```Python
+# bottle_test.py
+import requests
+
+resp = requests.get('http://localhost:9999/echo/Doky')
+
+if resp.status_code == 200 and \
+    resp.text == 'Say hello to my little friend: Doky!':
+    print('It worked! That almost never happends!')
+else:
+  print('Arhg, got this:', resp.text)
+```
+
+파일을 실행하면 'It worked! That almost never happends!'라는 결과를 볼 수 있따.
+
+이것은 **유닛 테스트(unit test)** 의 작은 예이다.  
+
+`run()` 함수를 호출할 때 아래 인자를 추가하여 실행할 수 있다.
+
+- `debug=True` : HTTP 에러가 발생하면 디버깅 페이지를 생성한다.
+- `reloader=True` : 파이썬 코드가 변경되면 변경된 코드를 다시 불러온다.
+
+시간이 되면 [튜토리얼](https://bottlepy.org/docs/0.12/tutorial.html#installation)을 진행해보자.
