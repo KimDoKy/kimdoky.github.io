@@ -157,9 +157,8 @@ X-Powered-By PleskLin
 
 'requests' 모듈을 사용하면 개발이 더 쉬워진다.
 
-##### 설치
-
 ```
+# requests 설치
 $ pip install requests
 ```
 
@@ -250,9 +249,8 @@ $ python -m http.server 9999
 
 Bottle은 하나의 파이썬 파일로 구성되어 있어서 쉽게 배포할 수 있다.
 
-##### 설치
-
 ```
+# bottle 설치
 $ pip install bottle
 ```
 
@@ -333,3 +331,129 @@ else:
 - `reloader=True` : 파이썬 코드가 변경되면 변경된 코드를 다시 불러온다.
 
 시간이 되면 [튜토리얼](https://bottlepy.org/docs/0.12/tutorial.html#installation)을 진행해보자.
+
+### 9.2.5 Flask
+
+Flask는 2010년 만우절 농담으로 등장했는데, bottle(병)에 대한 익살로 flask(실험용 병)이라고 지었다.  
+
+Bottle처럼 간단히 사용할 수 있지만, 페이스북 인증과 데이터베이스 연결 등 전문적인 웹 개발에 유용한 기능들을 지원한다.
+
+Flask 패키지는 werkzeug WSGI 라이브러리와 jinja2 템플릿 라이브러리를 포함한다.
+
+```
+# flask 설치
+$ pip install flask
+```
+
+Bottle의 예를 Flask로 바꾼다. 두 가지 참조 사항이다.
+
+- Flask의 기본 정적 파일 디렉터리는 static이다. 파일에 대한 URL 또한 /static으로 시작한다. 포더를 '.'(현재 디렉터리)로, URL 접두사를 ''(빈 문자열)로 바꿔서 URL /를 index.html 파일로 매핑할 수 있다.
+- `run()` 함수에서 `debug=True`는 서버의 코드를 다시 불러온다. Bottle에서는 디버깅과 코드를 다시 불러오는 인자가 분리되어 있다.
+
+```Python
+# flask1.py
+from flask import Flask
+
+app = Flask(__name__, static_folder='.', static_url_path='')
+
+@app.route('/')
+def home():
+    return app.send_static_file('index.html')
+
+@app.route('/echo/<thing>')
+def echo(thing):
+    return "Say hello to my little friend: %s" % thing
+
+app.run(port=9999, debug=True)
+```
+
+Bottle의 예와 똑같은 결과을 볼 수 있다.
+
+`run()` 함수를 호출할 때 `debug=True`로 설정하면 여러 이점이 있다. 서버 코드에서 예외가 발생하면 Flask는 오류 정보와 어디가 잘못되었는지에 대한 내용을 페이지로 표시해준다. 더 좋은 점은 서버 프로그램의 변숫값을 보기 위해 몇 가지 명령을 입력할 수 있다.
+
+Bottle에서는 할 수 없는 것들 중 하나는 템플릿 시스템이다.(jinja2)  
+
+templates 디렉터리를 생성하고, flask2.html 파일을 생성한다.
+
+```html
+<html>
+  <head>
+    <title>Flask2 Example</title>
+  </head>
+  <body>
+    Say hello my little friend: {{ thing }}
+  </body>
+</html>
+```
+
+여러 방법으로 두 번째 인자를 echo URL에 전달할 수 있다.
+
+#### URL 경로로 인자 전달하기
+
+```html
+# flask3.html
+<html>
+  <head>
+    <title>Flask2 Example</title>
+  </head>
+  <body>
+    Say hello my little friend: {{ thing }}.
+    Alas, it just destroyed {{ place }}!
+  </body>
+</html>
+```
+
+```Python
+# flask3a.py
+from flask import Flask, render_template
+
+app = Flask(__name__)
+
+@app.route('/echo/<thing>/<place>')
+def echo(thing, place):
+    return render_template('flask3.html', thing=thing, place=place)
+
+app.run(port=9999, debug=True)
+```
+http://localhost:9999/echo/doky/Corea 으로 접속하면 "Say hello my little friend: doky. Alas, it just destroyed Corea!"라는 결과를 볼 수 있다.
+
+#### GET 매개변수로 인자 제공
+
+```Python
+# flask3b.py
+from flask import Flask, render_template, request
+
+app = Flask(__name__)
+
+@app.route('/echo/')
+def echo():
+    thing = request.args.get('thing')
+    place = request.args.get('place')
+    return render_template('flask3.html', thing=thing, place=place)
+
+app.run(port=9999, debug=True)
+```
+
+http://localhost:9999/echo/?thing=Doky&place=Corea 으로 접속하면 "Say hello my little friend: Doky. Alas, it just destroyed Corea!"라는 결과를 볼 수 있다.
+
+GET 명령이 URL에 사용되는 경우 인자가 `&key=val1&key2=val2&...` 형태로 전달된다. 또한 딕셔너리 `**` 연산자를 사용하여 한 딕셔너리로부터 여러 인자를 템플릿에 전달할 수 있다.
+
+```python
+# flask3c.py
+from flask import Flask, render_template, request
+
+app = Flask(__name__)
+
+@app.route('/echo/')
+def echo():
+    kwargs = {}
+    kwargs['thing'] = request.args.get('thing')
+    kwargs['place'] = request.args.get('place')
+    return render_template('flask3.html', **kwargs)
+
+app.run(port=9999, debug=True)
+```
+
+동일한 결과를 같는다.
+
+`**kwargs`는 `thing=thing, place=place`처럼 동작한다. 입력 인자가 많을 경우 타이핑을 줄일 수 있다.
