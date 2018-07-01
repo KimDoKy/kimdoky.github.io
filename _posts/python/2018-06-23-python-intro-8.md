@@ -4,6 +4,7 @@ section-type: post
 title: Introducing Python - 흘러가는 데이터
 category: python
 tags: [ 'python' ]
+published: false
 ---
 
 # Chap8. 흘러가는 데이터
