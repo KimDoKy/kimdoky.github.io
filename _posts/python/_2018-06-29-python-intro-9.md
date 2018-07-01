@@ -457,3 +457,79 @@ app.run(port=9999, debug=True)
 동일한 결과를 같는다.
 
 `**kwargs`는 `thing=thing, place=place`처럼 동작한다. 입력 인자가 많을 경우 타이핑을 줄일 수 있다.
+
+### 9.2.6 비파이썬 웹 서버
+지금까지 다룬 웹서버(표준 라이브러리 http.server, Bottle, Flask의 디버깅 서버)는 간단했다. 제품으로 배포할 때는 빠른 웹 서버로 파이썬을 실행하는 것이 좋다. 일반적으로 다음을 선택한다.
+
+- 아파치(apache)와 mod_wsgi 모듈
+- 엔진엑스(nginx)와 uWSGI 앱 서버
+
+아파치는 가장 인기가 많고, 엔진엑스는 안정성과 메모리를 적게 사용하는 것으로 유명하다. 최근엔 엔진엑스의 주가가 올라가고 있다.
+
+#### 아파치
+
+> 실습에 앞서 가상 환경에서 벗어나서 작업을 해야 순조롭게 진행된다.
+
+아파치 웹 서버에 최적화된 WSGI 모듈은 mod_wsgi다. 이 모듈은 아파치 프로세스 안이나 아파치와 통신하기 위해 분리된 프로세스 안에서 파이썬 코드를 실행한다.
+
+```python
+import sys
+
+sys.path.append(# home.wsgi가 있는 디렉터리)
+sys.path.append(# python이 있는 디렉터리)
+
+import bottle
+application = bottle.default_app()
+
+@bottle.route('/')
+def home():
+    return "apache and wsgi, sitting in a tree"
+```
+
+`run()`을 호출하지 않는다. 내장된 파이썬 웹 서버를 작동하기 때문이다. 웹 서버와 파이썬 코드를 결합하기 위해, application 변수를 할당하여 이를 mod_wsgi가 찾을 수 있게 해준다.
+
+아파치와 mod_wsgi 모듈을 위의 파이썬 스크립트에 연결하기 위해 아파치 설정 작업이 필요하다.
+/etc/apache2/httpd.conf 파일에서 mod_wsgi와 가상 호스트에 관한 주석을 해제한다.
+
+```
+LoadModule wsgi_module /usr/local/lib/httpd/modules/mod_wsgi.so
+Include /private/etc/apache2/extra/httpd-vhosts.conf
+```
+
+> 아무리 뒤져봐도 mod_wsgi 를 설치해도 /usr/local/Cellar/mod_wsgi/ 가 없어서 한참 헤매었다. mod_wsgi 디렉터리를 생성후 안에 mod_wsgi-3.4.tar.gz를 다운받고, 압축을 풀고
+`./configure make`, `sudo make install`으로 해결하였다.
+
+기본 웹사이트를 설정하기 위해 '/etc/apache2/extra/httpd-vhost.conf' 파일에서 다음을 추가한다.
+
+```
+<VirtualHost *:80>
+    DocumentRoot "/Users/dokyungkim/Desktop/"
+
+    WSGIScriptAlias "/" "/Users/dokyungkim/Desktop/apache/home.wsgi"
+
+    <Directory "/Users/dokyungkim/Desktop/apache">
+        Order deny,allow
+        Allow from all
+    </Directory>
+</VirtualHost>
+```
+
+```
+$ sudo apachectl -t      # 문법검사
+```
+...........
+
+```
+# start : 서버 실행. stop: 서버 정지. restart : 재실행
+$ sudo apachectl restart
+```
+
+아오....... 안되네.........썅....ㅠ
+
+브류 설치부처 별 삽질을 다 했는데 서버는 실행되나 원하는 결과가 나오지 않음.
+
+프로세스를 죽여도 원하는 결과가 나오지 않음. 시간을 너무 많이 잡아 먹는 관계로 추후 웹서버에 대해 공부할때 대시 도전하기로 한다.
+
+#### 엔진엑스 웹 서버
+
+엔진엑스 웹 서버는 파이썬 모듈이 없다. 대신 uWSGI와 같은 별도의 WSGI 서버를 사용하여 통신한다. uWSGI를 설치해야 하는데, uWSGI는 다양한 설정을 할 수 있는 큰 시스템이다.
