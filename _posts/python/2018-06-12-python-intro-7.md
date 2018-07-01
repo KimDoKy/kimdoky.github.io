@@ -4,6 +4,7 @@ section-type: post
 title: Introducing Python - 데이터 주무르기
 category: python
 tags: [ 'python' ]
+published: false
 ---
 
 # Chap7. 데이터 주무르기

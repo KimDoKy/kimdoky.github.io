@@ -4,6 +4,7 @@ section-type: post
 title: Introducing Python - 객체와 클래스
 category: python
 tags: [ 'python' ]
+published: false
 ---
 
 # Chap 6. 객체와 클래스
