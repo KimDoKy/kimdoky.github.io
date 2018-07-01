@@ -558,3 +558,99 @@ $ sudo apachectl restart
 - tornado
 - gevent
 - gunicorn
+
+
+## 9.3 웹 서비스의 자동화
+
+웹은 HTML보다 더 많은 형식으로 애플리케이션과 데이터를 연결하는 강력한 방법이 존재한다.
+
+### 9.3.1 webbrowser 모듈
+
+```Python
+# 표준 라이브러리의 webbrowser 모듈을 호출해 파이썬 찬양 링크를 브라우져에 바로 던져준다.
+>>> import antigravity
+# 모듈을 바로 사용할 수 있다.
+# 브라우저에 파이썬 사이트를 불러온다
+>>> import webbrowser
+>>> url = 'http://www.python.org/'
+>>> webbrowser.open(url)
+True
+# 브라우저에 새 창을 연다.
+>>> webbrowser.open_new(url)
+True
+# 브라우저에 새 탭을 연다.
+>>> webbrowser.open_new_tab('http://www.python.org/')
+True
+```
+
+### 9.3.2 웹 API와 REST
+
+웹 페이지 대신 웹 **어플리케이션 프로그래밍 인터페이스(API.Application Programming Interface)**를 통해 데이터를 제공할 수 있다. 클라이언트는 URL 요청으로 서비스에 접근하여, 요청에 대한 상태와 데이터가 들어 있는 응답을 받을 수 있다. JSON, XML 같은 포맷을 사용한다.
+
+많은 곳에서 REST(REpresentiational State Transfer) 인터페이스 혹은 RESTful 인터페이스를 사용한다. 웹 서비스에 접근할 수 있는 URL을 정의하여 **웹** 인터페이스만 제공할 수 있다.
+
+RESTful 서비스는 특정 HTTP 동사를 사용한다.
+
+- HEAD : 리소스에 대한 정보를 얻는다.
+- GET : 서버에서 리소스의 데이터를 검색한다. `?`와 함께 인자들이 따라오는 URL이 GET 요청이다. 데이터의 변화가 있지 않는 데이터에 한정된다.
+- POST : 서버의 데이터를 갱신한다. 주로 HTML 폼과 웹 API에서 사용한다.
+- PUT : 새로운 리소스를 생성한다.
+- DELETE : 서버의 데이터를 삭제한다.
+
+RESTful 클라이언트는 HTTP 요청 헤더를 사용하여 서버로부터 하나 이상의 콘텐츠 타입을 요청할 수 있다. JSON을 선호한다.
+
+### 9.3.3 JSON
+JSON은 웹 클라이언트와 서버 간에 데이터를 교환하는데 유용하다. 오픈스택과 같은 웹 기반의 API에서 인기가 높다.
+
+### 9.3.4 크롤링과 스크래핑
+
+자동화 된 패처(getcher)는 크롤러(crawler) 혹은 스파이더(spider)라고 불린다. 원격 웹 서버에서 콘텐츠를 찾은 후, 스크래퍼에서 원하는 정보를 찾기 위해 파싱한다.
+
+'scrapy'는 BeautifulSoup과 같은 모듈이 아닌 프레임워크다. 기능은 더 많지만 설정이 복잡하다.
+
+```
+$ pip install scrapy
+```
+
+### 9.3.5 HTML 스크랩하기: BeautifulSoup
+
+```
+$ pip install beautifulsoup4
+```
+
+```python
+# 웹 페이지의 모든 링크 가져오는 예
+def get_links(url):
+    import requests
+    from bs4 import BeautifulSoup as bs
+
+    result = requests.get(url)
+    page = result.text
+    doc = bs(page)
+    links = [element.get('href') for element in doc.find_all('a')]
+    return links
+
+if __name__ == '__main__':
+    import sys
+    for url in sys.argv[1:]:
+        print('Links in', url)
+        for num, link in enumerate(get_links(url), start=1):
+            print(num, link)
+        print()
+```
+
+```
+$ python links.py http://boingboing.net
+1 https://boingboing.net
+2 http://boingboing.net/sub
+3 https://boingboing.net/search
+4 https://store.boingboing.net
+5 javascript:void(0)
+6 http://boingboing.net/blog
+7 http://bbs.boingboing.net
+8 https://bbs.boingboing.net/faq
+9 http://store.boingboing.net
+10 mailto:pubsupport@stackcommerce.com
+11 http://boingboing.net/about
+...
+```
