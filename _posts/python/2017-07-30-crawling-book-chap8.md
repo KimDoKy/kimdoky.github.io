@@ -4,6 +4,7 @@ section-type: post
 title: crawling - P2. 고급 스크레이핑 _ chap 8. 자연어 읽고 쓰기
 category: python
 tags: [ 'python' ]
+published: false
 ---
 
 구글 이미지 검색에 '귀여운 고양이(cute kitten)'라고 입력했을 때, 구글은 무엇을 검색했는지 어떻게 알 수 있을까요? 귀여운 고양이 이미지 주변에 있는 텍스트를 이용합니다. 유투브의 검색 창에 '죽은 앵무새(dead parrot)'이라고 입력했을 때 몬티 파이튼의 스케치를 찾아야 한다고 판단하는 건 어떻게 했을까요? 각 비디오를 올릴 때 함께 올리는 제목과 설명 텍스트 덕분입니다.  

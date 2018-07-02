@@ -4,6 +4,7 @@ section-type: post
 title: crawling - P1.스크레이퍼 제작 _ chap 6. 문서 읽기
 category: python
 tags: [ 'python' ]
+published: false
 ---
 
 이번 챕터에서는 문서를 다루는 방법을 다룹니다. 로컬 폴더에 내려받거나 직접 읽고 데이터를 추출하는 것 모두 해당합니다. 다양한 텍스트 인코딩에 대해 다루고, 외국어로 된 HTML 페이지도 읽을 수 있게 됩니다.

@@ -4,6 +4,7 @@ section-type: post
 title: crawling - P1.스크레이퍼 제작 _ chap 3. 크롤링 시작하기
 category: python
 tags: [ 'python' ]
+published: false
 ---
 
 여러 페이지, 여러 사이트를 이동하는 스크레이퍼를 통해 실제 문제를 다룹니다.

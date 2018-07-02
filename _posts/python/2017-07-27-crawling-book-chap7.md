@@ -4,6 +4,7 @@ section-type: post
 title: crawling - P2. 고급 스크레이핑 _ chap 7. 지저분한 데이터 정리하기
 category: python
 tags: [ 'python' ]
+published: false
 ---
 
 웹 스크레이핑에서는 제한된 곳에서만 데이터를 수집할 수는 없을 때가 많습니다.  

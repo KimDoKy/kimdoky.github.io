@@ -4,6 +4,7 @@ section-type: post
 title: crawling - P1.스크레이퍼 제작 _ chap 5. 데이터 저장
 category: python
 tags: [ 'python' ]
+published: false
 ---
 
 > 해당 포스팅은 맥 os 위주로 작성되었습니다.
