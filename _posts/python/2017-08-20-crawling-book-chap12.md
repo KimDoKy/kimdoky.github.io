@@ -4,6 +4,7 @@ section-type: post
 title: crawling - P2. 고급 스크레이핑 _ chap 12. 스크레이핑 함정 피하기
 category: python
 tags: [ 'python' ]
+published: false
 ---
 
 사이트를 스크랩하였으나 출력 결과가 브라우저에서 보이는 데이터가 없다거나, 폼을 완벽하게 작성해서 전송하였지만 웹 서버에서 거부 당할 수 있습니다. 우리가 알지 못하는 이유로 IP 주소가 차단당할 때도 있습니다.  
@@ -297,6 +298,6 @@ Do not change value of email
   2. 좌측 Name에서 확인하고 싶은 파일 선택
   3. 우측 Header 탭 선택  
   ![]({{site.url}}/img/post/python/crawling/c12_4_get_header.png)
-  
+
   - 일반적인 사람에게는 불가능한 것을 클릭하거나 접근하지 마세요.(허니팟입니다.)
   - 접근하기 정 어렵다면 웹사이트 관리자에게 연락해서 당신이 무엇을 하려는지 알리는 것도 하나의 방법입니다. 관리자의 이메일 주소는 보통 webmaster@domain.com 혹은 admin@domain.com 입니다. 스크레이퍼를 사용할 수 있는 권한을 요청하세요. 관리자도 사람이니 이런 방법이 통할 수도 있습니다.

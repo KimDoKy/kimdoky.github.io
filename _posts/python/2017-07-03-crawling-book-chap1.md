@@ -4,6 +4,7 @@ section-type: post
 title: crawling - P1.스크레이퍼 제작 _ chap 1. 첫 번째 웹 스크레이퍼
 category: python
 tags: [ 'python' ]
+published: false
 ---
 
 ![]({{site.url}}/img/post/python/crawling/animal.jpg)

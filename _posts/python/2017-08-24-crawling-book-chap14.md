@@ -4,6 +4,7 @@ section-type: post
 title: crawling - P2. 고급 스크레이핑 _ chap 14. 원격 스크레이핑
 category: python
 tags: [ 'python' ]
+published: false
 ---
 
 이번 챕터에서는 스크립트를 다른 컴퓨터, 또는 자신의 컴퓨터에서 다른 IP 주소를 사용해 실행하는 방법을 다룹니다.

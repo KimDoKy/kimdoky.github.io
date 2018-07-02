@@ -4,6 +4,7 @@ section-type: post
 title: crawling - P1.스크레이퍼 제작 _ chap 4. API 사용
 category: python
 tags: [ 'python' ]
+published: false
 ---
 
 대형 프로젝트를 다루다 보면 다른 사람들의 코드를 다루면서 고생을 하게 됩니다. 네임스페이스 문제, 타입 문제, 함수 반환 값에 대한 오해, A 지점에서 B 메서드로 정보를 전달하는 것 같은 단순한 문제조차 악몽처럼 복잡해 질 수 있습니다.  

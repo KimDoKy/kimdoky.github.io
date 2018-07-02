@@ -4,6 +4,7 @@ section-type: post
 title: crawling - P2. 고급 스크레이핑 _ chap 10. 자바스크립트 스크레이핑
 category: python
 tags: [ 'python' ]
+published: false
 ---
 
 클라이언트 쪽 스크립트 언어는 웹 서버가 아니라 브라우저 자체에서 동작하는 언어입니다. 클라이언트 쪽 언어의 성공은 브라우저가 그 언어를 얼마나 지원하는지에 달려있습니다.  
