@@ -139,24 +139,79 @@ False
 ## 10.2 디렉터리
 
 ### 10.2.1 생성하기: mkdir()
-```python
 
+```python
+>>> os.mkdir('poems')
+>>> os.path.exists('poems')
+True
 ```
+
 ### 10.2.2 삭제하기: rmdir()
-```python
 
+```python
+>>> os.rmdir('poems')
+>>> os.path.exists('poems')
+False
 ```
+
 ### 10.2.3 콘텐츠 나열하기: listdir()
-```python
 
+```python
+# 테스트를 위해 디렉터리 생성
+>>> os.mkdir('poems')
+>>> os.listdir('poems')
+[]  # 하위 디렉터리가 없다.
+>>> os.mkdir('poems/mcintyre') # 하위 디렉터리 생성
+>>> os.listdir('poems')
+['mcintyre']
+>>> fout = open('poems/mcintyre/the_good_man', 'wt')
+>>> fout.write('''Cheerful and happy was his mood,
+... He to the poor was kind and good''')
+65
+>>> fout.close()
+>>> os.listdir('poems')
+['mcintyre']
+>>> os.listdir('poems/mcintyre')
+['the_good_man']
 ```
+
 ### 10.2.4 현재 디렉터리 바꾸기: chdir()
-```python
 
+```python
+>>> os.chdir('poems')
+>>> os.listdir('.')
+['mcintyre']
+>>> os.chdir('mcintyre')
+>>> os.listdir('.')
+['the_good_man']
+>>> os.chdir('..')
+>>> os.getcwd()
+'..(생략)../intoro_python/chap10/poems'
 ```
-### 10.2.5 일치하는 파일 나열하기: glob()
-```python
 
+### 10.2.5 일치하는 파일 나열하기: glob()
+
+`glob()`함수는 복잡한 정규표현식이 아닌, 유닉스 쉘 규칙을 사용하여 일치하는 파일이나 디렉터리의 이름을 검색한다.
+
+- 모든 것에 일치: `*`(re 모듈에서의 `.*`와 같다.)
+- 한 문자에 일치: `?`
+- a,b 혹은 c 문자에 일치: `[abc]`
+- a,b 혹은 c를 제외한 문자에 일치: `[!abc]`
+
+```python
+>>> import glob
+# m으로 시작하는 모든 파일이나 디렉터리 찾기
+>>> glob.glob('m*')
+['mcintyre']
+# 두 글자로 된 파일이나 디렉터리 찾기
+>>> glob.glob('??')
+[]
+# m으로 시작하고 e로 끝나는 여덟 글자의 단어 찾기
+>>> glob.glob('m??????e')
+['mcintyre']
+# k,l이나 m으로 시작하고, e로 끝나는 단어 찾기
+>>> glob.glob('[klm]*e')
+['mcintyre']
 ```
 
 ## 10.3 프로그램과 프로세스
