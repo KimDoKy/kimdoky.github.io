@@ -192,7 +192,7 @@ class AccountSerializer(serializers.ModelSerializer):
 ### HTMLFormRenderer
 serializer에서 반환된 데이터를 HTML from으로 렌더링합니다. 이 renderer의 출력에는  포함된 `<form>`태크, 숨겨진 `CSRF`입력이나 `submit`버튼이 포함되지 않습니다.  
 이 renderer는 직접 사용하기 위한 것이 아니며, serializer 인스턴스를  `renderer_form` 템플릿 태그에 전달하여 템플릿에서 대신 사용할 수 있습니다.  
-
+{% raw %}
 ```python
 {% load rest_framework %}
 
@@ -202,6 +202,7 @@ serializer에서 반환된 데이터를 HTML from으로 렌더링합니다. 이 
     <input type="submit" value="Save" />
 </form>
 ```
+{% endraw %}
 더 자세한 내용은 [HTML & Forms](http://www.django-rest-framework.org/topics/html-and-forms/)를 참조하세요.  
 
 **.media_type**: `text/html`  
