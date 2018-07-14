@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: Django REST Framework - Serializer Validators
+title: Django REST Framework - Validators
 category: django
 tags: [ 'django' ]
 ---

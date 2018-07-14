@@ -376,25 +376,263 @@ I'm loopy, in process 25431
 ## 10.4 달력과 시간
 
 ```Python
-
+# 윤년 테스트
+>>> import calendar
+>>> calendar.isleap(1900)
+False
+>>> calendar.isleap(1996)
+True
+>>> calendar.isleap(2004)
+True
+>>> calendar.isleap(2018)
+False
 ```
+
+시간은 타임존과 섬머타임 때문에 다루기가 힘들다.  
+파이썬 표준 라이브러리는 datetime, time, calendar, dateutil 등 여러 시간과 날자 관련 모듈이 있다. 일부 기능들은 중복된다.
 
 ### 10.4.1 datetime 모듈
 
-```Python
+##### 주요 메서드
 
+- date : 년, 월, 일
+- time : 시, 분, 초, 마이크로초
+- dateitme : 날짜와 시간
+- timedelta : 날짜 또는 시간 간격
+
+```Python
+# 년, 월, 일을 지정하여 date 객체 생성하여, 속성으로 접근
+>>> from datetime import date
+>>> halloween = date(2015, 10, 31)
+>>> halloween
+>>> datetime.date(2015, 10, 31)
+>>> halloween.day
+31
+>>> halloween.month
+10
+>>> halloween.year
+2015
+# 날짜를 출력
+>>> halloween.isoformat()
+'2015-10-31'
+```
+
+iso는 국제표준화기구(ISO)에서 재정한 날짜와 시간 표현에 대한 국제표준규격 ISO 8601을 참고한다. 년, 월, 일 순으로 표현한다.
+
+```Python
+# 오늘 날짜를 출력
+>>> from datetime import date
+>>> now = date.today()
+>>> now
+datetime.date(2018, 7, 12)
+```
+
+```python
+# 날짜에 시간 간격을 더하기
+>>> from datetime import timedelta
+>>> one_day = timedelta(days=1)
+>>> tomorrow = now + one_day
+>>> tomorrow
+datetime.date(2018, 7, 13)
+>>> now + 17*one_day
+datetime.date(2018, 7, 29)
+>>> yesterday = now - one_day
+>>> yesterday
+datetime.date(2018, 7, 11)
+
+# datetime 모듈의 time 객체는 하루의 시간을 나타내는데 사용
+>>> from datetime import time
+>>> noon = time(12, 0, 0)
+>>> noon
+datetime.time(12, 0)
+>>> noon.hour
+12
+>>> noon.minute
+0
+>>> noon.second
+0
+>>> noon.microsecond
+0
+```
+
+인자는 시부터 마이크로초 순으로 입력한다. 인자를 입력하지 않으면 0으로 간주한다. 마이크로초는 하드웨어와 OS에 따라 달라진다.
+
+```Python
+# datetime 객체는 날짜와 시간 모두를 포함
+>>> from datetime import datetime
+>>> some_day = datetime(2015, 1, 2, 3, 4, 5, 6)
+>>> some_day
+datetime.datetime(2015, 1, 2, 3, 4, 5, 6)
+
+# datetime 객체에도 isoformat() 메서드가 있다.
+# 중간에 T는 날짜와 시간을 구분
+>>> some_day.isoformat()
+'2015-01-02T03:04:05.000006'
+
+# datetime 객체에서 now() 메서드로 현재 날짜와 시간을 얻을 수 있다.
+>>> from datetime import datetime
+>>> now = datetime.now()
+>>> now
+datetime.datetime(2018, 7, 12, 0, 38, 8, 314310)
+>>> now.year
+2018
+>>> now.month
+7
+>>> now.day
+12
+>>> now.hour
+0
+>>> now.minute
+38
+>>> now.second
+8
+>>> now.microsecond
+314310
+
+# combine() 으로 date 객체와 time 객체를 datetime 객체로 병합할 수 있다.
+>>> from datetime import datetime, time, date
+>>> noon = time(12)
+>>> this_day = date.today()
+>>> noon_today = datetime.combine(this_day, noon)
+>>> noon_today
+datetime.datetime(2018, 7, 12, 12, 0)
+# date()와 time() 메서드를 사용하여 날짜와 시간을 얻을 수 있다.
+>>> noon_today.date()
+datetime.date(2018, 7, 12)
+>>> noon_today.time()
+datetime.time(12, 0)
 ```
 
 ### 10.4.2 time 모듈
 
-```Python
+절대 시간을 나타내는 방법은 어떤 시작점 이후 시간의 초를 세는 것이다. **유닉스 시간** 은 1970년 1월 1일 자정 이후 시간의 초를 사용한다. 이 값을 **에포치(epoch)** 라 부르며, 시스템 간에 날짜와 시간을 교환하는 간단한 방식이다.
 
+```Python
+>>> import time
+>>> now = time.time()
+>>> now
+1531323715.87176
 ```
+숫자를 보면 1970년부터 지금까지 10억초가 넘는다.
+
+```python
+# ctime() 함수를 사용하여 에포치 값을 문자열로 변환
+>>> time.ctime(now)
+'Thu Jul 12 00:41:55 2018'
+```
+
+에포치값은 자바스크립트와 같은 다른 시스템에서 날짜와 시간을 교환하기 위한 유용한 공통분모다. 각각의 날짜와 시간 요소를 얻기 위해 time 모듈의 struct_time 객체를 사용할 수 있다. localtime() 메서드는 시간을 시스템의 표준시간대로, gmtime() 메서드는 시간을 UTC로 제공한다.
+
+```python
+>>> time.localtime(now)
+time.struct_time(tm_year=2018, tm_mon=7, tm_mday=12, tm_hour=0, tm_min=41, tm_sec=55, tm_wday=3, tm_yday=193, tm_isdst=0)
+>>> time.gmtime(now)
+time.struct_time(tm_year=2018, tm_mon=7, tm_mday=11, tm_hour=15, tm_min=41, tm_sec=55, tm_wday=2, tm_yday=192, tm_isdst=0)
+
+# mktime() 메서드는 struct_time 객체를 에포치 초로 변환한다.
+>>> tm = time.localtime(now)
+>>> time.mktime(tm)
+1531323715.0
+```
+struct_time 객체는 시간을 초까지만 유지하기 때문에, 이 값은 ()의 에포치 값과 정확히 일치하지는 않는다.
+
+가능하면 **UTC** 를 사용하는 것이 좋다. UTC는 표준시간대와 독립적인 절대 시간이다. 서버를 운영하고 있다면 현지 시간이 아닌 UTC로 설정해야 한다.
+
+그리고 **일광절약시간** 은 사용하지 마라. 연중 한 시간이 한 번 사라지기 때문에 매년 데이터 중복과 손실이 생긴다.
 
 ### 10.4.3 날짜와 시간 읽고 쓰기
 
-```Python
+isoformat() 뿐 아니라 time 모듈의 ctime() 함수로도 날짜와 시간을 쓸 수 있다. 이 ㅎ마수는 에포치 시간을 문자열로 변환한다.
 
+```Python
+>>> import time
+>>> now = time.time()
+>>> time.ctime(now)
+'Thu Jul 12 00:46:07 2018'
+```
+
+strftime()을 사용하여 날짜와 시간을 문자열로 변환할 수 있다. datetime.date.time 객체에서 메서드로 제공되고, time 모듈에서 함수로 제공된다.
+
+##### strftime() 출력 지정자
+
+문자열 포맷 | 날짜/시간 단위 | 범위
+---|---|---
+%Y | 년 |1900 ~ ...
+%m | 월 | 01 ~ 12
+%B | 월 이름 | January
+%b | 월 축약 이름 | Jan, ..
+%d | 일 | 01 ~ 31
+%A | 요일 | Sunday, ...
+%a | 요일 축약 이름 | Sun, ...
+%H | 24시간 | 00 ~ 23
+%I | 12시간 | 01 ~ 12
+%p | 오전/오후 | AM, PM
+%M | 분 | 00 ~ 59
+%s | 초 | 00 ~ 59
+
+
+```python
+# strftime() 함수는 struct_time 객체를 문자열로 변환한다.
+# 포맷 문자열 fmt를 정의하여 사용한다.
+>>> import time
+>>> fmt = "It's %A, %B %d, %Y, local time %I:%M:%S%p"
+>>> t = time.localtime()
+>>> t
+time.struct_time(tm_year=2018, tm_mon=7, tm_mday=12, tm_hour=0, tm_min=47, tm_sec=9, tm_wday=3, tm_yday=193, tm_isdst=0)
+>>> time.strftime(fmt, t)
+"It's Thursday, July 12, 2018, local time 12:47:09AM"
+
+# date 객체에 사용하면 날짜 부분만 작동한다. 시간을 기본값으로 지정된다.
+>>> from datetime import date
+>>> some_day = date(2015, 12, 12)
+>>> fmt = "It's %B %d, %Y, local time %I:%M:%S%p"
+>>> some_day.strftime(fmt)
+"It's December 12, 2015, local time 12:00:00AM"
+
+# time 객체는 시간 부분만 변환된다.
+>>> from datetime import time
+>>> some_time = time(10, 35)
+>>> some_time.strftime(fmt)
+"It's January 01, 1900, local time 10:35:00AM"
+
+# time 객체는 날짜에는 의미가 없다.
+```
+
+
+```Python
+>>> import time
+>>> fmt = "%Y-%m-%d"
+>>> time.strptime("2015 06 02", fmt)
+Traceback (most recent call last)
+<ipython-input-86-e161258e1fdb> in <module>()
+----> 1 time.strptime("2015 06 02", fmt)
+...
+ValueError: time data '2015 06 02' does not match format '%Y-%m-%d'
+
+>>> time.strptime("2015-06-02", fmt)
+time.struct_time(tm_year=2015, tm_mon=6, tm_mday=2, tm_hour=0, tm_min=0, tm_sec=0, tm_wday=1, tm_yday=153, tm_isdst=-1)
+>>> time.strptime("2015-13-29", fmt)
+Traceback (most recent call last)
+<ipython-input-88-e947ddabad6b> in <module>()
+----> 1 time.strptime("2015-13-29", fmt)
+...
+ValueError: time data '2015-13-29' does not match format '%Y-%m-%d'
+
+>>> import locale
+>>> from datetime import date
+>>> halloween = date(2015, 10,31)
+>>> for lang_country in ['ko_kr', 'en_us', 'fr_fr', 'de_de', 'es_es', 'is_is',]:
+...     locale.setlocale(locale.LC_TIME, lang_country)
+...     halloween.strftime('%A, %B %d')
+
+>>> import locale
+>>> names = locale.locale_alias.keys()
+>>> good_names = [name for name in names if len(name) == 5 and name[2] == '_']
+>>> good_names[:5]
+['a3_az', 'aa_dj', 'aa_er', 'aa_et', 'af_za']
+>>> de = [name for name in good_names if name.startswith('de')]
+>>> de
+['de_at', 'de_be', 'de_ch', 'de_de', 'de_lu']
 ```
 
 ### 10.4.4 대체 모듈
