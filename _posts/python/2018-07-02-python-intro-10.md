@@ -600,6 +600,7 @@ time.struct_time(tm_year=2018, tm_mon=7, tm_mday=12, tm_hour=0, tm_min=47, tm_se
 
 
 ```Python
+# 년-월-일  포맷을 지켜야 한다.
 >>> import time
 >>> fmt = "%Y-%m-%d"
 >>> time.strptime("2015 06 02", fmt)
@@ -611,28 +612,48 @@ ValueError: time data '2015 06 02' does not match format '%Y-%m-%d'
 
 >>> time.strptime("2015-06-02", fmt)
 time.struct_time(tm_year=2015, tm_mon=6, tm_mday=2, tm_hour=0, tm_min=0, tm_sec=0, tm_wday=1, tm_yday=153, tm_isdst=-1)
+
+# 값이 범위를 벗어나면 예외가 발생
 >>> time.strptime("2015-13-29", fmt)
 Traceback (most recent call last)
 <ipython-input-88-e947ddabad6b> in <module>()
 ----> 1 time.strptime("2015-13-29", fmt)
 ...
 ValueError: time data '2015-13-29' does not match format '%Y-%m-%d'
+```
 
+```python
+# 이름은 운영체제의 국제화 설정(로케일.locale)에 따름
+# setlocale()을 사용하여 다른 월,일의 이름을 출력
+# setlocale()의 첫 번째 인자는 날짜와 시간을 위한 locale.LC_TIME
+# setlocale()의 두 번째 인자는 언어와 국가 약어가 결합된 문자
 >>> import locale
 >>> from datetime import date
 >>> halloween = date(2015, 10,31)
 >>> for lang_country in ['ko_kr', 'en_us', 'fr_fr', 'de_de', 'es_es', 'is_is',]:
 ...     locale.setlocale(locale.LC_TIME, lang_country)
 ...     halloween.strftime('%A, %B %d')
+# .... 출력이 안된다...
 
+# lang_country에 대한 값 찾기
 >>> import locale
 >>> names = locale.locale_alias.keys()
+
+# names로 부터 로케일 이름 얻기
 >>> good_names = [name for name in names if len(name) == 5 and name[2] == '_']
 >>> good_names[:5]
 ['a3_az', 'aa_dj', 'aa_er', 'aa_et', 'af_za']
+# 특정 언어 로케일 이름 얻기
 >>> de = [name for name in good_names if name.startswith('de')]
 >>> de
 ['de_at', 'de_be', 'de_ch', 'de_de', 'de_lu']
 ```
 
 ### 10.4.4 대체 모듈
+
+표준 라이브러리 모듈이 특정 포맷 변환이 부족한 경우 외부 모듈을 사용할 수 있다.
+
+- allow : 많은 날짜와 시간 함수를 결합하여 간단한 API 제공
+- dateutil : 대부분의 날짜 포맷을 파싱하고, 상대적인 날짜와 시간도 처리한다.
+- iso8601 : ISO8601 포맷에 대한 라이브러리의 부족한 부분을 보충
+- fleming : 표준시간대 함수를 제공
