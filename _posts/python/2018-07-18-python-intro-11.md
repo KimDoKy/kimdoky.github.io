@@ -82,3 +82,85 @@ Drying dessert dish
 ```
 
 이 큐는 파이썬 이터레이터와 매우 비슷하다. 실제로 분리된 프로세스를 시작하며, 식기세척기(washer)와 건조기(dryer)가 통신한다. `JoinableQueue` 함수와 모든 접시가 건조되었다는 것을 식기세척기가 알게 하는 `join()` 메서드를 사용했다. `multiprocessing`모듈에는 다른 큐 타입도 있다.
+
+### 11.1.3 스레드
+
+스레드는 한 프로세스 내에서 실행된다. 프로세스의 모든 자원에 접근할 수 있다. multiprocessing 모듈은 프로세스 대신 스레드를 사용하는 `threading`가 있다.
+
+```Python
+import threading
+
+def do_this(what):
+    whoami(what)
+
+def whoami(what):
+    print("Thread %s says: %s" % (threading.current_thread(), what))
+
+if __name__ == "__main__":
+    whoami("I'm the main program")
+    for n in range(4):
+        p = threading.Thread(target=do_this,
+                args=("I'm function %s" % n,))
+        p.start()
+```
+
+```
+# 실행 결과
+Thread <_MainThread(MainThread, started 140736451294144)> says: I'm the main program
+Thread <Thread(Thread-1, started 123145375436800)> says: I'm function 0
+Thread <Thread(Thread-2, started 123145380691968)> says: I'm function 1
+Thread <Thread(Thread-3, started 123145375436800)> says: I'm function 2
+Thread <Thread(Thread-4, started 123145380691968)> says: I'm function 3
+```
+
+```python
+# 프로세스 기반의 dishes.py 예를 스레드로 구현
+import threading, queue
+import time
+
+def washer(dishes, dish_queue):
+    for dish in dishes:
+        print("Washing", dish)
+        time.sleep(5)
+        dish_queue.put(dish)
+
+def dryer(dish_queue):
+    while True:
+        dish = dish_queue.get()
+        print("Drying", dish)
+        time.sleep(10)
+        dish_queue.task_done()
+
+dish_queue = queue.Queue()
+for n in range(2):
+    dryer_thread = threading.Thread(target=dryer, args=(dish_queue,))
+    dryer_thread.start()
+
+dishes = ['salad', 'bread', 'entree', 'desert']
+washer(dishes, dish_queue)
+dish_queue.join()
+```
+
+```
+# 실행 결과
+Washing salad
+Washing bread
+Drying salad
+Washing entree
+Drying bread
+Washing desert
+Drying entree
+Drying desert
+```
+
+`multiprocessing` 모듈과 `threading`모듈의 차이는 `threading`모듈에는 `terminate()` 함수가 없다. 실행되고 잇는 스레드를 종료할 수 있는 간단한 방법은 없다. 자신과 코드의 모든 타입에 문제가 발생할 수 있기 때문이다.  
+
+스레드는 위험하다.(메모리 관리가 어렵다. 그리고 버그가 발생해도 매우 찾기 힘들다.) 스레드를 사용하려면 프로그램의 모든 코드와 이 프로그램을 사용하는 외부 라이브러리에서 반드시 **스레드-세이프** 한 코드를 작성해야 한다.  
+
+스레드는 전역 데이터가 관여하지 않을 때 유용하다. 특히 일부 I/O 작업을 완료할 때까지 기다리는 시간을 절약하는데 유용하다. 이 경우 완전히 별개의 변수를 가지고 있기 때문에 데이터와 씨름할 필요가 없다.  
+
+전역 데이터를 변경하기 위해 때론 스레드를 사용하는 것이 좋을 때가 있다. 여러 개의 스레드를 사용하는 일반적이 이유는 일부 데이터 작업을 나누기 위해서다. 이 경우 데이터 변경에 대한 확실한 정도를 예상할 수 있다.  
+
+데이터를 안전하게 공유하는 방법은 스레드에서 변수를 수정하기 전에 소프트웨어 락(잠금)을 적용하는 것이다. 이건 한 스레드에서 변수를 저장하는 동안 다른 스레드의 접근을 막아준다. 언락(잠금 해제)할지 기억해야 한다. 락은 중첩될 수 있다. 그렇기에 주의를 기울여야 한다.
+
+> 파이썬 스레드는 CPU 바운드 작업을 빠르게 처리 못한다. GIL(Global Interpreter Lock) 표준 파이썬 시스템의 세부 구현사항 때문이다. GIL은 파이썬 인터프리터의 스레딩 문제를 피하기 위해 존재한다. 실제로 파이썬의 멀티 스레드 프로그램은 싱글 스레드 혹은 멀티 프로세스 버전의 프로그램보다 느릴 수 있다.
