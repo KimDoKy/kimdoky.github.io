@@ -164,3 +164,64 @@ Drying desert
 데이터를 안전하게 공유하는 방법은 스레드에서 변수를 수정하기 전에 소프트웨어 락(잠금)을 적용하는 것이다. 이건 한 스레드에서 변수를 저장하는 동안 다른 스레드의 접근을 막아준다. 언락(잠금 해제)할지 기억해야 한다. 락은 중첩될 수 있다. 그렇기에 주의를 기울여야 한다.
 
 > 파이썬 스레드는 CPU 바운드 작업을 빠르게 처리 못한다. GIL(Global Interpreter Lock) 표준 파이썬 시스템의 세부 구현사항 때문이다. GIL은 파이썬 인터프리터의 스레딩 문제를 피하기 위해 존재한다. 실제로 파이썬의 멀티 스레드 프로그램은 싱글 스레드 혹은 멀티 프로세스 버전의 프로그램보다 느릴 수 있다.
+
+### 11.1.4 그린 스레드와 gevent
+
+**이벤트 기반(event-based)** 프로그래밍 : 중앙 **이벤트 루프** 를 실행하고, 모든 작업을 조금씩 실행하면서 루프를 반복한다. Nginx 웹 서버는 이러한 설계를 따르고 있어, 아파치 웹 서버보다 빠르다.
+
+gevent 라이브러리는 이벤트 기반이다. 명령 코드를 작성하고, 이 조각들을 코루틴으로 변환한다. 코루틴은 다른 함수와 서로 통신하여, 어느 위치에 있는지 파악하는 제네레이터와 같다. gevent는 블로킹 대신 이러한 메커니즘을 사용하기 위해 파이썬의 socket과 같이 많은 표준 객체를 수정한다.
+
+#### 설치
+
+```
+pip install gevent
+```
+
+#### 사용 예
+
+독립적으로 여러 사이트의 주소를 찾기 위해 gevent 모듈의 함수를 사용할 수 있다.
+
+```Python
+# 각 호스트네임은 차례차례 gethostbyname()의 호출에 전달
+# gevent의 gethostbyname()이라서 비동기적으로 실행된다.
+import gevent
+from gevent import socket
+hosts = ['www.naver.com', 'www.daum.net', 'www.google.com']
+jobs = [gevent.spawn(gevent.socket.gethostbyname, host) for host in hosts]
+gevent.joinall(jobs, timeout=5)
+for job in jobs:
+    print(job.value)
+```
+
+실행결과
+
+```
+125.209.222.141
+203.133.167.16
+74.125.204.105
+```
+
+`gevent.spawn()`은 각각의 `gevent.socket.gethostbyname(host)`를 실행하기 위해 **greenlet(그린 스레드(green thread) or 마이크로 스레드(microthread))** 를 생성한다.
+
+greenlet과 일반 스레드의 차이는 블록(block)을 하지 않는다는 것이다. 한 그레드에서 어떤 이슈로 블록되었다면, gevent는 제어를 다른 하나의 greenlet으로 바꾼다.  
+
+`gevent.joinall()` 메서드는 생성된 모든 작업이 끝날 때까지 기다린다. 그리고 호스트네이에 대한 IP 주소를 한 번에 얻게 된다.  
+
+gevent 버전의 socket 대신, **몽키-패치(monkey-patch)** 함수를 쓸 수 있다. 이 ㅎ마수는 gevent 버전의 모듈을 호출하지 않고, greenlet을 사용하기 위해 socket과 같은 표준 모듈을 수정한다. gevent에 적용하고 싶은 작업이 있을 때 유용하다. gevent에 접근할 수 없는 코드에도 적용할 수 있다.
+
+```Python
+# 이 프로그램뿐만 아니라 표준 라이브러리에서도 소켓이 호출되는 모든 곳에 gevent 소켓을 사용하도록 함
+# C로 작성된 라이브러리가 아닌 파이썬 코드에서만 작동
+# 가능한 gevent 영향을 많이 받아 속도가 향상
+from gevent import monkey; monkey.patch_all()
+```
+
+```
+125.209.222.141
+211.231.99.17
+172.217.31.132
+```
+
+gevent는 잠재적 위험이 있다. 모든 이벤트 기반의 시스템에서, 실행하는 각 코드 단위는 상대적으로 빠르게 처리되어야 한다. 논블로킹(nonblocking)임에도 많은 일을 처리해야 하는 코드는 여전히 느리다.  
+
+> tornado, gunicorn 이라는 이벤트 기반의 두 프레임워크가 있다. 이들은 저수준의 이벤트 처리와 빠른 웹 서버 모두를 제공한다. 아파치같은 전통적인 웹 서버없이 빠른 웹사이트 구축에 유용하다.
