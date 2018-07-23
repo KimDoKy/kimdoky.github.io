@@ -225,3 +225,66 @@ from gevent import monkey; monkey.patch_all()
 gevent는 잠재적 위험이 있다. 모든 이벤트 기반의 시스템에서, 실행하는 각 코드 단위는 상대적으로 빠르게 처리되어야 한다. 논블로킹(nonblocking)임에도 많은 일을 처리해야 하는 코드는 여전히 느리다.  
 
 > tornado, gunicorn 이라는 이벤트 기반의 두 프레임워크가 있다. 이들은 저수준의 이벤트 처리와 빠른 웹 서버 모두를 제공한다. 아파치같은 전통적인 웹 서버없이 빠른 웹사이트 구축에 유용하다.
+
+
+### 11.1.5 twisted
+
+twisted는 비동기식 이벤트 기반 네트워킹 프레임워크다. 데이터를 받거나 커넥션을 닫는 것과 같이 이벤트와 함수를 연결한다. 이 함수는 이러한 이벤트가 발생할 때 호출된다. 이것은 **콜백(callback)** 디자인으로 되어 있으며, 자바스크립트의 코드와 친숙하다. 일부 개발자는 콜백 기반 코드는 애플리케이션이 커지면 관리가 어려워진다고 한다.
+
+twisted는 TCP와 UDP 위에서 많은 인터넷 프로토콜을 지원하는 큰 패키지다.
+
+twisted 예제 중 knock-knock 서버와 클라이언트를 실습한다.
+
+```Python
+# knock-server.py
+
+from twisted.internet import protocol, reactor
+
+class Knock(protocol.Protocol):
+    def dataReceived(self, data):
+        print('Client: ', data)
+        if data.startswith('Knock knock'):
+            response = "Who's there?"
+        else:
+            response = data + " who?"
+        print('Sever: ', response)
+        self.transport.write(response)
+
+class KnockFactory(protocol.Factory):
+    def buildProtocol(self, addr):
+        return Knock()
+
+reactor.listenTCP(8000, KnockFactory())
+reactor.run()
+```
+
+```Python
+# knock-client.py
+
+from twisted.internet import reactor, protocol
+
+class KnockClient(protocol.Protocol):
+    def connectionMode(self):
+        self.transport.write("Knock knock")
+
+    def dataReceived(self, data):
+        if data.startswith("Who's there?"):
+            response = "Disappearing client"
+            self.transport.write(response)
+        else:
+            self.transport.loseConnection()
+            reactor.stop()
+
+class KnockFactory(protocol.ClientFactory):
+    protocol = KnockClient
+
+def main():
+    f = KnockFactory()
+    reactor.connectTCP("localhost", 8000, f)
+    reactor.run()
+
+if __name__ == '__main__':
+    main()
+```
+
+> 아직 사용법이 서툴러서 작동 확인이 안되었다. 추가 공부 후 업데이트 예정
