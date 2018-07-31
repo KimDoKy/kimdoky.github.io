@@ -139,6 +139,6 @@ sock.close()
 
 ![]({{site.url}}/img/post/python/socket_server.png)
 
-![]({{site.url}}/img/post/python/socket_server.png)
+![]({{site.url}}/img/post/python/socket_client.png)
 
 > [파이썬 소켓 연결 사용법](https://soooprmx.com/archives/8737) 여기도 잘 설명해 두셨으니 참고.
