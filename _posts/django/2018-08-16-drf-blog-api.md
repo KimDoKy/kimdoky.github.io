@@ -8,7 +8,7 @@ tags: [ 'django' ]
 
 - [William S. Vincent's Django Rest Framework - Blog API ](https://wsvincent.com/django-rest-framework-tutorial/)를 번역한 것입니다.
 
-- 해당 소스는 (Doky's Github)[https://github.com/KimDoKy/study/tree/master/daily/blog_project]에 업로드 해두었습니다.
+- 해당 소스는 [Doky's Github](https://github.com/KimDoKy/study/tree/master/daily/blog_project)에 업로드 해두었습니다.
 
 # Django Rest Framework - Blog API
 
