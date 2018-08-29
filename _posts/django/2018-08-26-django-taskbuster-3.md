@@ -349,7 +349,7 @@ $ python manage.py test functional_tests
 <link rel="stylesheet" href="{% static 'css/xxx.css' %}">
 <script src="{% static 'js/xxx.js' %}">
 ```
-{% endraw %}
+
 apple_touch_icon.png 링크는 제거해도 됩니다.
 
 파일 중간에 다음 코드를 발견할 수 있습니다.
@@ -358,7 +358,7 @@ document.write('<script src="js/vendor/jquery-1.11.0.min.js"><\/script>')</scrip
 ```
 
 이 코드에는 `"{% static 'xxx'%}` 태그를 추가할 수 없습니다. 문자열을 꺠뜨리기 떄문입니다. 이 경우 상대 경로를 지정하는 정적 파일을 포함할 수 있습니다.
-
+{% endraw %}
 ```
 document.write('<script src="static/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
 ```
