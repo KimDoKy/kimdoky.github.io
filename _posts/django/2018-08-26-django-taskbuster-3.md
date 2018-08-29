@@ -284,7 +284,7 @@ AssertionError: False is not true : Template 'base.html' was not a template used
 ```
 
 이제 base.html 템플릿을 수정합니다. 지금은 head 태그 안에 있는 **title 태그** 에만 관심이 있습니다.
-
+{% raw %}
 ```html
 <head>
     ...
@@ -323,8 +323,6 @@ $ python manage.py test functional_tests
 ```
 하나는 통과했고 하나는 실패했습니다. 실패응 정적 파일에 관한 것입니다.
 
-
--------------------
 먼저, 'taskbuster/static/css/main.css' 파일에 다음 내용을 추가합니다.
 
 ```css
@@ -351,7 +349,7 @@ $ python manage.py test functional_tests
 <link rel="stylesheet" href="{% static 'css/xxx.css' %}">
 <script src="{% static 'js/xxx.js' %}">
 ```
-
+{% endraw %}
 apple_touch_icon.png 링크는 제거해도 됩니다.
 
 파일 중간에 다음 코드를 발견할 수 있습니다.
