@@ -130,20 +130,19 @@ LOCALE_PATHS = (
 
 ```python
 # -*- coding: utf-8 -*-
-from django.conf.urls import include, url
 from django.contrib import admin
+from django.urls import path
 from django.conf.urls.i18n import i18n_patterns
 from .views import home, home_files
 
 urlpatterns = [
-    url(r'^(?P<filename>(robots.txt)|(humans.txt))$',
-        home_files, name='home-files'),
+    path('<filename>', home_files, name='home-files'),
 ]
 
 urlpatterns += i18n_patterns(
-    url(r'^$', home, name='home'),
-    url(r'^admin/', include(admin.site.urls)),
-)
+    path('admin/', admin.site.urls),
+    path('', home, name='home'),
+    )
 ```
 
 robots.txt와 humans.txt 파일을 같은 URL로 남겨두었고, 우리가 번역하고 싶은 것들은 `i18n_patterns` 함수를 사용합니다.
@@ -188,7 +187,7 @@ def test_uses_index_template(self):
  - `blocktrans`는 확정 된 콘텐츠에 사용됩니다. 단락에 사용합니다.
 
 `jumbotron` 컨테이너의 h1과 p 내용을 다음 코드와 같이 변경하세요.
-
+{% raw %}
 ```html
 <div class="jumbotron">
     <div class="container">
@@ -487,7 +486,7 @@ time filter만 사용하여 시간만 표시했습니다. 테스트를 다시 �
 ```
 {% load tz %}
 ```
-
+{% endraw %}
 테스트를 다시 실행하면 뷰가 현재 변수를 전달하지 않았기 때문에 이번에는 실패합니다. 'views.py'을 열고 파일 시작 부분에 임포트를 추가합니다.
 
 ```python
