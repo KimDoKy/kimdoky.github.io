@@ -240,7 +240,7 @@ Authorized Redirect Uris: http://127.0.0.1:8000/accounts/google/login/callback/
 
 자동으로 제안된 리다이렉션 URI는 여기에 쓰여진 것과 다릅니다.
 
-이 앱은 우리의 개발 및 테스트 환경에서 작동합니다. 제 prod 용으로 다른 클라이언트/보안 쌍을 만들어야 하며 웹 사이트 도메인에 따라 http://127.0.0.1:8000/ 을 변경해야 합니다.
+이 앱은 우리의 개발 및 테스트 환경에서 작동합니다. prod 용으로 다른 클라이언트/보안 쌍을 만들어야 하며 웹 사이트 도메인에 따라 http://127.0.0.1:8000/ 을 변경해야 합니다.
 
 Google 앱을 준비했으므로 Django 부분을 구성해봅시다.
 
@@ -297,13 +297,12 @@ $ mkdir taskbuster/fixtures
 
 다음은, fixture를 만듭니다.
 
-```
-$ python manage.py dumpdata --indent 2 --natural -e contenttypes -e auth.Permission > taskbuster/fixtures/allauth_fixture.json
-```
 
 ```
-$ python manage.py dumpdata --indent 2 --natural-primary -e contenttypes -e auth.Permission > taskbuster/fixtures/allauth_fixture.json
+$ python manage.py dumpdata --indent 2 --natural-foreign -e contenttypes -e auth.Permission > taskbuster/fixtures/allauth_fixture.json
 ```
+
+
 
 fixtures에는 중요한 정보가 있으므로 '.gitignore' 파일에 추가합니다.
 
@@ -392,4 +391,13 @@ url(r'^accounts/logout/$', 'django.contrib.auth.views.logout', {'next_page': '/'
 
 테스트를 다시 실행하면 제대로 작동합니다.
 
+
 [트위터로 로그인하기](http://www.marinamele.com/user-authentication-with-twitter-using-django-allauth) 단계도 있지만, 국내에서는 트위터가 대세가 아니라서 건너뜁니다.
+
+
+지금은 구글 로그인 태그들이 바뀌어서 테스트가 제대로 동작하지 않는 것 같습니다.
+코드를 이리 저리 수정했는데 마지막 로그인 버튼이 자동으로 클릭이 되지 않네요. 이 부분만 넘어가면 테스트를 끝낼 수 있을텐데, 아직 삽질 중입니다.
+
+삽질은 답답하지만, 실력 향상에는 이만한게 없으니!!
+
+계속 업데이트 중.
