@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: TaskBuster Django Tutorial – Part 8
+title: TaskBuster Django Tutorial – Part 8 - User Authentication with a Google Account using Django Allauth
 category: django
 tags: [ 'django' ]
 ---

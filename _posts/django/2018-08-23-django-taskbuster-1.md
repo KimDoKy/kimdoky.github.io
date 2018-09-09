@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: TaskBuster Django Tutorial – Part 1
+title: TaskBuster Django Tutorial – Part 1 - Working environment and start a Django Project
 category: django
 tags: [ 'django' ]
 ---

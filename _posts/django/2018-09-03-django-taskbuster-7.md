@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: TaskBuster Django Tutorial – Part 7
+title: TaskBuster Django Tutorial – Part 7 - Install and Configure PostgreSQL
 category: django
 tags: [ 'django' ]
 ---

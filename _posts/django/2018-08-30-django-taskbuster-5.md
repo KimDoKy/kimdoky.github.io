@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: TaskBuster Django Tutorial – Part 5
+title: TaskBuster Django Tutorial – Part 5 - Internationalization and Localization. Languages and Time zones
 category: django
 tags: [ 'django' ]
 ---

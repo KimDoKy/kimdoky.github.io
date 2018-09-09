@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: TaskBuster Django Tutorial – Part 3
+title: TaskBuster Django Tutorial – Part 3 - Create a Home Page with TDD, Staticfiles and Templates settings
 category: django
 tags: [ 'django' ]
 ---

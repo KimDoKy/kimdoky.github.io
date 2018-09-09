@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: TaskBuster Django Tutorial – Part 2
+title: TaskBuster Django Tutorial – Part 2 - Settings files and Version Control
 category: django
 tags: [ 'django' ]
 ---

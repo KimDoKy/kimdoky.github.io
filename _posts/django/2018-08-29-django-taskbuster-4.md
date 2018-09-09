@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: TaskBuster Django Tutorial – Part 4
+title: TaskBuster Django Tutorial – Part 4 - Template Inheritance, Website files and Testing with coverage
 category: django
 tags: [ 'django' ]
 ---

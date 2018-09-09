@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: TaskBuster Django Tutorial – Part 6
+title: TaskBuster Django Tutorial – Part 6 - Documenting the TaskBuster Django Boilerplate
 category: django
 tags: [ 'django' ]
 ---
