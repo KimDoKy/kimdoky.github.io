@@ -4,6 +4,7 @@ section-type: post
 title: pyDjango - chap3. Blog 앱
 category: django
 tags: [ 'django' ]
+published: false
 ---
 
 블로그의 기본 기능이라 할 수 있는 포스트 등록 및 열람, 태그 달기, 댓글 및 검색 기능, 콘텐츠 생성 및 편집 기능을 다룹니다.

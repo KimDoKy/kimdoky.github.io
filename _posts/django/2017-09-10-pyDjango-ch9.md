@@ -4,6 +4,7 @@ section-type: post
 title: pyDjango - chap9. Blog 앱 확장 -  검색 기능
 category: django
 tags: [ 'django' ]
+published: false
 ---
 블로그의 검색 기능을 개발합니다. 검색 기능도 블로그 앱에서 자주 쓰는 기능이므로 오픈 소스로 제공하는 패키지도 많은데, 종류도 다양하고 기능도 풍부한 편입니다. 구글 검색 기능을 제공해주는 패키지도 있고, AJAX 기능으로 검색을 해주는 패키지도 있습니다.  
 

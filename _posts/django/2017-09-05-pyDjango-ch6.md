@@ -4,6 +4,7 @@ section-type: post
 title: pyDjango - chap6. 가상 환경 사용하기 - virtualenv
 category: django
 tags: [ 'django' ]
+published: false
 ---
 
 독립된 가상환경이 필요한 이유는 인터넷에서 다운로드한 파이썬 라이브러리들이 충돌하는 것을 방지하기 위함입니다. 외부의 라이브러리들은 서로 의존성을 갖고 있는 경우가 많아 버전이 맞지 않는 경우 오작동을 일으킵니다.

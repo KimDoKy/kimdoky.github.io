@@ -4,6 +4,7 @@ section-type: post
 title: pyDjango - chap8. Blog 앱 확장 - 댓글 달기
 category: django
 tags: [ 'django' ]
+published: false
 ---
 장고 1.7 버전까지는 django.contrib.comments 패키지를 통해 자체 댓글 기능을 제공했었습니다. 장고 1.8 버전 이후부터는 comments 기능을 제외하고, 이보다 좀 더 유연하고 확장성이 높은 오픈소스 패키지인 django-disqus 패키지를 사용하는 것을 권장합니다.  
 

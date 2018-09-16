@@ -4,6 +4,7 @@ section-type: post
 title: pyDjango - chap5. 기존 앱 개선하기 - Bookmark 앱, Blog 앱
 category: django
 tags: [ 'django' ]
+published: false
 ---
 첫 페이지가 완성되고, 북마크 앱과 블로그 앱을 첫 페이지에 맞춘다면 이번 과정은 필요 없을 수도 있습니다.  
 하지만 일반적으로 디자인 요소가 중요시되는 첫 페이지 개발이 늦어지고, 고객의 요청에 따라 첫 페이지가 변경되는 경우가 자주 발생하기 때문에, 이미 개발된 북마크 앱과 블로그 앱을 개선하는 과정을 다룹니다.

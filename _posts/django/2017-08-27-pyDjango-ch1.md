@@ -4,6 +4,7 @@ section-type: post
 title: pyDjango - chap 1. 장고 개발의 기본 사항
 category: django
 tags: [ 'django' ]
+published: false
 ---
 두 번째 실습이라서 요점만 포스팅합니다.
 

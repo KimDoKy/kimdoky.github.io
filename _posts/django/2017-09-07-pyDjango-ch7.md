@@ -4,6 +4,7 @@ section-type: post
 title: pyDjango - chap7. Blog 앱 확장 - Tag 달기
 category: django
 tags: [ 'django' ]
+published: false
 ---
 각 포스트마다 태그를 달 수 있는 기능을 개발합니다.  
 

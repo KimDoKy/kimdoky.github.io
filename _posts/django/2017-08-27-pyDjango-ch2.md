@@ -4,6 +4,7 @@ section-type: post
 title: pyDjango - chap2. Bookmark 앱
 category: django
 tags: [ 'django' ]
+published: false
 ---
 북마크(Bookmark) 앱을 개발합니다. '즐겨찾기' 정도로 이해하면 되는 기능입니다.  
 

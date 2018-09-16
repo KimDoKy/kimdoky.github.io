@@ -4,6 +4,7 @@ section-type: post
 title: pyDjango - chap4. 프로젝트 첫 페이지 만들기
 category: django
 tags: [ 'django' ]
+published: false
 ---
 첫 페이지는 사이트 전체의 이미지를 대표하므로, 개성있는 UI와 일관성있는 룩앤필이 강조됩니다. 따라서 기능보다는 디자인 측면이 중요하기 때문에 HTML, 자바스크립트, 스타일시트 등의 지식이 필요한 부분입니다.
 
