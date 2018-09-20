@@ -2,8 +2,8 @@
 layout: post
 section-type: post
 title: JavaScript Tutorial - 11. Data Types
-category: front
-tags: [ 'front' ]
+category: javascript
+tags: [ 'javascript' ]
 ---
 
 ## JS Data Types

@@ -2,8 +2,8 @@
 layout: post
 section-type: post
 title: JavaScript Tutorial - 8. Operators
-category: front
-tags: [ 'front' ]
+category: javascript
+tags: [ 'javascript' ]
 ---
 
 ## JS Operators

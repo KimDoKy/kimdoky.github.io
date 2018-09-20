@@ -2,8 +2,8 @@
 layout: post
 section-type: post
 title: JavaScript Tutorial - 1. Introduction
-category: front
-tags: [ 'front' ]
+category: javascript
+tags: [ 'javascript' ]
 ---
 
 Django로 작업 하던 중, 혼자서 진행하는 부분에서 front-end 작업에서 막히게 되었습니다.

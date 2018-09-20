@@ -2,8 +2,8 @@
 layout: post
 section-type: post
 title: Google Map Custom Image Marker
-category: front
-tags: [ 'front' ]
+category: javascript
+tags: [ 'javascript' ]
 ---
 
 사진을 업로드하면 사진에서 GPS 정보를 추출하는 작업이 필요한 프로젝트를 진행하다가
@@ -120,4 +120,4 @@ def get_gps(photo):
 
 #### 여러 개의 구글맵이 출력되지 않고 하나만 나온다면?
 
-템플릿 for 문을 스크립트의 `function initMap()` 안쪽에 선언해야 합니다. for 문이 `function initMap()` 밖에 있다면 계속 초기화하여 마지막에 반복된 함수만이 유효하여 마지막꺼만 지도가 출력이 됩니다. 
+템플릿 for 문을 스크립트의 `function initMap()` 안쪽에 선언해야 합니다. for 문이 `function initMap()` 밖에 있다면 계속 초기화하여 마지막에 반복된 함수만이 유효하여 마지막꺼만 지도가 출력이 됩니다.

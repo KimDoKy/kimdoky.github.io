@@ -2,8 +2,8 @@
 layout: post
 section-type: post
 title: JavaScript Tutorial - 6. Comments
-category: front
-tags: [ 'front' ]
+category: javascript
+tags: [ 'javascript' ]
 ---
 
 ## JavaScript Comments
