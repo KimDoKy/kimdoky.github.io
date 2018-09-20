@@ -50,7 +50,7 @@ background-img: "../img/intro-bg.jpg"
 dynamic-typing: True
 shuffle: True # Shuffle the lines.
 loop: True
-loop-count: False # Set False for infinite loop, or set any number for finite loop.
+loop-count: True # Set False for infinite loop, or set any number for finite loop.
 type-speed: 10
 start-delay: 200
 delete-delay: 5000
@@ -95,12 +95,12 @@ email-share: True
 fb-share: True
 twitter-share: True
 linkedin-share: True
-reddit-share: True
+reddit-share: fale
 google-plus-share: True
-tumblr-share: True
-pinterest-share: True
+tumblr-share: false
+pinterest-share: false
 pocket-share: True
-vkontakte-share: True
+vkontakte-share: false
 
 disqus-shortname: "dokys-blog"
 
