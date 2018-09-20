@@ -55,7 +55,7 @@ type-speed: 10
 start-delay: 200
 delete-delay: 5000
 lines: # You can add HTML Tags in the Text
-  - text: "Python, Django Web Developer 입니다."
+  - text: "Python, Django Web Developer"
   - text: "공부한 것들을 기록하는 Blog입니다."
 
 me-img: "/img/jetpacktocat.png"
@@ -142,7 +142,7 @@ email: "makingfunk0@gmail.com"
 # This works best when your author blurb image has a transparent background, or matches your site background color.
 
 # if the author_blurb is not set, then this feature is skipped
-author_blurb: "Django와 Python을 사용하는 Web Developer입니다."
+author_blurb: "Django, Python, Web Developer"
 author_blurb_image: "/img/author.png"
 
 ##################
