@@ -4,6 +4,7 @@ section-type: post
 title: Two Scoops of Django - chap7. 쿼리와 데이터베이스 레이어
 category: django
 tags: [ 'django' ]
+published: false
 ---
 
 다른 ORM과 마찬가지로 장고도 여러 종류의 다른 데이터를 데이터베이스 종류와는 독립적인 형태로 객체화한다. 그리고 생성된 객체에 상호 작용할 수 있는 메서드 세트를 제공한다. 대부분 원래 의도대로 역할을 수행하지만 그렇지 않은 경우들도 존재한다.

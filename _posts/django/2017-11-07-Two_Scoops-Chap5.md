@@ -4,6 +4,7 @@ section-type: post
 title: Two Scoops of Django - chap5. settings와 requirements 파일
 category: django
 tags: [ 'django' ]
+published: false
 ---
 
 장고는 세팅 모듈에서 설정할 수 있는 140여 개가 넘는 항목을 제공하며 대부분의 경우 기본값으로 적용되어 있습니다. 세팅들은 서버가 시작될 때 적용되며 세팅값의 새로운 적용은 서버를 재시작해야만 가능학시 때문에 개발자들이 서비스 운영 중에 임의로 변경할 수 없게 되어 있다.

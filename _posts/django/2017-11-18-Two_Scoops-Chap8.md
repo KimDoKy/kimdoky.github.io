@@ -4,6 +4,7 @@ section-type: post
 title: Two Scoops of Django - chap8. 함수 기반 뷰와 클래스 기반 뷰
 category: django
 tags: [ 'django' ]
+published: false
 ---
 
 장고는 함수 기반 뷰(function-based view, FBV)와 클래스 기반 뷰(class-based view, CBV)를 둘 다 지원한다. 이 두가시 타입을 어떻게 이용하는지 다룬다.

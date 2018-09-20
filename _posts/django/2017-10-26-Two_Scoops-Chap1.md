@@ -4,6 +4,7 @@ section-type: post
 title: Two Scoops of Django - chap1. 코딩 스타일
 category: django
 tags: [ 'django' ]
+published: false
 ---
 
 ## 1.1 읽기 쉬운 코드를 만드는 것이 왜 중요한가

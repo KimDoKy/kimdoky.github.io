@@ -4,6 +4,7 @@ section-type: post
 title: Two Scoops of Django - chap2. 최적화된 장고 환경 꾸미기
 category: django
 tags: [ 'django' ]
+published: false
 ---
 
 ## 2.1 같은 데이터베이스를 이용하라.

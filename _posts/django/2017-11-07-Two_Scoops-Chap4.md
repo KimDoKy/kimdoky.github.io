@@ -4,6 +4,7 @@ section-type: post
 title: Two Scoops of Django - chap4. 장고 앱 디자인의 기본
 category: django
 tags: [ 'django' ]
+published: false
 ---
 
 장고 앱 디자인으로 들어가기 전에 용어 정리를 한다.

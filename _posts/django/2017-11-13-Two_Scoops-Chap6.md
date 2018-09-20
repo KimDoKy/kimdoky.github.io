@@ -4,6 +4,7 @@ section-type: post
 title: Two Scoops of Django - chap6. 장고에서 모델 이용하기
 category: django
 tags: [ 'django' ]
+published: false
 ---
 
 모델은 장고 프로젝트의 토대가 되는 부분이다. 성급하게 작성한다면 추후에 모델을 변경하거나 추가하게 될때, 최악의 경우 기존 데이터가 충돌하는 상황이 발생한다. 따라서 새 모델을 추가하거나 기존 모델을 수정할 때는 가능한한 탄탄하고 안전하게 다질 수 있는 방향으로 디자인을 고려해야 한다.

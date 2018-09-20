@@ -4,6 +4,7 @@ section-type: post
 title: Two Scoops of Django - chap3. 어떻게 장고 프로젝트를 구성할 것인가
 category: django
 tags: [ 'django' ]
+published: false
 ---
 
 프로젝트 레이아웃은 코어 장고 개발자들 사이에서도 여러 의견이 분분하다. 가장 널리 쓰이는 방법에 대해서 다룬다.
