@@ -132,7 +132,7 @@ events:
 # Contact #
 ###########
 
-email: "makingfunk0@gmail.com"
+# email: "makingfunk0@gmail.com"
 
 ################
 # Author Blurb #
@@ -154,8 +154,8 @@ social:
     url: "https://facebook.com/dokyung.kim.752"
   - title: "instagram"
     url: "https://www.instagram.com/makingfunk/"
-  - title: "github"
-    url: "https://github.com/KimDoKy"
+  # - title: "github"
+  #   url: "https://github.com/KimDoKy"
   - title: "rss"
     url: "/feed.xml"
 
