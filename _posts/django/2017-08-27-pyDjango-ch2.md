@@ -5,6 +5,13 @@ title: pyDjango - chap2. Bookmark 앱
 category: django
 tags: [ 'django' ]
 ---
+
+> Django 1.11.1 / Python 3.5.2 버전으로 실습 진행하였습니다.
+실습 당시와 지금은 버전 차이가 있기 때문에 오류들을 만나시게 될 겁니다.
+하나하나 해결해 나가셔도 되겠지만, 이 글을 보신다면 파이썬에 익숙하지 않으실 가능성이 높으므로,
+최신 버전으로 개정된 [파이썬 웹 프로그래밍(개정판)](http://www.hanbit.co.kr/store/books/look.php?p_code=B4329597070)을 구매시는 걸 추천 드립니다. 이 포스팅은 개정되기 전 버전의 [파이썬 웹 프로그래밍](http://www.hanbit.co.kr/store/books/look.php?p_code=B7703021280)을 실습한 내용입니다.
+
+
 북마크(Bookmark) 앱을 개발합니다.
 
 북마크는 생성, 수정, 삭제 등의 기능이 있어 연습하기에 적당함.
