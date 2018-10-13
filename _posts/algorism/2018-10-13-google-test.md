@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: 컴퓨터 공학 - Basic Registers
+title: 구글은 소프트웨어를 어떻게 테스트하는가
 category: algorism
 tags: [ 'algorism' ]
 ---
