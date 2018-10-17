@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: 컴퓨터 공학 - Basic Registers
+title: 컴퓨터 공학 - Basic Status Flag
 category: algorism
 tags: [ 'algorism' ]
 ---
