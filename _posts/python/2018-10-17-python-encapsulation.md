@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: Python - 기초 다지기 (classmethod, staticmethod)
+title: Python - 캡슐화(Encapsulation)
 category: python
 tags: [ 'python' ]
 ---
