@@ -153,6 +153,90 @@ Django는 각 user가 짧은 이름을 사용할 것을 기대하기 때문에 '
 
 모든 변경 작업을 수행 한 후에는 반드시 베이터베이스를 마이그레이션해야 합니다.
 
-![]()
-
 우리는 `first_name`, `last_name` 등과 같은 표준 Django User 필드를 많이 가지고 있지 않다는 것에 주의해야 합니다.
+
+
+### Option 2. Subclassing AbstractUser[repo](https://github.com/eleanorstrib/django-user-model-options/tree/master/user_models_abstractUser)
+
+이 옵션은 다음과 같은 경우에 유용합니다.
+
+- Django User model의 기본 필드 사용
+- 최소한의 오버 헤드로 username 변수를 제어
+- custom user manager 작성을 건너뛰고 Django의 내장 된 메소드를 활용
+
+하지만, 이 옵션은 username을 커스텀하는 것과 관련하여 몇 가지 제한이 있습니다.
+
+첫 단계는 모델을 작성하는 것입니다.
+
+```python
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+class CustomUser(AbstractUser):
+    email = models.EmailField(unique=True)
+    zip_code = models.CharField(max_length=6)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FILEDS = ['zip_code']
+
+    def __str__(self):
+        return self.email
+```
+
+이번에는 `AbstractUser`를 상속받지만, `is_staff` 필드는 필요하지 않습니다. 왜냐하면 이미 이 속성을 가진 기본 User 모델에 효과적으로 추가하고 있기 때문입니다.  
+
+`USERNAME_FIELD`는 username을 email로 재설정하므로 로그인할 때 필요합니다. 모델에는 이미 email 필드가 있지만 `unique=True` 매개 변수를 추가하려면 여기에 추가해야 합니다.
+
+> 또 다른 중요한 메모. username field와 password가 필요하기 때문에 `REQUIRED_FILEDS`에 이동할 필요가 없습니다. 실제로 `USERNAME_FIELD`를 재설정하면 앱에서 오류가 발생합니다.  
+
+`AUTH_USER_MODEL` 변수를 settings.py에 추가하여 이 프로젝트가 user를 알 수 있도록 하세요.
+
+```python
+AUTH_USER_MODEL = 'app.CustomUser'
+```
+
+모델을 프로젝트의 admin.py 파일에 등록하면 admin 화면에 모델이 표시됩니다.
+
+```python
+from django.contrib import admin
+from app.models import CustomUser
+
+admin.site.register(CustomUser)
+```
+
+이 시점에서 마이그레이션을 실행합니다.
+
+그 후 superuser를 생성하여 테스트를 합니다. username으로 email을 사용하려고 하지만, 실제로 로그인 할 때 실제 username이 필요하지 않은 경우 문제가 발생합니다. `AbstractUser` 모델의 소스 코드에는 email, password, username이 필요합니다.
+
+이것은 다음을 의미합니다.
+
+- superuser를 만든 때 `REQUIRED_FILEDS`에 username을 추가하지 않으면 'TypeError: create_superuser() missing 1 required positional argument: ‘username’' 오류가 발생하는데, `USERNAME_FIELD = 'email'`로 설정했더라도 `AbstractUser` 모델에서 해당 인수를 기대합니다.
+
+- 브라우저에서 username을 포함하지 않는 양식을 통해 user를 생성하려고 하면 다음과 같은 오류가 발생합니다 : `NOT NULL constraint failed: abstract_user_sample_customuser.username`
+
+요구 사항에 따라 몇 가지 옵션이 있습니다.
+
+1. 옵션1을 사용하고 custom model에 `AbstractBaseUser`를 상속받으세요. 더 많은 코드가 필요하지만 어떤 면에서는 더 깨끗합니다. 예를 들어, 응용 프로그램이 이해가 되지 않는 경우 username을 완전히 건너 뛸 수 있습니다.
+
+2. 필드를 유지하면서 새 user를 만들 때 email 매개 변수를 필요로 하지 않으려면 email 매개 변수를 덮어 쓰는 방법을 models.py 파일에서 username 필드 매개 변수를 재정의하세요. 바로 사용할 수 있는 예로, helper text, error message 등은 지우지만 해당 필드를 비워 두거나 `null`로 설정할 수 있습니다.
+
+```python
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+class CustomUser(AbstractUser):
+    email = models.EmailField(unique=True)
+    zip_code = models.CharField(max_length=6
+    username = model.CharField(blank=True, null=True, max_length=150)
+    REQUIRED_FILEDS = ['zip_code', 'username']
+    USERNAME_FIELD = 'email'
+
+    def __str__(self):
+        return self.email
+```
+
+`REQUIRED_FILEDS`에 username을 추가했으면 명령행에 superuser를 만들 때 표시되지만, forms.py 파일에 필드를 지정할 수 있으므로 최종 user가 username을 등록하면 완전히 삭제할 수 있으며 데이터베이스의 빈 username 필드에도 불구하고 프로세스를 완료할 수 있습니다.
+
+테스트를 하기 전에 마이그레이션을 실행하세요.  
+
+admin 패널에 로그인하고 새 user를 만들면 옵션 1과 달리 모델에 명시적으로 없는 기본 Django 필드와 우리가 추가한 `zip_code` 필드가 나옵니다. username이 나타나지만 필수는 아닙니다.
