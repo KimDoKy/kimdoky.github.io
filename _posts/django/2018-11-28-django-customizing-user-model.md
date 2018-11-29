@@ -10,8 +10,7 @@ tags: [ 'django' ]
 
 [Git repo](https://github.com/eleanorstrib/django-user-model-options)에 아래에서 다룰 3가지 옵션을 각각 간단히 구현해두었습니다.
 
-모든 예제는 Django 1.11과 Python 3.5.2를 사용합니다. (번역 및 실습하여 이 포스트에서는 Django 2.1.3과 Python 3.6.0으로 진행합니다.)
-
+모든 예제는 Django 1.11과 Python 3.5.2를 사용합니다.
 
 ## Django의 인증 기능을 사용하는 경우 모델을 Customizing하는 세 가지 옵션이 있습니다.
 
@@ -240,3 +239,31 @@ class CustomUser(AbstractUser):
 테스트를 하기 전에 마이그레이션을 실행하세요.  
 
 admin 패널에 로그인하고 새 user를 만들면 옵션 1과 달리 모델에 명시적으로 없는 기본 Django 필드와 우리가 추가한 `zip_code` 필드가 나옵니다. username이 나타나지만 필수는 아닙니다.
+
+### Option 3. The OneToOneField [repo](https://github.com/eleanorstrib/django-user-model-options/tree/master/user_models_oneToOne)
+
+이 옵션은 email을 암호로 사인하는 기존의 사용 사례와 실제로 일치하진 않지만 인증과 직접적으로 관련이 없는 user 데이터를 저장하는 경우 많은 의미를 갖습니다. 이건 여전히 user model에 연결되어 있습니다.  
+
+구현하기 매우 간단합니다. 앱의 models.py에 User 모델을 임포트하고 `OneToOneField` 메소드가 있는 모델에 연결 합니다.
+
+```python
+from django.db import models
+from django.contrib.auth.models import User
+
+class CustomUser(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    zip_code = models.CharField(max_length=6)
+
+    def __str__(self):
+        return self.user.username
+```
+
+이 경우, Django User 모델을 사용하기 때문에 settings.py에 아무 것도 추가할 필요가 없지만, admin.py에 모델은 등록해야 합니다.  
+
+`User`모델과 `CustomUser`모델이 연결된 방식은 Admin에서 매우 명확합니다. Admin을 보면 `User`와 `CustomUser`가 별도로 나열되어 있음을 알 수 있습니다.
+
+![]({{ site.url }}/img/post/django/other/custom_1.png)
+
+user를 만들때는 평소와 같지만 custom user를 추가하려면 관지자가 custom user 모델을 연결할 레코드의 username을 묻는 메시지를 표시하고 추가한 `zip_code` 필드를 표시합니다.
+
+![]({{ site.url }}/img/post/django/other/custom_2.png)
