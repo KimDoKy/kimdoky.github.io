@@ -357,6 +357,6 @@ In [8]: conn.commit()
 
 > 출처  
 - [모두의 데이터과학 with 파이썬](https://www.kyobobook.co.kr/product/detailViewKor.laf?mallGb=KOR&ejkGb=KOR&barcode=9791160502152&orderClick=JAj)  
-전체 내용은 위 서적에서 발췌하였으며, 미리보고로 제공되는 선까지만 다루었습니다. :)  
+전체 내용은 위 서적에서 발췌하였으며, 미리보기로 제공되는 선까지만 다루었습니다. :)  
 - [시골청년의 엔지니어이야기](https://xinet.kr/?p=974)  
 - [MySql](https://dev.mysql.com/doc/refman/5.6/en/validate-password.html)
