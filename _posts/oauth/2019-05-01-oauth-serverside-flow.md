@@ -237,7 +237,7 @@ Pragma: no-cache
 
 > 클라이언트 사이드 플로우는 나중에 다룰 예정.
 
-> 시간이 되는대로 짬짬히 [RFC 6749](https://tools.ietf.org/html/rfc6749) 문서를 읽어보자.
+> 시간이 되는대로 짬짬이 [RFC 6749](https://tools.ietf.org/html/rfc6749) 문서를 읽어보자.
 
 > 출처 및 참조  
 [OAuth 2.0 마스터](http://book.interpark.com/product/BookDisplay.do?_method=detail&sc.prdNo=266585781)
