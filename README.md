@@ -1,1 +1,3 @@
-# DoKy's Blog Git
+# { Doky's Blog }
+
+- url : https://kimdoky.github.io/

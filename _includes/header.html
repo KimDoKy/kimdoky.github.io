@@ -1,22 +1,14 @@
+<nav id="my-menu">
+  <div>
+    <p>{{ site.title }}</p>
 
-<!-- Intro Start -->
+    <ul class="pages">
+      <li><a href="{{ site.baseurl }}/"><i class="fa fa-home"></i> Home</a></li>
+      <li><a href="{{ site.baseurl }}/posts/"><i class="fa fa-archive"></i> All Posts</a></li>
+      <li><a href="{{ site.baseurl }}/search/"><i class="fa fa-search"></i> Search</a></li>
+    </ul>
 
-<header class="intro">
-  <div class="intro-body">
-    <div class="container">
-      <div class="row">
-          <div class="col-md-10 col-md-offset-1">
-            <h1 class="brand-heading">&nbsp;</h1>
-            <h1 class="brand-heading">&nbsp;</h1>
-            <span class="intro-text">{{ content }}</span>
-            <h5>&nbsp;</h5>
-            <a href="#{{ site.pages_list['About'] }}" class="page-scroll">
-              <img class="img-me" src="{{site.baseurl}}{{ site.me-img }}" alt="">
-            </a>
-          </div>
-        </div>
-    </div>
+    {% include social_links.html %}
   </div>
-</header>
-
-<!-- Intro End -->
+</nav>
+<div class="menu-button" href="#menu"><i class="fa fa-bars"></i></div>
