@@ -29,3 +29,9 @@ kramdown:
 
 permalink: pretty
 exclude: [vendor]
+
+# Disqus Comments
+---
+layout: default
+comments: true
+---
