@@ -322,3 +322,144 @@ for k, v in s:
 sorted(d.items())
 # [('blue', {2, 4}), ('red', {1, 3})]
 ```
+
+## [namedtuple()](https://docs.python.org/ko/3.7/library/collections.html?highlight=collections#namedtuple-factory-function-for-tuples-with-named-fields)
+
+tuple은 데이터를 그룹으로 관리할때 자주 사용한다. `namedtuple()`은 정수 인덱스 뿐아니라 ,속성 이름을 지정하여 요소를 취득할 수 있는 튜플의 파생형을 제공한다.
+
+- `collections.namedtuple(typename, field_names, *, rename=False, defaults=None, module=None)`
+ - typename : 생성할 튜플현의 이름
+ - filed_names : 튜플 요소 이름을 지정
+ - rename : True일때 잘못된 요소의 이름을 수정
+
+```python
+from collections import namedtuple
+
+Point = namedtuple('Point', ['x', 'y'])
+p = Point(11, y=22)
+p
+# Point(x=11, y=22)
+p[0] + p[1]
+# 33
+x, y = p
+x, y
+# (11, 22)
+p.x + p.y
+# 33
+```
+
+`namedtuple()`은 csv나 sqlite3에서 반환된 결과 튜즐에 이름을 할당하는데 특히 효과적!
+
+```python
+EmployeeRecord = namedtuple('EmployeeRecord', 'name, age, title, department, paygrade')
+
+import csv
+for emp in map(EmployeeRecord._make, csv.reader(open("employees.csv", "rb"))):
+    print(emp.name, emp.title)
+
+import sqlite3
+conn = sqlite3.connect('/companydata')
+cursor = conn.cursor()
+cursor.execute('SELECT name, age, title, department, paygrade FROM employees')
+for emp in map(EmployeeRecord._make, cursor.fetchall()):
+    print(emp.name, emp.title)
+```
+
+#### namedtuple은 튜플에서 상속받은 메소드 외에도 3가지 메소드와 2가지 속성을 추가로 지원한다!
+
+- `somenamedtuple._make(iterable)`
+기존 시퀀스에서 새 인스턴스를 반환
+
+```python
+t = [11, 22]
+Point._make(t)
+# Point(x=11, y=22)
+```
+
+- `somenamedtuple._asdict()`
+요소의 이름과 값을 매핑한 OrderedDict 인스턴스를 반환
+
+```python
+p = Point(x=11, y=22)
+p._asdict()
+# OrderedDict([('x', 11), ('y', 22)])
+```
+
+- `somenamedtuple._replace(**kwargs)`
+지정된 필드를 새로운 값으로 교체한 튜플의 새 인스턴스를 반환
+
+```python
+p = Point(x=11, y=22)
+p._replace(x=33)
+# Point(x=33, y=22)
+```
+
+- `somenamedtuple._fields`
+필드 이름을 나열하는 문자열 튜플을 반환.
+
+```python
+p._fields
+# ('x', 'y')
+
+# 이렇게 활용하면 됨!
+Color = namedtuple('Color', 'red green blue')
+Pixel = namedtuple('Pixel', Point._fields + Color._fields)
+Pixel(11, 22, 128, 255, 0)
+# Pixel(x=11, y=22, red=128, green=255, blue=0)
+```
+
+- `somenamedtuple._field_defaults`
+dict에 필드 이름을 기본값으로 매핑
+
+```python
+Account = namedtuple('Account', ['type', 'balance'], defaults=[0])
+Account._field_defaults
+# {'balance': 0}
+Account('premium')
+# Account(type='premium', balance=0)
+```
+
+```python
+# 지정된 필드를 검색
+getattr(p, 'x')
+# 11
+
+# dict를 tuple으로 변환(unpacking)
+d = {'x': 11, 'y': 22}
+Point(**d)
+# Point(x=11, y=22)
+
+# sub class를 사용하여 기능을 추가나 변경할 수 있다.
+# 계산 된 필드와 고정 너비, print 형식을 추가하는 예
+class Point(namedtuple('Point', ['x', 'y'])):
+    __slots__ = () # 인스턴스 dict 작성으로 방지하여 메모리 요구사항을 낮게 유지
+    @property
+    def hypot(self):
+        return (self.x ** 2 + self.y ** 2) ** 0.5
+    def __str__(self):
+        return 'Point: x=%6.3f y=%6.3f hypot=%6.3f' % (self.x, self.y, self.hypot())
+
+    for p in Point(3, 4), Point(14, 5/7):
+        print(p)
+# Point: x= 3.000 y= 4.000 hypot= 5.000
+# Point: x=14.000 y= 0.714 hypot=14.018
+
+# 기존에 선언한 namedtuple의 필드에 새로운 필드를 추가한 튜플 유형을 구현
+Point3D = namedtuple('Point3D', Point._fields + ('z',))
+Point3D('a', 'v', 'z')
+# Point3D(x='a', y='v', z='z')
+
+# __doc__ 필드에 직접 할당하여 문서 문자열을 사용자 정의 할 수 있습니다 .
+Book.__doc__ += ': Hardcover book in active collection'
+Book.id.__doc__ = '13-digit ISBN'
+Book.title.__doc__ = 'Title of first printing'
+Book.authors.__doc__ = 'List of authors sorted by last name'
+
+# _replace()를 사용하여 기본값을 구현할 수 있다.
+Account = namedtuple('Account', 'owner balance transaction_count')
+default_account = Account('<owner name>', 0.0, 0)
+johns_account = default_account._replace(owner='Jone')
+johns_account
+# Account(owner='Jone', balance=0.0, transaction_count=0)
+
+```
