@@ -461,5 +461,56 @@ default_account = Account('<owner name>', 0.0, 0)
 johns_account = default_account._replace(owner='Jone')
 johns_account
 # Account(owner='Jone', balance=0.0, transaction_count=0)
+```
 
+## [OrderedDict objects](https://docs.python.org/ko/3.7/library/collections.html?highlight=collections#ordereddict-objects)
+
+삽입 순서를 기억하는 dict 객체이다. 초기값을 지정할때 시퀀스는 순서를 기억하지만, dict, 키워드 인수 등은 순서를 기억하지 않는다.
+
+- `popitem(last=True)`
+마지막이 True이면 LIFO 순으로 리턴, False이면 FIFO 순으로 리턴한다.
+
+- `move_to_end(key, last=True)`
+key를 정렬된 dict의 끝으로 이동하는데, True이면 오른쪽으로 이동하고, False이면 처음으로 이동한다. key가 없으면 KeyError가 발생한다.
+
+```python
+from collections import OrderedDict
+
+d = OrderedDict.fromkeys('abcde')
+d.move_to_end('b')
+''.join(d.keys())
+# 'acdeb'
+
+d.move_to_end('b', last=False)
+''.join(d.keys())
+# 'bacde'
+```
+
+#### OrderedDict recipes
+
+```python
+# 마지막으로 삽입 된 순서를 기억하는 정렬된 dict
+class LastUpdatedOrderedDict(OrderedDict):
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        super().move_to_end(key)
+
+# 최대 크기일때 가장 최근 키를 제거
+class LRU(OrderedDict):
+
+    def __init__(self, maxsize=128, *args, **kwds):
+        self.maxsize = maxsize
+        super().__init__(*args, **kwds)
+
+    def __getitem__(self, key):
+        value = super().__getitem__(key)
+        self.move_to_end(key)
+        return value
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        if len(self) > self.maxsize:
+            oldest = next(iter(self))
+            del self[oldest]
 ```
