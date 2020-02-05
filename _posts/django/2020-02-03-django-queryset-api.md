@@ -82,9 +82,13 @@ QuerySet 클래스에는 두 가지 특성이 있다.
 
 # 새 QuerySet을 반환하는 함수들
 
-- `filter()`: 지정된 매개 변수와 일치하는 객체를 포함한 QuerySet을 반환한다.
+### `filter()`
 
-- `exclude()`: 지정된 매개 변수와 일치하지 않는 객체를 포함한 QuerySet을 반환한다.
+지정된 매개 변수와 일치하는 객체를 포함한 QuerySet을 반환한다.
+
+### `exclude()`
+
+지정된 매개 변수와 일치하지 않는 객체를 포함한 QuerySet을 반환한다.
 
 ```python
 # pub_date가 2005-1-3 이후이고 headline이 'Hello'인 모든 항목을 제외
@@ -103,7 +107,9 @@ WHERE NOT pub_date > '2005-1-3'
 AND NOT headline = 'Hello'
 ```
 
-- `annotate()`: `annotate()`의 각 인수는 QuerySet의 각 객체에 추가 될 주석이다. 각 주석은 단순한 값, 모델의 필드에 대한 참조, QuerySet의 각 객체와 관련된 집계(averages, sums 등)이다.
+### `annotate()`
+
+`annotate()`의 각 인수는 QuerySet의 각 객체에 추가 될 주석이다. 각 주석은 단순한 값, 모델의 필드에 대한 참조, QuerySet의 각 객체와 관련된 집계(averages, sums 등)이다.
 
 ```python
 >>> from django.db.models import Count
@@ -119,7 +125,9 @@ AND NOT headline = 'Hello'
 42
 ```
 
-- `order_by()`: 정렬 기준을 재정의한다.
+### `order_by()`
+
+정렬 기준을 재정의한다.
 
 ```python
 Entry.objects.filter(pub_date__year=2005).order_by('-pub_date', 'headline')
@@ -188,7 +196,9 @@ Entry.objects.order_by('headline').order_by('pub_date')
 
 > 정렬에 추가한 각 필드는 DB 비용이 발생한다. 외래키도 암시적으로 포함된다.
 
-- `reverse()`: 역순으로 반환한다.
+### `reverse()`
+
+역순으로 반환한다.
 
 ```python
 # 마지막 5개 항목
@@ -199,16 +209,18 @@ my_queryset.reverse()[:5]
 
 `reverse()`는 QuerySet이 순서가 정의되어 있을 때만 효과가 있다(기본 순서를 정의하는 모델에 대해 쿼리할때, 또는 `order_by()`를 사용할때). 정의된 순서가 없는 경우 효과가 없다.
 
-- `distinct()`: `SELECT DISTINCT`를 사용하는 QuerySet을 반환한다. 쿼리 결과에 중복행을 제거한다.
+### `distinct()`
+
+`SELECT DISTINCT`를 사용하는 QuerySet을 반환한다. 쿼리 결과에 중복행을 제거한다.
 
 QuerySet은 기본적으로 중복 행을 제거하지 않지만, 쿼리가 여러 테이블에 걸쳐 있는 경우 중복된 결과를 얻을 수 있다. 그런 경우 `distinct()`를 사용한다.
 
 > `order_by()`에서 사용된 필드는 SQL `SELECT`열에 포함되어 있기 때문에, `distinct()`과 함께 사용될 경우 예상치 못한 결과를 초래할 수 있다.  
 관련 모델의 필드별로 정렬하면 해당 필드는 SELECT 열에 추가되지 않아서 중복 행이 구별된 것처럼 보일 수 있다. 추가 행은 반환된 결과에는 나타나지 않기 때문에, 뚜렷하지 않은 결과가 반환되는 것처럼 보인다.  
 선택한 열을 제한하기 위해서 `values()`를 사용할 경우, `order_by()`안에 사용된 열이나 기본 모델 순서에서 사용되는 열이 여전히 연관되어 있어, 결과의 고유성에 영향을 미친다.  
-`distinct()`을 사용하려면 **관련 모델에 의한 정렬**에 주의해야 한다. `distinct()`와 `values()`를 한께 사용할 때는 `values()` 호출에 없는 필드도 주의해야 한다.
+`distinct()`을 사용하려면 **관련 모델에 의한 정렬** 에 주의해야 한다. `distinct()`와 `values()`를 한께 사용할 때는 `values()` 호출에 없는 필드도 주의해야 한다.
 
-PostgreSQL을 사용할때는 DISTINCT를 적용할 필드를 지정하기 위해 위치 인수(*fields)를 전달할 수 있다.  
+PostgreSQL을 사용할때는 DISTINCT를 적용할 필드를 지정하기 위해 위치 인수(`*fields`)를 전달할 수 있다.  
 일반적으로 `distinct()`를 사용하면 DB는 각 행의 각 필드를 비교하지만, 지정된 필드가 있다면, DB는 지정된 필드만 비교한다.  
 
 필드를 지정할 때 QuerySet에 `order_by()`를 사용해야 하며, `order_by()`의 필드는 같은 순서로 필드를 시작해야 한다.
@@ -247,182 +259,376 @@ Entry.objects.order_by('blog').distinct('blog')
 
 `관계_id`(blog_id)나 참조된 필드(blog_pk)를 명시하여 두 식이 일치하는지 확인해야 한다.
 
-- `values()`
+### `values()`
 
-- `values_list()`
+dict를 반환하는 QuerySet을 반환한다.
 
-- `dates()`
+```python
+>>> Blog.objects.filter(name__startswith='Beatles')
+<QuerySet [<Blog: Beatles Blog>]>
 
-- `datetimes()`
+>>> Blog.objects.filter(name__startswith='Beatles').values()
+<QuerySet [{'id': 1, 'name': 'Beatles Blog', 'tagline': 'All the latest Beatles news.'}]>
+```
 
-- `none()`
+`values()`는 선택적 위치 인수를 사용하며, SELECT가 제한되어야 하는 필드 이름을 지정할 수 있다. 필드를 지정하면 지정한 필드에 대한 필드의 키/값만 들어간다. 필드를 지정하지 않으면 DB 테이블의 모든 필드에 대한 키/값이 들어간다.  
 
-- `all()`
+```python
+>>> Blog.objects.values()
+<QuerySet [{'id': 1, 'name': 'Beatles Blog', 'tagline': 'All the latest Beatles news.'}]>
 
-- `union()`
+>>> Blog.objects.values('id', 'name')
+<QuerySet [{'id': 1, 'name': 'Beatles Blog'}]>
+```
 
-- `intersection()`
+`values()` 인자로 표현식을 넣을 수 있으며, 아래 코드는 키를 주석으로 교체한다.  
 
-- `difference()`
+```python
+>>> from django.db.models.functions import Lower
+>>> Blog.objects.values(lower_name=Lower('name'))
+<QuerySet [{'lower_name': 'beatles blog'}]>
+```
 
-- `select_related()`
+built_in과 custom lookup을 사용할 수 있다.
 
-- `prefetch_related()`
+```python
+>>> from django.db.models import CharField
+>>> from django.db.models.functions import Lower
+>>> CharField.register_lookup(Lower)
+>>> Blog.objects.values('name__lower')
+<QuerySet [{'name__lower': 'beatles blog'}]>
+```
 
-- `extra()`
+`values()`의 aggregate는 동일한 `values()`내의 다른 인수보다 먼저 적용된다. 다른 값으로 그룹화해야 하는 경우, `values()`의 인자에 추가해야 한다.
+
+```python
+>>> from django.db.models import Count
+>>> Blog.objects.values('entry__authors', entries=Count('entry'))
+<QuerySet [{'entry__authors': 1, 'entries': 20}, {'entry__authors': 1, 'entries': 13}]>
+
+>>> Blog.objects.values('entry__authors').annotate(entries=Count('entry'))
+<QuerySet [{'entry__authors': 1, 'entries': 33}]>
+```
+
+'Foo'라는 필드가 ForeignKey인 경우, 'foo_id'라는 사전 키를 반환하는데, 실제 모델 속성의 이름이다.  
+`value()`를 호출하고 필드 이름을 입력할때 'foo'나 'foo_id'를 입력하면 동일한 항목을 반환한다.
+
+```python
+>>> Entry.objects.values()
+<QuerySet [{'blog_id': 1, 'headline': 'First Entry', ...}, ...]>
+
+>>> Entry.objects.values('blog')
+<QuerySet [{'blog': 1}, ...]>
+
+>>> Entry.objects.values('blog_id')
+<QuerySet [{'blog_id': 1}, ...]>
+```
+
+- `values()`와 `distinct()`를 값이 사용하면 순서가 결과에 영향을 미친다.
+- `extra()`를 호출한 후 `values()`를 사용하면, `extra()`의 선택 인수에 의해 정의된 필드를 `values()` 호출에 명시적으로 포함해야 한다.
+- `values()` 호출 후에 `extra()`를 사용하면 선택도니 추가 필드는 무시된다.
+- `values()` 뒤에 `only()`, `defer()`를 호툴하는 것은 무의미하므로 **NotImplementedError를 발생시칸다.
+- 변환과 집계를 겹합하려면 두 개의 `annotate()` 호출을 하거나, `values()`에 키워드 인수로 사용해야 한다. 변환이 관련 필드에 등록된 경우 첫 번째 `annotate()`는 생략할 수 있다.
+
+```python
+>>> from django.db.models import CharField, Count
+>>> from django.db.models.functions import Lower
+>>> CharField.register_lookup(Lower)
+>>> Blog.objects.values('entry__authors__name__lower').annotate(entries=Count('entry'))
+<QuerySet [{'entry__authors__name__lower': 'test author', 'entries': 33}]>
+>>> Blog.objects.values(
+...     entry__authors__name__lower=Lower('entry__authors__name')
+... ).annotate(entries=Count('entry'))
+<QuerySet [{'entry__authors__name__lower': 'test author', 'entries': 33}]>
+>>> Blog.objects.annotate(
+...     entry__authors__name__lower=Lower('entry__authors__name')
+... ).values('entry__authors__name__lower').annotate(entries=Count('entry'))
+<QuerySet [{'entry__authors__name__lower': 'test author', 'entries': 33}]>
+```
+
+`values()` 호출 후에 `filter()`, `order_by()` 등을 호출할 수 있다.
+
+```python
+# 둘은 동일하다.
+Blog.objects.values().order_by('id')
+Blog.objects.order_by('id').values()
+```
+
+**OneToOneField**, **ForeignKey**, **ManyToManyField** 속성을 통해 역관계가 있는 관련 모델을 참조할 수도 있다.
+
+```python
+>>> Blog.objects.values('name', 'entry__headline')
+<QuerySet [{'name': 'My blog', 'entry__headline': 'An entry'},
+     {'name': 'My blog', 'entry__headline': 'Another entry'}, ...]>
+```
+
+MTM 등 역관계가 있는 하나의 필드에 여러 데이터가 포함될 수 있기 때문에 `values()`를 사용하면 너무 큰 결과를 반환할 수도 있다.
+
+### `values_list()`
+
+Tuple를 반환하는 QuerySet을 반환한다. 그외에는 `values()`와 동일하다.
+
+```python
+>>> Entry.objects.values_list('id', 'headline')
+<QuerySet [(1, 'First entry'), ...]>
+>>> from django.db.models.functions import Lower
+>>> Entry.objects.values_list('id', Lower('headline'))
+<QuerySet [(1, 'first entry'), ...]>
+```
+
+단일 필드만 지정하는 경우, `flat` 매개 변수로 전달 할 수도 있다. True리면 반환된 결과가 튜플이 아닌 단일 값임을 의미한다.
+
+```python
+>>> Entry.objects.values_list('id').order_by('id')
+<QuerySet[(1,), (2,), (3,), ...]>
+
+>>> Entry.objects.values_list('id', flat=True).order_by('id')
+<QuerySet [1, 2, 3, ...]>
+```
+
+`named=True`를 전달하면, `namedtuple()` 결과를 얻을 수 있다.
+
+```python
+>>> Entry.objects.values_list('id', 'headline', named=True)
+<QuerySet [Row(id=1, headline='First entry'), ...]>
+```
+
+`values_list()`에 인자를 넣지 않으면 선언 된 순서대로 모델의 모든 필드가 반환된다.  
+
+특정 필드의 값을 얻으려면 `get()`을 호출해야 한다.
+
+```python
+>>> Entry.objects.values_list('headline', flat=True).get(pk=1)
+'First entry'
+```
+
+더블언더바로 MTM도 참조할 수 있다. 필드에 값이 없는 경우 None을 반환한다.
+
+```python
+>>> Author.objects.values_list('name', 'entry__headline')
+<QuerySet [('Noam Chomsky', 'Impressions of Gaza'),
+ ('George Orwell', 'Why Socialists Do Not Believe in Fun'),
+ ('George Orwell', 'In Defence of English Cooking'),
+ ('Don Quixote', None)]>
+```
+
+### `dates()`
+
+날짜를 나타내는 필드를 `datetime.date` 객체 리스트로 평가되는 QuerySet을 반환한다. 각 필드는 `datetime.date` 객체 유형이어야 한다.
+
+```
+dates(field, kind, order='ASC')
+```
+
+- field: 모델의 DateField 필드 이름을 지정한다.
+- kind: 'year', 'month', 'week', 'day' 중 하나를 선택한다.
+- order: 기본값은 'ASC'이다.
+
+```python
+>>> Entry.objects.dates('pub_date', 'year')
+[datetime.date(2005, 1, 1)]
+>>> Entry.objects.dates('pub_date', 'month')
+[datetime.date(2005, 2, 1), datetime.date(2005, 3, 1)]
+>>> Entry.objects.dates('pub_date', 'week')
+[datetime.date(2005, 2, 14), datetime.date(2005, 3, 14)]
+>>> Entry.objects.dates('pub_date', 'day')
+[datetime.date(2005, 2, 20), datetime.date(2005, 3, 20)]
+>>> Entry.objects.dates('pub_date', 'day', order='DESC')
+[datetime.date(2005, 3, 20), datetime.date(2005, 2, 20)]
+>>> Entry.objects.filter(headline__contains='Lennon').dates('pub_date', 'day')
+[datetime.date(2005, 3, 20)]
+```
+
+### `datetimes()`
+
+날짜를 나타내는 필드를 `datetime.datetime` 객체 리스트로 평가되는 QuerySet을 반환한다.
+
+```python
+datetimes(field_name, kind, order='ASC', tzinfo=None)
+```
+
+- field_name: 모델의 DateTimeField의 이름을 지정해야 한다.
+- kind: 'year', 'month', 'week', 'day', 'hour', 'minute', 'second' 중에 선택하여 지정한다.
+- order: `dates()`와 동일하다.
+- tzinfo: 시간대를 정의한다. 매개변수는 datetime.tzinfo 객체이어야 한다. 그렇지 않으면 Django의 시간대를 사용하고, `USE_TZ`가 False이면 효과가 없다.
+
+### `none()`
+
+객체를 반환하지 않는 QuerySet을 반환하고, 엑서스할 때 쿼리가 실행되지 않는다.  
+`qs.none()`은 EmptyQuerySet의 인스턴스이다.
+
+```python
+>>> Entry.objects.none()
+<QuerySet []>
+>>> from django.db.models.query import EmptyQuerySet
+>>> isinstance(Entry.objects.none(), EmptyQuerySet)
+True
+```
+
+### `all()`
+
+### `union()`
+
+### `intersection()`
+
+### `difference()`
+
+### `select_related()`
+
+### `prefetch_related()`
+
+### `extra()`
  - `select`
  - `where / tables`
  - `order_by`
  - `params`
 
-- `defer()`
+### `defer()`
 
-- `only()`
+### `only()`
 
-- `using()`
+### `using()`
 
-- `select_for_update()`
+### `select_for_update()`
 
-- `raw()`
+### `raw()`
 
 # 새 QuerySet을 반환하는 연산자들
 
-- `AND(&)`
+### `AND(&)`
 
-- `OR(|)`
+### `OR(|)`
 
 # QuerySet을 반환하지 않는 함수들
 
-- `get()`
+### `get()`
 
-- `create()`
+### `create()`
 
-- `get_or_create()`
+### `get_or_create()`
 
-- `update_or_create()`
+### `update_or_create()`
 
-- `bulk_create()`
+### `bulk_create()`
 
-- `bulk_update()`
+### `bulk_update()`
 
-- `count()`
+### `count()`
 
-- `in_bulk()`
+### `in_bulk()`
 
-- `iterator()`
+### `iterator()`
 
-- `latest()`
+### `latest()`
 
-- `earliest()`
+### `earliest()`
 
-- `first()`
+### `first()`
 
-- `last()`
+### `last()`
 
-- `aggregate()`
+### `aggregate()`
 
-- `exists()`
+### `exists()`
 
-- `udpate()`
+### `udpate()`
 
-- `delete()`
+### `delete()`
 
-- `as_manager()`
+### `as_manager()`
 
-- `explain()`
+### `explain()`
 
 # 필드 검색
 
-- `exact`
+### `exact`
 
-- `iexact`
+### `iexact`
 
-- `contains`
+### `contains`
 
-- `icontains`
+### `icontains`
 
-- `in`
+### `in`
 
-- `gt`
+### `gt`
 
-- `gte`
+### `gte`
 
-- `lt`
+### `lt`
 
-- `lte`
+### `lte`
 
-- `startswith`
+### `startswith`
 
-- `istartswith`
+### `istartswith`
 
-- `endswith`
+### `endswith`
 
-- `iendswith`
+### `iendswith`
 
-- `range`
+### `range`
 
-- `date`
+### `date`
 
-- `year`
+### `year`
 
-- `iso_year`
+### `iso_year`
 
-- `month`
+### `month`
 
-- `day`
+### `day`
 
-- `week`
+### `week`
 
-- `week_day`
+### `week_day`
 
-- `quarter`
+### `quarter`
 
-- `time`
+### `time`
 
-- `hour`
+### `hour`
 
-- `minute`
+### `minute`
 
-- `second`
+### `second`
 
-- `isnull`
+### `isnull`
 
-- `regex`
+### `regex`
 
-- `iregex`
+### `iregex`
 
 # 집계 기능
 
-- `expressions`
+### `expressions`
 
-- `output_field`
+### `output_field`
 
-- `filter`
+### `filter`
 
-- `**extra`
+### `**extra`
 
-- `Avg`
+### `Avg`
 
-- `Count`
+### `Count`
 
-- `Max`
+### `Max`
 
-- `Min`
+### `Min`
 
-- `StdDev`
+### `StdDev`
 
-- `Sum`
+### `Sum`
 
-- `Variance`
+### `Variance`
 
 # Query-related tools
 
-- `Q()` objects
+### `Q()` objects
 
-- `Prefetch()` objects
+### `Prefetch()` objects
 
-- `prefetch_related_objects()`
+### `prefetch_related_objects()`
 
-- `FilteredRelation()` objects
-
--
+### `FilteredRelation()` objects
