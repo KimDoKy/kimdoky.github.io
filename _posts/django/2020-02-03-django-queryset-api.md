@@ -467,15 +467,297 @@ True
 
 ### `all()`
 
+현재 QuerySet의 사본을 리턴한다. QuerySet이 평가된 후 평가 이전에 평가한 QuerySet에 `all()`을 호출하면 업데이트된 결과를 얻게 된다.
+
 ### `union()`
+
+SQL의 UNION 연산자를 사용하여 둘 이상의 QuerySet 결과를 결합한다.
+
+```python
+>>> qs1.union(qs2, qs3)
+```
+
+UNION 연산자는 기본적으로 고유한 값만 선택하지만, 중복값을 혀용하려면 `all=True` 인수를 사용하면 된다.
+
+`union()`, `intersection()`, `difference()`는 인자가 다른 모델의 QuerySet인 경우 첫 번째 QuerySet 타입의 모델 인스턴스를 반환한다. SELECT 리스트가 모든 QuerySet과 동일하기만 하면 다른 모델을 전달 할 수도 있다. 이런 경우 QuerySeet에 적용된 QuerySet 메소드의 첫 번째 QuerySet에서 컬럼 이름을 사용해야 한다.
+
+```python
+>>> qs1 = Author.objects.values_list('name')
+>>> qs2 = Entry.objects.values_list('headline')
+>>> qs1.union(qs2).order_by('name')
+```
+
+또한 LIMIT, OFFSET, COUNT(* ), ORDER_BY, 지정한 열(slicing, `count()`, `order_by()`, `values()/values_list()`만 결과 QuerySet에 지정할 수 있다.  
+
+DB는 결합된 쿼리에서 허용되는 작업을 제한한다. 예를 들면 대부분의 DB는 결합된 쿼리에서 LIMIT나 OFFSET을 허용하지 않는다.
 
 ### `intersection()`
 
+SQL의 INTERSECT 연산자를 사용하여 둘 이상의 QuerySet의 공유 요소를 리턴한다.
+
+```python
+>>> qs1.intersection(qs2, qs3)
+```
+
 ### `difference()`
+
+SQL의 EXCEPT 연산자를 사용하여 QuerySet(qs1)에는 있고 qs2, qs3에는 없는 요소만 유지한다.
+
+```python
+>>> qs1.difference(qs2, qs3)
+```
 
 ### `select_related()`
 
+쿼리를 실행할때 추가적인 관련 객체 데이터를 선택하여 외래키 관계를 팔로우할 QuerySet을 반환한다. 이건 더 복잡한 쿼리를 가져오도록 부추기지만 외래키 관계를 사용할 경우 DB 쿼리가 필요하지 않음을 의미한다.
+
+```python
+# 일반적인 조회와 select_related() 조회의 차이점
+
+#일반적인 조회
+# 아래 2줄은 각각 DB에 접근한다.
+e = Entry.objects.get(id=5)
+b = e.blog
+
+# select_related를 사용한 조회
+# select_related으로 blog 필드에 접근하여 캐싱되기 때문에 e.blog는 DB를 거치지 않아도 된다.
+e = Entry.objects.select_related('blog').get(id=5)
+b = e.blog
+
+# 객체의 QuerySet과 select_related() 함께 사용
+from django.utils import timezone
+
+# 공개 예정인 항목이 있는 모든 블로그 찾기
+blogs = set()
+
+for e in Entry.objects.filter(pub_date__gt=timezone.now()).select_related('blog'):
+    # select_related()가 없으면 각각에 대한 데이터베이스 쿼리를 만 항목에 대한 관련 블로그를 가져오기 위해 각 루프 반복에 대한 DB 쿼리가 된다.
+    blogs.add(e.blog)
+```
+
+`filter()`나 `select_related()`의 연결 순서는 상관없다.
+
+```python
+Entry.objects.filter(pub_date__gt=timezone.now()).select_related('blog')
+Entry.objects.select_related('blog').filter(pub_date__gt=timezone.now())
+```
+
+외래키를 쿼리하는 것과 비슷한 방식으로 외래키를 따를 수 있다.
+
+```python
+# models
+from django.db import models
+
+class City(models.Model):
+    # ...
+    pass
+
+class Person(models.Model):
+    # ...
+    hometown = models.ForeignKey(
+        City,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+
+class Book(models.Model):
+    # ...
+    author = models.ForeignKey(Person, on_delete=models.CASCADE)
+```
+
+`Book.objects.select_related('author__hometown').get(id=4)`를 호출하면 관련 Person과 관련 City가 캐시된다.
+
+```python
+# author와 hometown 테이블에 조인하여 DB를 히트한다.
+b = Book.objects.select_related('author__hometown').get(id=4)
+p = b.author         # Doesn't hit the database.
+c = p.hometown       # Doesn't hit the database.
+
+# Without select_related()...
+b = Book.objects.get(id=4)  # Hits the database.
+p = b.author         # Hits the database.
+c = p.hometown       # Hits the database.
+```
+
+`select_related()`에 ForeignKey나 OneToOneField 관계를 참조할 수 있다.  
+또한 select_related을 전달된 필드 리스트에서 OneToOneField의 역방향도 참조할 수 있다. 즉 OneToOneField를 필드가 정의된 객체로 다시 이동할 수 있다.  
+
+필드 이름을 지정하는 대신 관련 객체의 필드에 related_name을 사용하면 된다.  
+
+관련 객체가 많은 `select_content()`를 호출하고 싶거나, 모든 관계를 모르는 상황이 있을 수 있다. 이런 경우 `select_content()`를 인수 없이 호출한다. 이러면 null 아닌 모든 외래키를 따르게 된다. 대부분의 이런 경우는 기본 쿼리를 더 복잡하게 만들고 필요한 데이터보다 많은 데이터를 반환하기 때문에 권장되지 않는다.  
+
+QuerySet에서 select_related의 이전 호출에 의해 추가된 관련 필드 리스트를 지워야 하는 경우 매개 변수로 None을 전달한다.
+
+```python
+>>> without_relations = queryset.select_related(None)
+```
+
+```python
+# select_related를 체이닝하여 콜하는 경우
+# 둘은 같다.
+select_related('foo', 'bar') == select_related('foo').select_related('bar')
+```
+
 ### `prefetch_related()`
+
+지정된 각 조회에 대해 단일 배치에서 관견 객체를 자동으로 검새하는 QuerySet을 반환한다. 이건 `select_related`와 비슷하다. 둘 다 관련 객체에 액세스하여 발생하는 DB 쿼리의 유출을 막기 위해 설계되었지만, 전략은 완전 다르다.
+
+`select_related`는 SQL join을 생성하고 SELECT 문에 관련 객체의 필드를 포함시켜 작동한다. 그렇기 때문에 `select_related`는 동일한 DB 쿼리에서 관련 객체를 가져온다. 그러나 많은 관계가 조인하여 발생하는 큰 결과셋을 피하기 위해 `select_related`는 외래키와 one-to-one 관계로 제한한다.  
+
+`prefetch_related`는 각 관계에 대해 별도로 조회하고 파이썬에서 joining을 수행한다. 이를 통해 `select_related`에서는 할 수 없는 many-to-many, many-to-one 객체도 사용이 가능하다. 또한 `GenericRelation`, `GenericForeignKey`도 지원하지만, 동일한 결과 집합으로 제한된다.
+
+```python
+# 예를 위한 모델
+from django.db import models
+
+class Topping(models.Model):
+    name = models.CharField(max_length=30)
+
+class Pizza(models.Model):
+    name = models.CharField(max_length=50)
+    toppings = models.ManyToManyField(Topping)
+
+    def __str__(self):
+        return "%s (%s)" % (
+            self.name,
+            ", ".join(topping.name for topping in self.toppings.all()),
+        )
+```
+
+```python
+# run
+>>> Pizza.objects.all()
+["Hawaiian (ham, pineapple)", "Seafood (prawns, smoked salmon)"...
+```
+
+위 코드의 문제는 `Pizza.__str__()`이 `self.toppings.all()`을 요청할때마다 DB를 쿼리해야하기 떄문에 `Pizza.objects.all()`은 Toppings 테이블에서 쿼리를 실행한다.
+
+```python
+# prefetch_related를 사용하면 두 개의 쿼리로 줄일 수 있다.
+>>> Pizza.objects.all().prefetch_related('toppings')
+```
+
+이건 각 Pizza마다 `self.toppings.all()`을 의미한다. 이 `self.toppings.all()`은 호출할 때마다 DB로 이동하지 않고 단일 조회로 채워진 미리 설정된 QuerySet 캐시에서 해당 항목을 찾는다.  
+
+즉, 모든 관련 toppings은 단일 쿼리로 가져와 관련 결과들로 미리 채워진 캐시가 있는 QuerySet을 만드는데 사용되고, 이 QuerySet은 `self.toppings.all()` 호출에 사용된다.
+
+`prefetch_related()`의 추가 쿼리는 QuerySet의 평가가 시작되고 기본 쿼리가 실행된 후에 실행된다.  
+
+반복 가능한 모델 인스턴스의 경우 `prefetch_related_objects()`를 사용하여 해당 인스턴스에서 관련 속성을 미리 준비할 수 있다.  
+
+그 후에 기본 QuerySet의 결과 캐시와 지정된 모든 관련 객체를 메모리에 완전히 불러온다. 일반적으로는 DB에서 쿼리가 실행 된 후에도 필요한 모든 객체를 메모리에 로드하지 않는다.
+
+> QuerySet에서 다른 DB 쿼리를 암시하는 후속 체인 메소드는 이전의 캐시된 결과를 무시하고 새로운 DB 쿼리를 사용하여 데이터를 검색한다.
+
+```python
+>>> pizzas = Pizza.objects.prefetch_related('toppings')
+>>> [list(pizza.toppings.filter(spicy=True)) for pizza in pizzas]
+```
+
+위 코드는 `pizza.toppings.all()`가 프리패치 되었지만 아무런 도움이 되지 않는다. `prefetch_related('toppings')`는 `pizza.toppings.all()`을 암시하지만 `pizza.toppings.filter()`와는 다른 쿼리다. 그래서 위 코드에서는 사용하지 않는 DB 쿼리를 수행하기 때문에 프리패치가 도움이 되지 않을 뿐더러, 성능까지 저하된다.
+
+또한, 관련 관리자에서 DB 변경 메소드(`add()`, `remove()`, `clear()`, `set()`을 호출하면 프리패치된 캐시가 지워진다.
+
+일반 조인 구문을 사용하여 관련 필드의 관련 필드를 수행할 수도 있다.
+
+```python
+# 위 모델 코드에 추가 모델
+class Restaurant(models.Model):
+    pizzas = models.ManyToManyField(Pizza, related_name='restaurants')
+    best_pizza = models.ForeignKey(Pizza, related_name='championed_by', on_delete=models.CASCADE)
+```
+
+```python
+>>> Restaurant.objects.prefetch_related('pizzas__toppings')
+```
+
+Restaurant에 속한 모든 Pizza와 해당 Pizza에 속하는 모든 Topping이 프리패치되는데, 이는 총 3개의 DB 쿼리가 발생한다.(Restaurant, Pizza, Topping)
+
+```python
+>>> Restaurant.objects.prefetch_related('best_pizza__toppings')
+```
+
+이건 각 Restaurant마다 최고의 Pizze와 최고의 Pizza를 위한 모든 Topping을 가져온다. 이 역시 3개의 DB 쿼리가 발생한다.
+
+물론, `select_related`를 사용하여 쿼리를 둘로 줄일 수도 있다.
+
+```python
+>>> Restaurant.objects.select_related('best_pizza').prefetch_related('best_pizza__toppings')
+```
+
+프리패치는 기본쿼리 후에 실행되므로 `best_pizza` 객체가 이미 패치되었음을 감지하고 다시 패치하지 않는다.  
+
+`prefetch_related` 호출을 연결하면 프리패치된 조회가 누적된다. 이 동작을 지우려면 None을 매개변수로 전달해야 한다.
+
+```python
+>>> non_prefetched = qs.prefetch_related(None)
+```
+
+`prefetch_related`를 사용시 유의할 점은 쿼리로 생성된 객체가 의도와 상관없이 관계가 있는 다른 객체간에 공유 될 수 있다는 것이다. 이건 일반적으로 외래키 관계에서 발생하는데, 이 동작이 문제가 되지 않는다면 메모리와 CPU 시간을 모두 절약한다.  
+
+`GenericForeignKey`는 여러 테이블의 데이터를 참조할 수 있기 때문에 모든 항목에 대해 하나의 쿼리가 아니라 참조된 테이블 당 하나의 쿼리가 필요하다. 관계된 행을 가져오지 못한 경우 ContentType 테이블에 추가 쿼리가 있을 수 있다.  
+
+대부분 `prefetch_related`는 SQL IN 연산자를 사용한다. 이건 큰 QuerySet의 경우 DB에 따라 쿼리 구분 분석이나 실행시 큰 IN 이 생성되어 성능 이슈가 발생할 수 있음을 의미한다.  
+
+`iterator()`를 사용하면 `prefetch_related()`는 무시된다.  
+
+`Prefetch`를 사용하면 프리패치 객체를 추가로 제어할 수 있다.
+
+```python
+>>> from django.db.models import Prefetch
+# 가장 단순한 Prefetch 사용으로, 기본 문자열 검색과 동일하다.
+>>> Restaurant.objects.prefetch_related(Prefetch('pizzas__toppings'))
+
+# 선택적 queryset 인자를 사용하여 cunstom queryset를 만들 수 있다.
+# 이걸로 queryset의 기본 순서를 변경 할 수 있다.
+>>> Restaurant.objects.prefetch_related(
+...     Prefetch('pizzas__toppings', queryset=Toppings.objects.order_by('name')))
+
+# select_related()를 호출하여 쿼리를 더 줄일 수 있다.
+>>> Pizza.objects.prefetch_related(
+...     Prefetch('restaurants', queryset=Restaurant.objects.select_related('best_pizza')))
+
+# to_attr 인자를 사용하여 프리패치된 결과를 사용자 정의 속성에 지정할 수 있다.
+# 결과는 리스트에 저장된다.
+
+# 이를 통해 다른 QuerySet으로 동일한 관계를 여러번 프리패치 할 수 있다.
+>>> vegetarian_pizzas = Pizza.objects.filter(vegetarian=True)
+>>> Restaurant.objects.prefetch_related(
+...     Prefetch('pizzas', to_attr='menu'),
+...     Prefetch('pizzas', queryset=vegetarian_pizzas, to_attr='vegetarian_menu'))
+
+# 사용자 정의된 to_attr으로 작성된 조회는 다른 조회에서 같이 계속 순회가 가능하다.
+>>> vegetarian_pizzas = Pizza.objects.filter(vegetarian=True)
+>>> Restaurant.objects.prefetch_related(
+...     Prefetch('pizzas', queryset=vegetarian_pizzas, to_attr='vegetarian_menu'),
+...     'vegetarian_menu__toppings')
+
+# 프리 패치 결과를 필터링 할때는 to_attr을 사용하는 것이 좋다.
+>>>
+>>> # Recommended:
+>>> restaurants = Restaurant.objects.prefetch_related(
+...     Prefetch('pizzas', queryset=queryset, to_attr='vegetarian_pizzas'))
+>>> vegetarian_pizzas = restaurants[0].vegetarian_pizzas
+>>>
+>>> # Not recommended:
+>>> restaurants = Restaurant.objects.prefetch_related(
+...     Prefetch('pizzas', queryset=queryset))
+>>> vegetarian_pizzas = restaurants[0].pizzas.all()
+```
+
+사용자 지정 프리패치는 ForeignKey나 OneToOneField와 같은 단일 관계에서도 동작한다. 이런 관계는 일반적으로 `select_related()`를 사용하지만, 사용자 정의 QuerySet을 사용하여 프리패치 하는 것이 더 유용한 경우도 많다.
+
+ - 관련 모델에서 추가 프리패치를 수행하는 QuerySet을 사용하려는 경우
+ - 관련 객체의 일부만 프리패치하려는 경우
+ - `deferred fields`처럼 성능 최적화된 기술을 사용하려는 경우
+
+```python
+>>> queryset = Pizza.objects.only('name')
+>>>
+>>> restaurants = Restaurant.objects.prefetch_related(
+...     Prefetch('best_pizza', queryset=queryset))
+```
 
 ### `extra()`
  - `select`
