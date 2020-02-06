@@ -760,26 +760,186 @@ Restaurant에 속한 모든 Pizza와 해당 Pizza에 속하는 모든 Topping이
 ```
 
 ### `extra()`
+
+Django는 복잡한 WHERE 구문을 위해 `extra()`을 제공한다.(QuerySet에 의해 생성된 SQL에 특정 절을 삽입하기 위한 훅)  
+
+`extra()`는 더이상 업데이트 되지 안는다. 다른 쿼리셋 메소드를 사용해서 쿼리를 표현할 수 없는 경우에만 사용해야 한다.
+
  - `select`
+ 여분의 필드를 삽입할 수 있다. SELECT 절에 dict를 맵핑해야 한다.
+
+```python
+# Entry에 추가속석 is_recent 이 있음
+# 이 속성은 pub_date가 2006년 1월 1일보다 큰지 여부를 나타냄
+Entry.objects.extra(select={'is_recent': "pub_date > '2006-01-01'"})
+
+# SQL
+SELECT blog_entry.*, (pub_date > '2006-01-01') AS is_recent
+FROM blog_entry;
+
+# Blog 객체에 entry_count속석 관련 Entry 객체의 정수 갯수를 호출
+Blog.objects.extra(
+    select={
+        'entry_count': 'SELECT COUNT(*) FROM blog_entry WHERE blog_entry.blog_id = blog_blog.id'
+    },
+)
+
+# SQL
+SELECT blog_blog.*, (SELECT COUNT(*) FROM blog_entry WHERE blog_entry.blog_id = blog_blog.id) AS entry_count
+FROM blog_blog;
+```
+
  - `where / tables`
+ `where`을 사용하여 명시적으로 SQL WHERE절을 정의한다.  
+ `tables`를 사용하여 SQL FROM절에 테이블을 수동으로 추가할 수 있다.
+
+ ```python
+ # where의 각 요소는 AND로 해석된다.
+ Entry.objects.extra(where=["foo='a' OR bar = 'a'", "baz = 'a'"])
+
+# SQL
+SELECT * FROM blog_entry WHERE (foo='a' OR bar='a') AND (baz='a')
+```
+
  - `order_by`
+
+`extra()`으로 생성된 새로운 필드나 테이블을 정렬할 수 있다.
+ ```python
+q = Entry.objects.extra(select={'is_recent': "pub_date > '2006-01-01'"})
+q = q.extra(order_by = ['-is_recent'])
+```
  - `params`
+ where의 매개 변수를 '%s'으로 표현하는데, 매개 변수를 params에 넣어야 한다.
+
+ ```python
+ Entry.objects.extra(where=['headline=%s'], params=['Lennon'])
+ ```
 
 ### `defer()`
 
+QuerySet으로 DB에 접근할때 지연시킬 필드명을 지정한다.
+
+```python
+Entry.objects.defer("headline", "body")
+
+# 여러번 호출할 수도 있다.
+Entry.objects.defer("body").filter(rating=5).defer("headline")
+
+# 관련 모델의 필드는 이중 언더바로 지정하여 적용할 수 있다.
+Blog.objects.select_related().defer("entry__headline", "entry__body")
+
+# defer()를 초기화하려면 None을 인자로 전달하면 된다.
+my_queryset.defer(None)
+```
+
+기본 키와 같은 모델의 일부 필드는 지연시킬 수 없다.
+
 ### `only()`
+
+`defer()`와 정반대로 동작한다. 지연되어서는 안되는 필드를 지정한다.  
+거의 모든 필드를 연기해야하는 경우 `only()`을 사용하면 코드는 더 간단해진다.
+
+```python
+# Person은 name, age, biography 3개의 필드를 가지고 있다고 가정한다.
+# 두 코드는 동일한 동작을 한다.
+Person.objects.defer("age", "biography")
+Person.objects.only("name")
+```
+
+`only()`을 중첩할 경우 마지막만 적용된다.
+
+```python
+# This will defer all fields except the headline.
+Entry.objects.only("body", "rating").only("headline")
+```
+
+그렇기 때문에 `defer()`와 `only()`를 결합하여 사용할 수 있다.
+
+```python
+# headline를 제외한 모든 것이 지연된다.
+Entry.objects.only("headline", "body").defer("body")
+
+
+# headline, body를 호출한다.
+Entry.objects.defer("body").only("headline", "body")
+```
 
 ### `using()`
 
+둘 이상의 DB를 사용하는 경우 QuerySet이 평가할 DB를 지저한다.
+
+```python
+# queries the database with the 'default' alias.
+>>> Entry.objects.all()
+
+# queries the database with the 'backup' alias
+>>> Entry.objects.using('backup')
+```
+
 ### `select_for_update()`
 
+트랜잭션이 끝날때까지 행을 잠그는 'SELECT ... FOR UPDATE' SQL문을 생성하는 QuerySet을 반환한다.
+
+```python
+from django.db import transaction
+
+entries = Entry.objects.select_for_update().filter(author=request.user)
+with transaction.atomic():
+    for entry in entries:
+        ...
+```
+
+일반적으로 다른 트랜잭션이 선택된 행 중 하나에 잠금을 획득한 경우, 잠금이 해제 될때까지 쿼리가 차단되는데, 차단하지 않으려면 `select_for_update(nowait=True)`를 하면 된다.  
+`select_for_update(skip_locked=True)`를 하면 잠긴 행을 무시할 수 있다.
+
+부모 모델을 잠그려면 `of`에 상위 링크 필드(<parent_model_name>_ptr)를 지정해야한다.
+```python
+Restaurant.objects.select_for_update(of=('self', 'place_ptr'))
+```
+
+해당 필드가 null인 경우 사용이 불가하고 `NotSupportedError`가 발생한다. 이러한 제한을 피하기 위해 제외할 수 있다.
+
+```python
+>>> Person.objects.select_related('hometown').select_for_update().exclude(hometown=None)
+<QuerySet [<Person: ...)>, ...]>
+```
+
+postgresql, oracle, mysql에서 `select_for_update()`를 지원하지만, MySql은 of 인수를 지원하지 않고, nowait, skip_locked는 MySQL 8.0.1 이상에서만 지원한다.  
+
 ### `raw()`
+
+원시 SQL 쿼리를 실행하고, `django.db.models.query.RawQuerySet` 인스턴스를 반환한다.
 
 # 새 QuerySet을 반환하는 연산자들
 
 ### `AND(&)`
 
+SQL AND 연산자를 사용하여 결합한다.
+
+```python
+# 모두 동일하다.
+Model.objects.filter(x=1) & Model.objects.filter(y=2)
+Model.objects.filter(x=1, y=2)
+from django.db.models import Q
+Model.objects.filter(Q(x=1) & Q(y=2))
+
+# SQL
+SELECT ... WHERE x=1 AND y=2
+```
+
 ### `OR(|)`
+
+SQL OR 연산자를 사용하여 결합한다.
+
+```python
+# 모두 동일하다.
+Model.objects.filter(x=1) | Model.objects.filter(y=2)
+from django.db.models import Q
+Model.objects.filter(Q(x=1) | Q(y=2))
+
+# SQL
+SELECT ... WHERE x=1 OR y=2
+```
 
 # QuerySet을 반환하지 않는 함수들
 
