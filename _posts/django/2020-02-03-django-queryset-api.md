@@ -943,27 +943,184 @@ SELECT ... WHERE x=1 OR y=2
 
 # QuerySet을 반환하지 않는 함수들
 
+이 메소드들은 캐시를 사용하지 않고, 호출 될 떄마다 DB를 쿼리한다.
+
 ### `get()`
+
+단일 객체를 반환한다.  
+
+QuerySet이 하나의 행을 반환 될 것으로 예상되면 인수 없이 사용하면 된다.
+
+```python
+entry = Entry.objects.filter(...).exclude(...).get()
+```
 
 ### `create()`
 
+객체의 생성 및 저장을 한번에 진행한다.
+
+```python
+# 1,2는 동일하다.
+## 1
+p = Person.objects.create(first_name="Bruce", last_name="Springsteen")
+
+## 2
+p = Person(first_name="Bruce", last_name="Springsteen")
+p.save(force_insert=True)
+```
+
 ### `get_or_create()`
+
+단일 객체(`(object, created)`)를 반환하고, 없으면 생성한다.
+
+`get_or_create()`에 `filter()`를 사용할 수 있다.
+
+```python
+from django.db.models import Q
+
+obj, created = Person.objects.filter(
+    Q(first_name='Bob') | Q(first_name='Robert'),
+).get_or_create(last_name='Marley', defaults={'first_name': 'Bob'})
+```
+
+`get_or_create()`에서 여러 객체가 발견되면 `MultipleObjectsReturned`를 발생시킨다.
 
 ### `update_or_create()`
 
+단일 객체를 업데이트하고, 없다면 생성한다.  
+
+튜플을 반환한다. `(object, created)`
+
 ### `bulk_create()`
+
+객체 리스트를 DB에 삽입한다. (한번에 여러 객체를 저장)
+
+```python
+>>> Entry.objects.bulk_create([
+...     Entry(headline='This is a test'),
+...     Entry(headline='This is only a test'),
+... ])
+```
+
+몇가지 주의 사항이 있다.
+
+- `save()`가 호출되지 않기 때문에 `pre_save`, `post_save` 시그널이 발생하지 않는다.
+- 다중 테이블 상속 시나리오에서는 하위 모델과 작동하지 않는다.
+- 모델의 기본 키가 AuthField인 경우 DB 백엔드가 지원하지 않는 다면(PostgreSQL) 기본 키 속성을 검색하여 설정하지 않는다.
+- many-to-many 관계는 지원하지 않는다.
 
 ### `bulk_update()`
 
+하나의 쿼리로 모델 인스턴스에서 제공된 필드를 효율적으로 업데이트한다.
+
+```python
+>>> objs = [
+...    Entry.objects.create(headline='Entry 1'),
+...    Entry.objects.create(headline='Entry 2'),
+... ]
+>>> objs[0].headline = 'This is entry 1'
+>>> objs[1].headline = 'This is entry 2'
+>>> Entry.objects.bulk_update(objs, ['headline'])
+```
+
+`QuerySet.update()`와 `save()`을 사용하여 모델 리스트를 반복 업데이트하는 것보다 효율적이지만 몇가지 주의 사항이 있다.
+
+- 모델의 기본 키를 업데이트 할 수 없다.
+- 각 모델의 `save()`가 호출되지 않아서 `pre_save`, `post_save` 시그널이 발생하지 않는다.
+- 많은 수의 행을 업데이트하는 경우 SQL이 매우 클 수 있다. `batch_size`를 사용하여 이런 경우를 피할 수 있다.(`batch_size`는 단일 쿼리에 저장되는 개체 수를 제어한다.)
+- 다중 테이블 상속시 조상에 정의된 필드를 업데이트하면, 각 조상마다 추가 쿼리가 발생한다.
+- objs에 중복이 포함된 경우 첫 항목만 업데이트 된다.
+
 ### `count()`
+
+QuerySet과 일치하는 DB 객체의 수를 나타내는 정수를 반환한다.
+
+```python
+# Returns the total number of entries in the database.
+Entry.objects.count()
+
+# Returns the number of entries whose headline contains 'Lennon'
+Entry.objects.filter(headline__contains='Lennon').count()
+```
+
+`count()`는 `SELECT COUNT(*)`를 수행하므로, 모든 레코드를 파이썬 객체에 로드하고 `len()`를 호출하는 것보다는 `count()`를 사용해야한다.(객체를 메모리에 로드하지 않을때는 `len()`이 더 빠르다.)
 
 ### `in_bulk()`
 
+`in_bulk(id_list=None, field_name='pk')`
+
+`{id, object}`형식으로 반환한다. `id_list`를 지정하지 않으면 QuerySet의 모든 객체를 반환한다. `field_name`은 고유 필드이어야 하고, 기본키로 설정해야 한다.
+
+```python
+>>> Blog.objects.in_bulk([1])
+{1: <Blog: Beatles Blog>}
+>>> Blog.objects.in_bulk([1, 2])
+{1: <Blog: Beatles Blog>, 2: <Blog: Cheddar Talk>}
+>>> Blog.objects.in_bulk([])
+{}
+>>> Blog.objects.in_bulk()
+{1: <Blog: Beatles Blog>, 2: <Blog: Cheddar Talk>, 3: <Blog: Django Weblog>}
+>>> Blog.objects.in_bulk(['beatles_blog'], field_name='slug')
+{'beatles_blog': <Blog: Beatles Blog>}
+```
+
 ### `iterator()`
+
+QuerySet을 평가하고 결과를 iterator에 반환한다.  
+
+QuerySet은 보통 반복적인 평가가 추가 쿼리를 생성하지 않도록 결과를 내부적으로 캐시한다. 하지만 `iterator()`는 QuerySet 수준에서 캐싱하지 않고 결과를 직접 읽는다.  
+
+많은 수의 객체를 반환하는 QuerySet의 경우 쿼리 성능이 향상되고 메모리는 크게 감소한다.  
+
+이미 평가한 QuerySet에 `iterator()`을 사용하면 쿼리를 반복하여 재평가하는 점은 주의해야 한다.  
+
+`iterator()`를 사용하면 이전의 `prefetch_related()`는 무시된다.  
+
+- server-side cursors를 사용하는 경우
+
+Oracle과 PostgreSQL는 server-side sursors를 사용하여 전체 결과 셋을 메모리에 로드하지 않고 DB에서 결과를 스트리밍한다.  
+
+server-side cursors의 경우, `chunk_size` 매개변수는 DB 드라이버 수준에서 캐시할 결과의 수를 지정한다. 더 많은 결과를 가져오면 메모리 소비량이 증가하지만, DB 드라이버와 DB 간의 전송 횟수가 줄어든다.  
+
+PostgreSQL의 경우, `DISABLE_SERVER_SIDE_CURSORS`가 False로 설정되어있어야 server-side cursors를 사용할 수 있다.  
+
+- server-side cursors가 없는 경우
+
+MySQL은 스트리밍 결과를 지원하지 않기 때문에, Python DB 드라이버는 전체 결과셋을 메모리에 로드한다. 그후 `fetchmany()` 메소드를 사용하여 파이썬 row 객체로 변환된다.  
+
+`chunk_size` 매개 변수는 DB 드라이버에서 Django가 검색하는 배치의 크기를 제어한다. 배치가 클수록 메모리 소비량이 약간 증가하지만, DB 드라이버와 통신하는 오버헤드가 감소한다.  
+
+텍스트와 숫자 데이터가 혼홥된 10~20 열의 행들의 데이터의 경우, 2000은 100KB 미만의 데이터를 가져올 것이며, 루프가 일찍 종료될 경우 전송되는 행의 수와 폐기되는 데이터 사이의 좋은 절충안이 될 것이다.
 
 ### `latest()`
 
+주어진 필드를 기준으로 최신 객체를 반환한다.  
+
+```python
+# pub_date 필드를 기준으로 최신 항목을 반환한다.
+Entry.objects.latest('pub_date')
+
+# 여러 필드를 기반으로 선택할 수도 있다.
+# 두 항목의 pub_date가 동일한 경우 expire_date가 빠른 항목을 선택
+Entry.objects.latest('pub_date', '-expire_date')
+```
+
+모델의 Meta가 `get_latest_by`를 지정하는 경우, `get_latest_by`에 지정된 필드가 기본값이 되어, `earliest()`,`latest()`의 인수를 생략할 수 있다.
+
+`earliest()`, `latest()`는 오직 편의와 가독성을 위해서 존재한다.
+
+`earliest()`와 `latest()`는 null date의 인스턴스를 반환 할 수 있다.  
+순서는 DB에 위임되기 때문에, 서로 다른 DB를 사용할 경우 null 값을 허용하는 필드의 결과는 다르게 정렬될 수 있다. 예를 들어 PostgreSQL와 MySQL은 null 값이 null이 아닌 값보다 높은 것으로 정렬하고, SQLite는 반대로 처리한다.  
+
+```python
+# null 값을 필터링 할 수 있다.
+Entry.objects.filter(pub_date__isnull=False).latest('pub_date')
+```
+
 ### `earliest()`
+
+방향이 변경된 경우를 제외하고 `latest()`와 다르게 작동한다.
+(다르게 작동한다는게 무슨 의미인지 이해가 안된다.)
 
 ### `first()`
 
