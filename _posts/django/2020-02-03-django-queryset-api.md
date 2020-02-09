@@ -1124,110 +1124,768 @@ Entry.objects.filter(pub_date__isnull=False).latest('pub_date')
 
 ### `first()`
 
+QuerySet과 일치하는 첫 객체를 반환한다. 정렬을 정의하지 않으면 pk으로 자동 정렬한다. 이건 `order_by()`와 상호작용에 양향을 미칠 수 있다.
+
+```python
+p = Article.objects.order_by('title', 'pub_date').first()
+
+# 위 코드는 아래 코드와 동일하게 작동한다.(first()의 간편함을 이용하자.)
+try:
+    p = Article.objects.order_by('title', 'pub_date')[0]
+except IndexError:
+    p = None
+```
+
 ### `last()`
+
+QuerySet과 일치하는 마지막 객체를 리턴한다. 그외에는 `first()`와 동일하다.
 
 ### `aggregate()`
 
+QuerySet에 대해 계산된 집계를 dict으로 리턴한다. 집계로 쿼리식이기 때문에 다른 집계나 값과 결합하여 복잡한 집계를 만들 수 있다.  
+
+키워드 인수를 사용하여 집계된 집계는 키워드를 주석의 이름으로 사용한다. 익명 인수는 집계함수의 이름과 집계되는 모델 필드에 따라 이름이 생성된다. 복합 집계는 익명 인수를 사용할 수 없기 때문에 별칭을 지정해주어야 한다.  
+
+```python
+# 블로그 항목을 제공한 작성자의 수를 조회
+>>> from django.db.models import Count
+>>> q = Blog.objects.aggregate(Count('entry'))
+{'entry__count': 16}
+
+# 키워드 인수를 사용하여 집계 함수를 지정(리턴되는 집계 값의 이름을 제어)
+>>> q = Blog.objects.aggregate(number_of_entries=Count('entry'))
+{'number_of_entries': 16}
+```
+
 ### `exists()`
+
+QuerySet에 조건에 해당하는 객체가 있으면 True, 없으면 False를 리턴한다.  
+
+일반적으로 빠른 성능을 위해 쿼리를 수행하는 방법을 채택하지만, `exists()`는 거의 동일한 쿼리를 실행한다.  
+
+`exists()`는 특히 큰 QeurySet의 컨텍스트의 검색에 효과적이다.  
+
+```python
+# 고유필드(ex. pk)이 QuerySet에 존재하는지 확인
+entry = Entry.objects.get(pk=123)
+if some_queryset.filter(pk=entry.pk).exists():
+    print("Entry contained in queryset")
+
+# 위 코드는 아래의 코드(전체 쿼리 집합을 평가를 반복)보다 빠르다.
+if entry in some_queryset:
+   print("Entry contained in QuerySet")
+
+# QuerySet에 아이템의 포함 여부를 확인한다.
+if some_queryset.exists():
+    print("There is at least one object in some_queryset")
+
+# 위 코드는 아래 코드보다 빠르다.
+if some_queryset:
+    print("There is at least one object in some_queryset")
+```
+
+해당 조건의 아이템이 어느 부분에 있는 알고 있다면 `exists()`를 사용하는 것보다는, 결과를 검색하고 반환결과를 Boolean 처리하는 것이 더 좋다.
 
 ### `udpate()`
 
+SQL UPDATE을 수행하고, 적용된 필드 수를 반환한다.
+
+```python
+# 2010년에 게시된 모든 블로그 항목의 댓글을 해제한다.
+>>> Entry.objects.filter(pub_date__year=2010).update(comments_on=False)
+```
+
+여러 필드를 업데이트 할 수도 있다. 필드 수의 제한은 없다.
+
+```python
+# comments_on, headline 필드를 업데이트한다.
+>>> Entry.objects.filter(pub_date__year=2010).update(comments_on=False, headline='This is old')
+```
+
+관련 모델은 `update()`가 제한된다.
+
+```python
+>>> Entry.objects.update(blog__name='foo') # Won't work!
+```
+
+관련 필드를 필터링하면 업데이트가 가능하다.
+
+```python
+>>> Entry.objects.filter(blog__id=1).update(comments_on=True)
+```
+
+슬라이스하거나 더이상 필터링을 할 수 없는 QuerySet은 `update()`를 사용할 수 없다.
+
+`update()`는 update가 적용된 필드 수를 리턴한다.
+
+```python
+1
+
+>>> Entry.objects.filter(slug='nonexistent-slug').update(comments_on=True)
+0
+
+>>> Entry.objects.filter(pub_date__year=2010).update(comments_on=False)
+132
+```
+
+모델 객체에 필드의 업데이트만 수행하고 아무 작업을 하지않는다면, 해당 모델 객체를 메모리에 로드하는 것보다 `update()`를 사용하는것이 효율적이다.
+
+```python
+# 객체를 메모리에 로드하고 update를 한다.
+e = Entry.objects.get(id=10)
+e.comments_on = False
+e.save()
+
+# 객체를 필터링하여 update를 바로 수행한다.
+Entry.objects.filter(id=10).update(comments_on=False)
+```
+
+이 방법은 객체를 로드하는 시각과 `save()`를 수행하는 짧은 시간동안 발생할 수 있는 경쟁 조건 자체를 방지한다.  
+
+`update()`는 SQL 수준에서 업데이트를 수행하기 때문에, 모델에서 `save()`를 수행하지 않아서 `pre_save`, `post_save` 시그널을 발생시키지 않는다.
+
 ### `delete()`
+
+SQL DELETE를 수행하고, 삭제된 객체의 수와 객체 유형당 삭제된 수로된 dict를 반환한다.  
+
+`delete()`는 즉시 적용된다. 슬라이스가 있거나 더 이상 필터링을 할 수 없는 QuerySet은 `delete()`를 사용할 수 없다.  
+
+```python
+# 특정 블로그의 모든 항목을 삭제
+>>> Entry.objects.filter(blog=b).delete()
+(4, {'weblog.Entry': 2, 'weblog.Entry_authors': 2})
+```
+
+Django의 ForeignKey는 기본적으로 SQL의 `ON DELETE CASCADE`를 에뮬레이트한다. 즉, 삭제 될 객체를 가리키는 외래키가 있는 객체도 함께(CASCADE) 삭제된다.
+
+```python
+>>> blogs = Blog.objects.all()
+
+# This will delete all Blogs and all of their Entry objects.
+>>> blogs.delete()
+(5, {'weblog.Blog': 1, 'weblog.Entry': 2, 'weblog.Entry_authors': 2})
+```
+
+이 동작은 `on_delete` 인수를 통해 ForeignKey로 지정할 수 있다.  
+
+`delete()`는 대량 삭제를 수행하며, 모델에서 `delete()`를 호출하지 않는다. 하지만 `pre_delete`, `post_delete` 시그널은 **발생**시킨다.  
+
+Django는 cascade를 처리하기 위해 객체를 메모리에 가져와야 한다. cascade나 시그널이 없는 경우 Django는 객체를 메모리에 가져오지 않고 바로 삭제한다. 그래서 메모리 사용량이 크게 줄어들고, 실행된 쿼리 양도 줄어든다.  
+
+`on_delete DO_NOTHING`으로 설정된 ForeignKey는 빠른 삭제를 진행할 수 있다.
 
 ### `as_manager()`
 
+QuerySet의 메소드의 사본과 인스턴스 매니저를 리턴한다.
+
+[Creating a manager with QuerySet methods](https://docs.djangoproject.com/en/2.2/topics/db/managers/#create-manager-with-queryset-methods) 참조
+
 ### `explain()`
+
+QuerySet의 실행 계획의 문자열을 리턴한다. 느린 쿼리를 분석하여 성능을 향상시키는데 도움이 된다.  
+
+```python
+# PostgreSQL를 사용하는 경우
+>>> print(Blog.objects.filter(title='My Blog').explain())
+Seq Scan on blog  (cost=0.00..35.50 rows=10 width=12)
+  Filter: (title = 'My Blog'::bpchar)
+
+# 출력은 DB 마다 다르다.
+```
+
+`explain()`은 구현이 복잡하기 때문에 Oracle을 제외한 모든 DB 백엔드에서 지원한다.  
+
+format 매개변수는 텍스트 기반 DB의 출력 형식을 변경한다. PostgreSQL는 'TEXT', 'JSON', 'YAML', 'XML'을 지원한다. MySQL은 'TEXT'('TRADITIONAL')과 'JSON'을 지원한다.  
+
+일부 DB는 쿼리에 대한 추가 정보를 반환 할 수 있는 플래그를 허용한다.
+
+```python
+# PostgreSQL을 사용하는 경우
+# 플래스를 키워드 인수로 전달
+>>> print(Blog.objects.filter(title='My Blog').explain(verbose=True))
+Seq Scan on public.blog  (cost=0.00..35.50 rows=10 width=12) (actual time=0.004..0.004 rows=10 loops=1)
+  Output: id, title
+  Filter: (blog.title = 'My Blog'::bpchar)
+Planning time: 0.064 ms
+Execution time: 0.058 ms
+```
+
+일부 DB에서는 플래그로 인해 DB에 부정적인 영향을 줄 수도 있다. 예를 들어 PostgreSQL의 ANALYZE 플래그는 트리거가 있거나 SELECT 쿼리의 경우 함께 호출되면 데이터가 변경될 수도 있다.
 
 # 필드 검색
 
+'SQL WHERE' 구문을 작성한다. QuerySet 메소드(`get()`, `exclude()` ,`get()`)의 키워드 인수로 지정된다.  
+
 ### `exact`
+
+조건과 정확히 일치해야한다.  
+None이면 SQL NULL으로 해석된다.  
+
+```python
+Entry.objects.get(id__exact=14)
+Entry.objects.get(id__exact=None)
+
+# SQL
+SELECT ... WHERE id = 14;
+SELECT ... WHERE id IS NULL;
+```
 
 ### `iexact`
 
+조건과 정확히 일치해야하지만 대소문자는 구분하지 않는다.  
+None이면 SQL NULL으로 해석된다.  
+
+```python
+Blog.objects.get(name__iexact='beatles blog')
+Blog.objects.get(name__iexact=None)
+
+# SQL
+SELECT ... WHERE name ILIKE 'beatles blog';
+SELECT ... WHERE name IS NULL;
+
+# 'Beatles Blog', 'beatles blog', 'BeAtLes BLoG' 등이 일치한다.
+```
+
 ### `contains`
+
+지정한 문자열이 포함하는 객체만 검색한다.
+
+```python
+Entry.objects.get(headline__contains='Lennon')
+
+# SQL
+SELECT ... WHERE headline LIKE '%Lennon%';
+
+# 'Lennon honored today' but not 'lennon honored today'가 일치한다.
+```
+
+> SQLite는 대소문자를 구분하는 LIKE문을 지원하지 않는다.
 
 ### `icontains`
 
+지정한 문자열이 포함하는 객체만 검색하지만 대소문자를 구별하지는 않는다.
+
+```python
+Entry.objects.get(headline__icontains='Lennon')
+
+# SQL
+SELECT ... WHERE headline ILIKE '%Lennon%';
+```
+
 ### `in`
+
+주어진 iterator(list, tuple), 혹은 문자열(문자열의 각 문자)의 요소가 있는 객체를 검색한다.
+
+```python
+Entry.objects.filter(id__in=[1, 3, 4])
+Entry.objects.filter(headline__in='abc')
+
+# SQL
+SELECT ... WHERE id IN (1, 3, 4);
+SELECT ... WHERE headline IN ('a', 'b', 'c');
+```
+
+QuerySet을 지정할 수도 있다.
+
+```python
+inner_qs = Blog.objects.filter(name__contains='Cheddar')
+entries = Entry.objects.filter(blog__in=inner_qs)
+
+# SQL
+SELECT ... WHERE blog.id IN (SELECT id FROM ... WHERE NAME LIKE '%Cheddar%')
+```
+
+`values()`나 `values_list()`에서 나온 QuerySet을 전달하는 경우 하나의 필드만 추출해야 한다.
+
+```python
+inner_qs = Blog.objects.filter(name__contains='Ch').values('name')
+entries = Entry.objects.filter(blog__name__in=inner_qs)
+```
+
+두 개 이상 지정하면 예외를 발생시킨다.
 
 ### `gt`
 
+Greater then.
+
+```python
+Entry.objects.filter(id__gt=4)
+
+# SQL
+SELECT ... WHERE id > 4;
+```
+
 ### `gte`
+
+Greater then or equal to.
 
 ### `lt`
 
+Less then.
+
 ### `lte`
+
+Less then or equal to.
 
 ### `startswith`
 
+지정한 문자열로 시작하는 객체를 검색한다.
+
+```python
+Entry.objects.filter(headline__startswith='Lennon')
+
+# SQL
+SELECT ... WHERE headline LIKE 'Lennon%';
+```
+
 ### `istartswith`
+
+지정한 문자열(대소분자 구분하지 않음)로 시작하는 객체를 검색한다.
+
+```python
+Entry.objects.filter(headline__istartswith='Lennon')
+
+# SQL
+SELECT ... WHERE headline ILIKE 'Lennon%';
+```
 
 ### `endswith`
 
+지정한 문자열로 끝나는 객체를 검색한다.
+
+```python
+Entry.objects.filter(headline__endswith='Lennon')
+
+# SQL
+SELECT ... WHERE headline LIKE '%Lennon';
+```
+
 ### `iendswith`
+
+지정한 문자열(대소문자 구분하지 않음)으로 끝나는 객체를 검색한다.
+
+```python
+Entry.objects.filter(headline__iendswith='Lennon')
+
+# SQL
+SELECT ... WHERE headline ILIKE '%Lennon'
+```
 
 ### `range`
 
+검색할 범위를 지정한다.
+
+```python
+import datetime
+start_date = datetime.date(2005, 1, 1)
+end_date = datetime.date(2005, 3, 31)
+Entry.objects.filter(pub_date__range=(start_date, end_date))
+
+# SQL
+SELECT ... WHERE pub_date BETWEEN '2005-01-01' and '2005-03-31';
+```
+
+날짜, 숫자, 문자 등 SQL BETWEEN을 사용할 수 있는 모든 곳에서 `range()`를 사용할 수 있다.
+
 ### `date`
+
+datetime 필드는 date를 지정할 수 있다.
+
+```python
+Entry.objects.filter(pub_date__date=datetime.date(2005, 1, 1))
+Entry.objects.filter(pub_date__date__gt=datetime.date(2005, 1, 1))
+```
 
 ### `year`
 
+date와 datetime 필드는 year를 지정할 수 있다.
+
+```python
+Entry.objects.filter(pub_date__year=2005)
+Entry.objects.filter(pub_date__year__gte=2005)
+
+# SQL
+SELECT ... WHERE pub_date BETWEEN '2005-01-01' AND '2005-12-31';
+SELECT ... WHERE pub_date >= '2005-01-01';
+```
+
 ### `iso_year`
+
+date, datetime 필드의 경우 ISO 8610 week-numbering year를 지정할 수 있다.
+
+```python
+Entry.objects.filter(pub_date__iso_year=2005)
+Entry.objects.filter(pub_date__iso_year__gte=2005)
+```
 
 ### `month`
 
+date, datetime 필드는 month를 지정할 수 있다. 정수 1~12까지 가능하다.
+
+```python
+Entry.objects.filter(pub_date__month=12)
+Entry.objects.filter(pub_date__month__gte=6)
+
+# SQL
+SELECT ... WHERE EXTRACT('month' FROM pub_date) = '12';
+SELECT ... WHERE EXTRACT('month' FROM pub_date) >= '6';
+```
+
 ### `day`
+
+date, datetime 필드는 day를 지정할 수 있다.
+
+```python
+Entry.objects.filter(pub_date__day=3)
+Entry.objects.filter(pub_date__day__gte=3)
+
+# SQL
+SELECT ... WHERE EXTRACT('day' FROM pub_date) = '3';
+SELECT ... WHERE EXTRACT('day' FROM pub_date) >= '3';
+```
 
 ### `week`
 
+date, datetime 필드는 ISO-8601에 따른 week number(1-52 or 53)를 지정할 수 있다.
+
+```python
+Entry.objects.filter(pub_date__week=52)
+Entry.objects.filter(pub_date__week__gte=32, pub_date__week__lte=38)
+```
+
 ### `week_day`
+
+date, datetime 필드는 'day of the week'를 지정할 수 있다. 1을 일요일, 7은 토요일이다.
+
+```python
+Entry.objects.filter(pub_date__week_day=2)
+Entry.objects.filter(pub_date__week_day__gte=2)
+```
 
 ### `quarter`
 
+date, datetime 필드는 분기별로 지정이 가능하다. 1~4까지 가능하다.
+
+```python
+Entry.objects.filter(pub_date__quarter=2)
+```
+
+
 ### `time`
+
+datetime 필드는 time을 지정할 수 있다.
+
+```python
+Entry.objects.filter(pub_date__time=datetime.time(14, 30))
+Entry.objects.filter(pub_date__time__range=(datetime.time(8), datetime.time(17)))
+```
 
 ### `hour`
 
+datetime, time 필드는 hour를 지정할 수 있다. 정수 0 ~ 23까지 가능하다.  
+
+```python
+Event.objects.filter(timestamp__hour=23)
+Event.objects.filter(time__hour=5)
+Event.objects.filter(timestamp__hour__gte=12)
+
+# SQL
+SELECT ... WHERE EXTRACT('hour' FROM timestamp) = '23';
+SELECT ... WHERE EXTRACT('hour' FROM time) = '5';
+SELECT ... WHERE EXTRACT('hour' FROM timestamp) >= '12';
+```
+
 ### `minute`
 
+datetime, date 필드는 minute 를 지정할 수 있다. 정수 0 ~ 59까지 지정할 수 있다.
+
+```python
+Event.objects.filter(timestamp__minute=29)
+Event.objects.filter(time__minute=46)
+Event.objects.filter(timestamp__minute__gte=29)
+
+# SQL
+SELECT ... WHERE EXTRACT('minute' FROM timestamp) = '29';
+SELECT ... WHERE EXTRACT('minute' FROM time) = '46';
+SELECT ... WHERE EXTRACT('minute' FROM timestamp) >= '29';
+```
+
 ### `second`
+datetime, time 필드는 second를 지정할 수 있다. 정수 0 ~ 59까지 지정할 수 있다.
+
+```python
+Event.objects.filter(timestamp__second=31)
+Event.objects.filter(time__second=2)
+Event.objects.filter(timestamp__second__gte=31)
+
+# SQL
+SELECT ... WHERE EXTRACT('second' FROM timestamp) = '31';
+SELECT ... WHERE EXTRACT('second' FROM time) = '2';
+SELECT ... WHERE EXTRACT('second' FROM timestamp) >= '31';
+```
 
 ### `isnull`
 
+SQL의 'IS NULL', 'IS NOT NULL'에 해당하는 Boolean을 지정할 수 있다. 지정항 값이 null인 객체를 검색한다.
+
+```python
+Entry.objects.filter(pub_date__isnull=True)
+
+# SQL
+SELECT ... WHERE pub_date IS NULL;
+```
+
 ### `regex`
+
+정규식(대소문자 구분)으로 조건을 지정할 수 있다. SQLite는 정규식 기능이 내장되어 있지 않기 때문에 파이썬의 `re` 모듈을 사용해야 한다.
+
+```python
+Entry.objects.get(title__regex=r'^(An?|The) +')
+
+# SQL
+SELECT ... WHERE title REGEXP BINARY '^(An?|The) +'; -- MySQL
+
+SELECT ... WHERE REGEXP_LIKE(title, '^(An?|The) +', 'c'); -- Oracle
+
+SELECT ... WHERE title ~ '^(An?|The) +'; -- PostgreSQL
+
+SELECT ... WHERE title REGEXP '^(An?|The) +'; -- SQLite
+```
+
+정규식을 작성할때 원시 문자열(`r'foo'`)를 사용하는게 좋다.
 
 ### `iregex`
 
+정규식(대소문자 구분 안함)으로 조건을 지정할 수 있다.
+
+```python
+
+Entry.objects.get(title__iregex=r'^(an?|the) +')
+
+# SQL
+SELECT ... WHERE title REGEXP '^(an?|the) +'; -- MySQL
+
+SELECT ... WHERE REGEXP_LIKE(title, '^(an?|the) +', 'i'); -- Oracle
+
+SELECT ... WHERE title ~* '^(an?|the) +'; -- PostgreSQL
+
+SELECT ... WHERE title REGEXP '(?i)^(an?|the) +'; -- SQLite
+```
+
 # 집계 기능
 
-### `expressions`
+Django는 django.db.models 모듈에 여러 집계 함수들을 제공한다.
 
-### `output_field`
+QuerySet이 비어있으면 모든 집계 함수들은 None을 반환한다.
 
-### `filter`
+## 공통 파라미터
 
-### `**extra`
+#### `expressions`
+
+모델의 필드를 참조하는 문자열이나 쿼리 정규식
+
+#### `output_field`
+
+리턴 값의 타입 필드를 지정할 수 있다.
+
+#### `filter`
+
+집계된 행을 필터링한다. Q 객체를 지정한다.
+
+#### `**extra`
+
+집계에 의해 생성된 QuerySet에 추가 컨텍스트를 키워드 인수로 지정한다.
 
 ### `Avg`
 
+```python
+class Avg(expression, output_field=None, filter=None, **extra)
+```
+
+평균값(float)을 반환한다. output_field로 출력 필드 타입을 바꿀 수 있다.
+
 ### `Count`
+
+```python
+class Count(expression, distinct=False, filter=None, **extra)
+```
+
+조건에 해당하는 객체의 수를 반환한다.
+
+ - `distinct=True`인 경우 고유한 인스턴스만 포함된다. SQL의 COUNT(DISTINCT <field>)에 해당한다. 기본값은 False이다.
 
 ### `Max`
 
+```python
+class Max(expression, output_field=None, filter=None, **extra)
+```
+
+최대값을 리턴한다.
+
 ### `Min`
+
+```python
+class Min(expression, output_field=None, filter=None,**extra)
+```
+
+최소값을 반환한다.
 
 ### `StdDev`
 
+```python
+class StdDev(expression, output_field=None, sample=False, filter=None, **extra)
+```
+
+데이터의 표준 편차를 반환한다.
+
+ - `sample=True`인 경우 반환 값은 샘플 표준 편차이다.
+
 ### `Sum`
 
+```python
+class Sum(expression, output_field=None, filter=None, **extra)
+```
+
+모든 값의 합계를 반환한다.
+
 ### `Variance`
+
+```python
+class Variance(expression, output_field=None, sample=False, filter=None, **extra)
+```
+
+데이터의 분산을 반환한다.
+
+ - `sample=True`인 경우 반환값은 샘플의 분산이다.
 
 # Query-related tools
 
 ### `Q()` objects
 
+`Q()`객체는 F 객체와 마찬가지로 DB 작업에 사용할 수 있는 파이썬의 SQL expression을 캡슐화한다.
+
+`Q()`객체는 조건을 정의하고 재사용할 수 있다.`|`(OR), `&`(AND) 연산자를 사용하여 복잡한 DB 쿼리를 구축할 수 있다.
+
+```python
+# Q() prefetch_related_objects
+from django.db.models import Q
+
+Q1 = Q(first_name__startswith='J')
+Q2 = Q(first_name__endswith='e')
+User.objects.filter(Q1 & Q2)
+User.objects.filter(Q1 | Q2)
+
+# F() expression
+# F()를 사용하면 Django는 파이썬 메모리가 아닌 DB 내부에서 계산 논리를 수행하는 쿼리를 생성한다.
+from django.db.models import F
+
+e = Event.objects.get(id=1)
+e.event_date = F('event_date') + datetime.timedelta(days=14)
+e.save()
+```
+
 ### `Prefetch()` objects
+
+```python
+class Prefetch(lookup, queryset=None, to_attr=None)
+```
+
+`Prefetch()`객체를 사용하여 `prefetch_related`의 동작을 제어할 수 있다.  
+
+- `lookup` 인수에 따라야 할 관계를 지정하면 `prefetch_related()`에 전달된 문자열 기반 조회와 동일하게 동작한다.
+
+```python
+>>> from django.db.models import Prefetch
+>>> Question.objects.prefetch_related(Prefetch('choice_set')).get().choice_set.all()
+<QuerySet [<Choice: Not much>, <Choice: The sky>, <Choice: Just hacking again>]>
+# This will only execute two queries regardless of the number of Question
+# and Choice objects.
+>>> Question.objects.prefetch_related(Prefetch('choice_set')).all()
+<QuerySet [<Question: What's up?>]>
+```
+
+- `queryset` 인수는 주어진 조회에 대한 기본 QuerySet을 제공한다. 프리패치 조작을 추가로 필터링하거나, 프리패치된 관계에서 `select_related()`를 호출하여 조회수를 더 줄이게 해준다.  
+
+```python
+>>> voted_choices = Choice.objects.filter(votes__gt=0)
+>>> voted_choices
+<QuerySet [<Choice: The sky>]>
+>>> prefetch = Prefetch('choice_set', queryset=voted_choices)
+>>> Question.objects.prefetch_related(prefetch).get().choice_set.all()
+<QuerySet [<Choice: The sky>]>
+```
+
+- `to_attr` 인수는 프리패치 작업의 결과를 사용자 정의 속성으로 설정한다.
+
+```python
+>>> prefetch = Prefetch('choice_set', queryset=voted_choices, to_attr='voted_choices')
+>>> Question.objects.prefetch_related(prefetch).get().voted_choices
+[<Choice: The sky>]
+>>> Question.objects.prefetch_related(prefetch).get().choice_set.all()
+<QuerySet [<Choice: Not much>, <Choice: The sky>, <Choice: Just hacking again>]>
+```
+
+> `to_attr`을 사용하면 프리패치된 결과가 리스트에 저장된다. 이건 QuerySet 인스턴스 내부에 저장하는 `prefetch_related`보다 속도를 크게 향상시킬 수 있다.
 
 ### `prefetch_related_objects()`
 
+```python
+prefetch_related_objects(model_instance, *related_lookups)
+```
+
+반복 가능한 모델 인스턴스에서 지정된 조회를 프리패치한다. QuerySet과는 반대로 모델 인스턴스 목록을 받을 때 유용하다. (캐시에서 모델을 가져오거나, 수동으로 인스턴스화 할때)  
+
+
+
+```python
+>>> from django.db.models import prefetch_related_objects
+>>> restaurants = fetch_top_restaurants_from_cache()  # A list of Restaurants
+>>> prefetch_related_objects(restaurants, 'pizzas__toppings')
+```
+
 ### `FilteredRelation()` objects
+
+```python
+class FilteredRelation(relation_name, *, conditino=Q())
+```
+
+- `relation_name`: 관계를 필터링하려는 필드의 이름
+- `condition`: 필터링을 제어하는 Q 객체
+
+`FilteredRelation`은 JOIN이 수행될때 ON 구문을 만들기 위해 `annotate()`와 함께 사용해야 한다. 기본 관계가 아닌 annotate의 이름에 영향을 준다.
+
+```python
+# 이름에 'mozzarella'가 포함된 vegetarial가 있는 식당 조회
+>>> from django.db.models import FilteredRelation, Q
+>>> Restaurant.objects.annotate(
+...    pizzas_vegetarian=FilteredRelation(
+...        'pizzas', condition=Q(pizzas__vegetarian=True),
+...    ),
+... ).filter(pizzas_vegetarian__name__icontains='mozzarella')
+
+# 피자가 많은 경우
+# 첫 번째 queryset의 WHERE 구문에서 필터링하면 vegetarial에서만 동작하기 때문에 성능이 위 코드보다 좋다.
+>>> Restaurant.objects.filter(
+...     pizzas__vegetarian=True,
+...     pizzas__name__icontains='mozzarella',
+... )
+```
+
+#### `FilteredRelation`가 지원하지 않는 것
+
+- 관계형 필드에 조건을 추가
+
+```python
+>>> Restaurant.objects.annotate(
+...    pizzas_with_toppings_startswith_n=FilteredRelation(
+...        'pizzas__toppings',
+...        condition=Q(pizzas__toppings__name__startswith='n'),
+...    ),
+... )
+Traceback (most recent call last):
+...
+ValueError: FilteredRelation's condition doesn't support nested relations (got 'pizzas__toppings__name__startswith').
+```
+
+- `QuerySet.only()`, `prefetch_related()`
+- 부모 모델에서 상속된 `GenericForeignKey`
