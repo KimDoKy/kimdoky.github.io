@@ -10,6 +10,8 @@ tags: [ 'git' ]
 
 그러다 IT 서적 리뷰 이벤트에 당첨되어 책을 선택하게 되었는데, 그 중 바로 적용해 볼 수 있는 ['Git 교과서'](http://www.kyobobook.co.kr/product/detailViewKor.laf?ejkGb=KOR&mallGb=KOR&barcode=9791165210885&orderClick=LAG&Kc=&fbclid=IwAR2yo5F7Vsg3ul8SsG4fdtV7ANHsakY_JngdR3Hrl1P-_Lw85i0b4jJ828o)를 선택하였습니다.
 
+![]({{ site.url }}/img/post/book/git/0.jpg)
+
 ## 시작하자마자 결론?!
 
 결론은, 굉장히 잘 짜여진 서적이라는 것입니다.
