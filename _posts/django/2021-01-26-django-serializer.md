@@ -37,3 +37,13 @@ class ContentSerializer(serializers.ModelSerializer):
 serializer의 소스 코드도 비슷합니다.
   
 쳇...
+
+### 의미 있는 삽질
+
+DRF의 serializer로 값을 불러오면 FK필드의 경우 int값이 나옵니다.  
+  
+삽질한 코드로 작업을 하면 좀 더 세밀하게 가공할 수 있습니다.  
+
+## 결론
+
+둘 다 잘 조합해서 문제 해결!
