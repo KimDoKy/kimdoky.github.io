@@ -3,7 +3,7 @@ layout: post
 section-type: post
 title: [Review] Git 교과서
 category: git
-tags: [ 'git', 'review']
+tags: [ 'git']
 ---
 
 평소에 Git을 사용하고 있지만, Merge는 항상 부담스러웠습니다.
