@@ -6,9 +6,9 @@ category: javascript
 tags: [ 'javascript' ]
 ---
 
-# Review - 자바스크립트는 모든 곳에 존재한다.
+![]({{ site.url }}/img/post/book/jsew.jpg)
 
-![]({{ site.url }}/img/post/book/jseverywhere_main.jpg)
+![](https://raw.githubusercontent.com/KimDoKy/kimdoky.github.io/master/img/post/book/jseverywhere_main.jpg)
 
 실습 환경: 맥북프로 2016 / 16G / macOS Big Sur
 
