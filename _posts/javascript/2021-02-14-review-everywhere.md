@@ -8,8 +8,6 @@ tags: [ 'javascript' ]
 
 ![]({{ site.url }}/img/post/book/jsew.jpg)
 
-![](https://raw.githubusercontent.com/KimDoKy/kimdoky.github.io/master/img/post/book/jseverywhere_main.jpg)
-
 실습 환경: 맥북프로 2016 / 16G / macOS Big Sur
 
 많은 프로그래밍 언어들이 각각의 매력을 어필하며 발전하고 있습니다. Python, Go, Java, JavaScript, C++, .. etc
