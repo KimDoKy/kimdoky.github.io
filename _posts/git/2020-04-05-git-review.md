@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: [Review] Git 교과서
+title: review - Git 교과서
 category: git
 tags: [ 'git']
 ---
