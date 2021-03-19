@@ -37,4 +37,4 @@ tags: [ 'javascript' ]
 
 크로스 플랫폼에 관심이 있고, JS를 사용하신다면 이 책으로 입문하셔도 좋을 것 같습니다 :)
 
-> 실습 진행한 부분은 [git](https://github.com/KimDoKy/JavaScriptEverywhere)을 참고하여 같이 진행하실 수 있어요.
+> 실습 진행한 부분은 [git](https://github.com/KimDoKy/FirstReactNative)을 참고하여 같이 진행하실 수 있어요.
