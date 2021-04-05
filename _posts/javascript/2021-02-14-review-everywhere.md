@@ -49,3 +49,5 @@ JavaScript의 가장 매력적인 이유는 바로 '모든 것'을 할 수 있�
 완독하는데 그리 오랜 시간이 걸리지 않기 때문에, JavaScript를 메인 언어로 시작하시려거나, JavaScript으로 여러 플랫폼을 다루려고 한다면 이 책을 추천드립니다.
 
 > 실습 진행한 부분은 [git](https://github.com/KimDoKy/JavaScriptEverywhere)을 참고하여 같이 진행하실 수 있어요.
+
+> "한빛미디어 <나는 리뷰어다> 활동을 위해서 책을 제공받아 작성된 서평입니다."
