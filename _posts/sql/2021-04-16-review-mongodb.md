@@ -6,7 +6,7 @@ category: sql
 tags: [ 'sql' ]
 ---
 
-![]({{ site.url }}/img/post/book/mongodb.jpg)
+![]({{ site.url }}/img/post/book/mongodb_f.jpg)
 
 현대의 DB는 크게 RDMS(Relational Database Management System)과 [NoSQL(Not Only SQL)](https://ko.wikipedia.org/wiki/NoSQL)으로 나누어집니다.  
 RDMS에는 MySQL이 있다면, NoSQL에는 MongoDB가 가장 유명합니다.  
