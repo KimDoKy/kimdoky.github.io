@@ -56,7 +56,7 @@ for i in $(seq $((60/$SLEEP))); do
 done
 ```
 
-> python3 의 명령어는 가상환경때문에 세부 경로를 지정하였었는데 정상 동작하지 않았다.
+> python3 의 명령어는 가상환경때문에 세부 경로를 지정하였었는데 정상 동작하지 않았다. python3 으로 그냥 입력하면... 정상동작.. 음.. 
 
 #### crontab의 간단 사용법
 
@@ -75,6 +75,9 @@ done
 $ service cron start
 
 # crontab 이 실행중이라면 리로드
+$ systemctl daemon-reload
+
+# crontab 상태 체크
 $ systemctl status cron.service
 $ service cron status  (같은 명령)
 ```
