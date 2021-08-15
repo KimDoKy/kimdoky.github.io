@@ -14,12 +14,13 @@ tags: [ 'tech' ]
 
 그러던 중 8원 리뷰어로 '초소형 머신러닝 TinyML'을 진행하게 되었습니다.
 
+![]({{ site.url }}/img/post/book/tinyml_1.jpg)
 
 사실 저는 ML을 거의 모르기 때문에 겁이 났습니다.  
 
 하지만, 이 책은 초보자들도 시작할 수 있도록 용기를 주고 있습니다 ㅎ
 
-![]({{ site.url }}/img/post/book/tinyml_1.png)
+![]({{ site.url }}/img/post/book/tinyml_2.jpg)
 
 ---
 
