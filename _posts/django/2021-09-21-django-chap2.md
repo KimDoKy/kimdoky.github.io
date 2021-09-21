@@ -25,7 +25,7 @@ tags: [ 'django' ]
 개발 환경에서는 보통 SQLite3를 많이 사용하는데, 이는 동적이고 느슨한 타이핑을 지원하기 때문에, 운영 환경의 엄격한 타이핑 동작 데이터베이스에서는 조건 에러(constraint error)등을 발생시킵니다. 그리고 이러한 에러는 재현 및 발견하기가 어렵습니다.  
 
 추천 조합은 Django + PostgreSQL 입니다.  
-[Django QuerySet API](https://kimdoky.github.io/django/2020/02/03/django-queryset-api/)
+[Django QuerySet API](https://kimdoky.github.io/django/2020/02/03/django-queryset-api/)  
 [Django Database Functions](https://kimdoky.github.io/django/2020/01/31/django-db-functions/) 참고
 
 ### 2.1.3 Fixtures Are Not a Magic Solution
