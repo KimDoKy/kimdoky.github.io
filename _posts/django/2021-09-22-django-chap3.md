@@ -92,7 +92,7 @@ icecreamratings_project
 └── requirements.txt
 ```
 
-file / directory / purpose
+file / directory | purpose
 ---|---
 .gitignore | git에서 제외할 대상
 config/ | `configuration_root`으로 settings, urls.py, wsgi.py이 포함
@@ -102,7 +102,7 @@ README.md and docs/ | 개발자를 위한 프로젝트 문서들
 requirements.txt | 프로젝트에 이용되는 파이썬 패키지 목록
 icecreamratings/ | `django_project_root`
 
-directory / purpose
+directory | purpose
 ---|---
 media/ | 개발 용도의 디렉터리.(미디어파일)
 products/ | 예제용. 아이스크림 브랜드를 관리하고 보여주는 앱
