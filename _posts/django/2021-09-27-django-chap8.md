@@ -8,6 +8,8 @@ tags: [ 'django' ]
 
 > [Two Scoops of Django 3.x](https://www.feldroy.com/books/two-scoops-of-django-3-x)
 
+---
+
 {% raw %}
 
 ## 8.1 When to Use FBV or CBVs

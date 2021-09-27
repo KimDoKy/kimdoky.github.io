@@ -6,6 +6,10 @@ category: django
 tags: [ 'django' ]
 ---
 
+> [Two Scoops of Django 3.x](https://www.feldroy.com/books/two-scoops-of-django-3-x)
+
+---
+
 ## 7.1 Use `get_object_or_404()` for Single Objects
 
 단일 객체를 가져와서 작업할 경우 `get()` 보다는 `get_object_or_404()`를 이용해야 합니다.  
