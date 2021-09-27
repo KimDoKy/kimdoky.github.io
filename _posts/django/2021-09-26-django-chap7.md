@@ -1,4 +1,10 @@
-# chap7. Queries and the Database Layer
+---
+layout: post
+section-type: post
+title: Two Scoops of django 3.x - Chap7. Queries and the Database Layer
+category: django
+tags: [ 'django' ]
+---
 
 ## 7.1 Use `get_object_or_404()` for Single Objects
 
