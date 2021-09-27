@@ -1,4 +1,14 @@
-# chap8. Function-And Class Based Views
+---
+layout: post
+section-type: post
+title: Two Scoops of django 3.x - Chap8. Function-And Class Based Views
+category: django
+tags: [ 'django' ]
+---
+
+> [Two Scoops of Django 3.x](https://www.feldroy.com/books/two-scoops-of-django-3-x)
+
+{% raw %}
 
 ## 8.1 When to Use FBV or CBVs
 
@@ -274,3 +284,5 @@ def ice_cream_store_display(request, store_id):
 - CBV, FBV를 다루어야 하는 경우
 - URLConf에서 뷰 로직을 분리하는 방법
 - CBV를 이용할 때 객체 상속을 이용하여 코드의 재사용성을 높이기
+
+{% endraw %}
