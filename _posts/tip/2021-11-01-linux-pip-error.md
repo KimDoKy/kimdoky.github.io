@@ -18,7 +18,6 @@ ubuntu 20.04.2 에서 pip으로 package 설치 실패 시
 - apt-get update 확인
 - 작업 디렉터리의 권한 확인
 
-
 ### mysqlclient 를 설치하는 중 에러
 
 ```
@@ -31,14 +30,13 @@ apt-get 으로 mysqlclient를 설치해도 동일한 에러 발생
 
 해결법
 
-```csharp
-sudo apt-get install python3-dev
+```bash
+$ sudo apt-get install python3-dev
+$ sudo apt-get install build-essential
+$ sudo apt-get install libmysqlclient-dev
 ```
 
-```csharp
-sudo apt-get install build-essential
-```
+apt로 라이브러리 추가 설치시 마지막에 꼭 한번 더 update를 해야 함.
+
 
 [stackoverflow](https://stackoverflow.com/questions/33315210/error-command-x86-64-linux-gnu-gcc-when-installing-mysqlclient/33315233)
-
-
