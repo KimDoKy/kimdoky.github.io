@@ -15,7 +15,7 @@ tags: [ 'django' ]
 북마크(Bookmark) 앱을 개발합니다.
 
 북마크는 생성, 수정, 삭제 등의 기능이 있어 연습하기에 적당함.
-
+{% raw %}
 
 ## 2.1 애플리케이션 설계하기
 
@@ -328,9 +328,9 @@ class BookmarkDV(DetailView): # 4
     <h1>Bookmark LIst</h1>
 
     <ul>
-        {% raw %}{% for bookmark in object_list %}{% endraw %} # 1
-            <li><a href="{% raw %}{% url 'detail' bookmark.id %}{% endraw %}">{% raw %}{{ bookmark }}{% endraw %}</a></li> # 2
-        {% raw %}{% endfor %}{% endraw %}
+        {% for bookmark in object_list %} # 1
+            <li><a href="{% url 'detail' bookmark.id %}">{{ bookmark }}</a></li> # 2
+        {% endfor %}
     </ul>
 </div>
 
@@ -343,7 +343,7 @@ def __str__(self):
     return self.title
 ```
 
-`{% raw %}{{ bookmark }}{% endraw %}` 템플릿 변수를 프린트하면 해당 객체의 title이 출력됩니다.
+`{{ bookmark }}` 템플릿 변수를 프린트하면 해당 객체의 title이 출력됩니다.
 
 
 ### 2.6.2 bookmark_detail.html 템플릿 작성하기
@@ -360,10 +360,10 @@ def __str__(self):
 
 <div id="content">
 
-    <h1>{% raw %}{{  object.title }}{% endraw %}</h1> # 1
+    <h1>{{  object.title }}</h1> # 1
 
     <ul>
-        <li>URL: <a href="{% raw %}{{ object.url }}{% endraw %}">{% raw %}{{ object.url }}{% endraw %}</a></li> # 2
+        <li>URL: <a href="{{ object.url }}">{{ object.url }}</a></li> # 2
     </ul>
 </div>
 </body>
@@ -387,3 +387,4 @@ Naver | http://www.naver.com
 `http://127.0.0.1:8000/bookmark/` 으로 접속합니다.
 
 각 항목을 클릭하여 상세 화면도 확인해봅니다.
+{% endraw %}
