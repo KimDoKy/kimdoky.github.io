@@ -1,0 +1,465 @@
+I"�Z<blockquote>
+  <p>Django 1.11.1 / Python 3.5.2 버전으로 실습 진행하였습니다.
+실습 당시와 지금은 버전 차이가 있기 때문에 오류들을 만나시게 될 겁니다.
+하나하나 해결해 나가셔도 되겠지만, 이 글을 보신다면 파이썬에 익숙하지 않으실 가능성이 높으므로,
+최신 버전으로 개정된 <a href="http://www.hanbit.co.kr/store/books/look.php?p_code=B4329597070">파이썬 웹 프로그래밍(개정판)</a>을 구매시는 걸 추천 드립니다. 이 포스팅은 개정되기 전 버전의 <a href="http://www.hanbit.co.kr/store/books/look.php?p_code=B7703021280">파이썬 웹 프로그래밍</a>을 실습한 내용입니다.</p>
+</blockquote>
+
+<p>북마크(Bookmark) 앱을 개발합니다.</p>
+
+<p>북마크는 생성, 수정, 삭제 등의 기능이 있어 연습하기에 적당함.</p>
+
+<h2 id="21-애플리케이션-설계하기">2.1 애플리케이션 설계하기</h2>
+
+<p>UI, URL, 테이블, 처리 로직 등을 설계해야 함.
+UI 설계는 웹 프로그래밍에서 비중이 큼.</p>
+
+<h3 id="211-화면-ui-설계">2.1.1 화면 UI 설계</h3>
+
+<p>화면 UI 설계는 주로 템플릿 코딩에 반영되고, templates/ 디렉터리 하위의 <code class="language-plaintext highlighter-rouge">*.html</code> 파일에 코딩</p>
+
+<h3 id="212-테이블-설계">2.1.2 테이블 설계</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>필드명</th>
+      <th>타입</th>
+      <th>제약 조건</th>
+      <th>설명</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>id</td>
+      <td>Int</td>
+      <td>PK, Auth Increment</td>
+      <td>Primary Key</td>
+    </tr>
+    <tr>
+      <td>title</td>
+      <td>Char(100)</td>
+      <td>Blank, Null</td>
+      <td>북마크 제목</td>
+    </tr>
+    <tr>
+      <td>url</td>
+      <td>URLField</td>
+      <td>Unique</td>
+      <td>북마크 URL</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="213-로직-설계">2.1.3 로직 설계</h3>
+
+<p>로직 설계는 처리 흐름을 설계하는 것.</p>
+
+<p>로직 설계를 간략화해 URL-뷰-템플릿 간의 처리 흐름만 정리.</p>
+
+<h3 id="214-url-설계">2.1.4 URL 설계</h3>
+
+<p>URL 설계 내용은 URLconf 코딩에 반영되고, urls.py 파일에 코딩.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>URL 패턴</th>
+      <th>뷰 이름</th>
+      <th>템플릿 파일 이름</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>/bookmark/</td>
+      <td>BookmarkLV(ListView)</td>
+      <td>bookmark_list.html</td>
+    </tr>
+    <tr>
+      <td>/bookmark/99/*</td>
+      <td>BookmarkDV(DetailView)</td>
+      <td>bookmark_detail.html</td>
+    </tr>
+    <tr>
+      <td>/admin/</td>
+      <td>(장고 제공 기능)</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="215-작업코딩-순서">2.1.5 작업/코딩 순서</h3>
+
+<p>장고는 MTV 패턴에 따라 개발하도록 되어 있음<br />
+모델 코딩은 뷰 또는 템플릿과 독립적으로 이뤄지므로 가장 먼저 코딩해야 함<br />
+URL, 뷰, 템플릿 매핑은 URLconf 코딩시 결정되고, 클래스형 뷰를 사용하므로 템플릿보다는 뷰를 먼저 코딩</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>작업 순서</th>
+      <th>관련 명령/파일</th>
+      <th>필요한 작업 내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>뼈대 만들기</td>
+      <td>startproject <br /> settings.py <br /> migrate <br /> createsuperuser <br /> startapp <br /> settings.py</td>
+      <td>mysite 프로젝트 생성 <br /> 프로젝트 설정 항목 변경 <br /> User/Group 테이블 생성 <br /> 프로젝트 관리자 생성 <br /> 북마크 앱 생성 <br /> 북마크 앱 등록</td>
+    </tr>
+    <tr>
+      <td>모델 코딩하기</td>
+      <td>models.py <br /> admin.py <br /> makemigrations <br /> migrate</td>
+      <td>모델(테이블)정의 <br /> Admin 사이트에 모델 등록 <br /> 모델을 데이터베이스에 반영</td>
+    </tr>
+    <tr>
+      <td>URLconf 코딩하기</td>
+      <td>urls.py</td>
+      <td>URL 정의</td>
+    </tr>
+    <tr>
+      <td>뷰 코딩하기</td>
+      <td>views.py</td>
+      <td>뷰 로직 작성</td>
+    </tr>
+    <tr>
+      <td>템플릿 코딩하기</td>
+      <td>templates 디렉터리</td>
+      <td>템플릿 파일 작성</td>
+    </tr>
+    <tr>
+      <td>그 외 코딩하기</td>
+      <td>-</td>
+      <td>(없음)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="22-개발-코딩하기---뼈대">2.2 개발 코딩하기 - 뼈대</h2>
+
+<h3 id="221-프로젝트-생성">2.2.1 프로젝트 생성</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>django-admin.py startproject mysite
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>└── mysite
+    ├── manage.py
+    └── mysite
+        ├── __init__.py
+        ├── settings.py
+        ├── urls.py
+        └── wsgi.py
+</code></pre></div></div>
+
+<h3 id="222-프로젝트-설정-파일-변경">2.2.2 프로젝트 설정 파일 변경</h3>
+
+<p>settings.py 파일에 필요한 사항을 지정<br />
+Database, INSTALED_APPS, TIME_ZONE 항목 등 6가지를 지정하거나 확인</p>
+
+<h4 id="1-베이스데이터-설정확인">(1) 베이스데이터 설정확인</h4>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
+</code></pre></div></div>
+
+<h4 id="2-템플릿-설정확인">(2) 템플릿 설정확인</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # 수정
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+</code></pre></div></div>
+
+<h4 id="3-정적-파일-설정확인">(3) 정적 파일 설정확인</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>STATIC_URL = '/static/'
+
+STATICFILES_DIRS =  [os.path.join(BASE_DIR, 'static')]  # 추가
+</code></pre></div></div>
+
+<h4 id="4-타임존-지정">(4) 타임존 지정</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Seoul'
+</code></pre></div></div>
+
+<h4 id="5-미디어-관련-지정">(5) 미디어 관련 지정</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+</code></pre></div></div>
+
+<h4 id="6-애플리케이션-등록">(6) 애플리케이션 등록</h4>
+
+<h3 id="223-기본-테이블-생성">2.2.3 기본 테이블 생성</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>python manage.py migrate
+</code></pre></div></div>
+
+<p>테이블을 만들지 않았더라도, 사용자 및 권한 그룹 테이블을 만들어 주기 위해서 프로젝트 개발 시점에 마이그레이트를 실행해야 함.</p>
+
+<h3 id="224-슈퍼유저-생성">2.2.4 슈퍼유저 생성</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>python manage.py createsuperuser
+</code></pre></div></div>
+
+<h3 id="225-애플리케이션-생성">2.2.5 애플리케이션 생성</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>python manage.py startapp bookmark
+</code></pre></div></div>
+
+<h3 id="226-애플리케이션-등록">2.2.6 애플리케이션 등록</h3>
+
+<p>프로젝트에 포함되는 애플리케이션들은 모두 설정 파일에 지정해야 함.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'bookmark.apps.BookmarkConfig',  # 추가
+]
+</code></pre></div></div>
+
+<h2 id="23-개발-코딩하기---모델">2.3 개발 코딩하기 - 모델</h2>
+
+<h3 id="231-테이블-정의">2.3.1 테이블 정의</h3>
+
+<ul>
+  <li>bookmark/models.py</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="c1"># Create your models here.
+</span>
+<span class="k">class</span> <span class="nc">Bookmark</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">URLField</span><span class="p">(</span><span class="s">'url'</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">title</span>
+</code></pre></div></div>
+
+<h3 id="232-admin-사이트에-테이블-반영">2.3.2 Admin 사이트에 테이블 반영</h3>
+
+<ul>
+  <li>bookmark/admin.py</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">admin</span>
+<span class="kn">from</span> <span class="nn">bookmark.models</span> <span class="kn">import</span> <span class="n">Bookmark</span>
+
+<span class="c1"># Register your models here.
+</span>
+<span class="k">class</span> <span class="nc">BookmarkAdmin</span><span class="p">(</span><span class="n">admin</span><span class="p">.</span><span class="n">ModelAdmin</span><span class="p">):</span>
+    <span class="n">list_display</span> <span class="o">=</span> <span class="p">(</span><span class="s">'title'</span><span class="p">,</span> <span class="s">'url'</span><span class="p">)</span>
+
+<span class="n">admin</span><span class="p">.</span><span class="n">site</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="n">Bookmark</span><span class="p">,</span> <span class="n">BookmarkAdmin</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="233-데이터베이스-변경-사항-반영">2.3.3 데이터베이스 변경 사항 반영</h3>
+
+<p>데이터베이스에 변경이 필요한 사항이 있으면, 이를 데이터베이스에 실제로 반영해주는 작업을 해야 함.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>python manage.py makemigrations
+python manage.py migrate
+</code></pre></div></div>
+
+<h3 id="234-테이블-모습-확인하기">2.3.4 테이블 모습 확인하기</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>python manage.py runserver 0.0.0.0:8000
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» python manage.py runserver 0.0.0.0:8000 &amp;
+[1] 9814
+» Performing system checks...
+
+System check identified no issues (0 silenced).
+August 27, 2017 - 18:45:41
+Django version 1.11.1, using settings 'mysite.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+
+» jobs
+[1]  + running    python3 manage.py runserver 0.0.0.0:8000
+</code></pre></div></div>
+<p><strong>명령어 뒤에 <code class="language-plaintext highlighter-rouge">&amp;</code>를 붙이면 백그라운드에서 명령이 실행되며, <code class="language-plaintext highlighter-rouge">jobs</code> 명령으로 실행 중인 프로세스 목록을 볼 수 있음(꿀 팁)</strong></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://127.0.0.1:8000/admin
+</code></pre></div></div>
+<p>위 주소로 접속하여 Admin 사이트의 로그인 페이지가 나타면 정상.</p>
+
+<p>앞에서 생성한 슈퍼유저로 로그인</p>
+
+<p>장고에서 기본적으로 만들어주는 User, Group 테이블 이외에 Bookmark 테이블을 볼 수 있음</p>
+
+<p>[ADD] 버튼을 클릭하면, models.py 파일에 정의한 테이블이 어떤 모습인지 UI 화면을 볼 수 있음.</p>
+
+<h2 id="24-개발-코딩하기---urlconf">2.4 개발 코딩하기 - URLconf</h2>
+
+<ul>
+  <li>mysite/urls.py</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.conf.urls</span> <span class="kn">import</span> <span class="n">url</span>
+<span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">admin</span>
+
+<span class="kn">from</span> <span class="nn">bookmark.views</span> <span class="kn">import</span> <span class="n">BookmarkLV</span><span class="p">,</span> <span class="n">BookmarkDV</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s">'^admin/'</span><span class="p">,</span> <span class="n">admin</span><span class="p">.</span><span class="n">site</span><span class="p">.</span><span class="n">urls</span><span class="p">),</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s">'^bookmark/$'</span><span class="p">,</span> <span class="n">BookmarkLV</span><span class="p">.</span><span class="n">as_view</span><span class="p">(),</span> <span class="n">name</span><span class="o">=</span><span class="s">'index'</span><span class="p">),</span> <span class="c1"># 1
+</span>    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s">'^bookmark/(?P&lt;pk&gt;\d+)/$'</span><span class="p">,</span> <span class="n">BookmarkDV</span><span class="p">.</span><span class="n">as_view</span><span class="p">(),</span> <span class="n">name</span><span class="o">=</span><span class="s">'detail'</span><span class="p">),</span>  <span class="c1"># 2
+</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>간단한 뷰라도 views.py 파일에 코딩할 것을 권장(향후 확장성이나 임포트 관계를 단순하게 유지하는 장점)</p>
+
+<p>views.py를 작성하지 않고 urls.py 파일 하나만으로 작성할 수도 있음(비추)</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.conf.urls</span> <span class="kn">import</span> <span class="n">url</span>
+<span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">admin</span>
+
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">ListView</span><span class="p">,</span> <span class="n">DetailView</span>
+<span class="kn">from</span> <span class="nn">bookmark.models</span> <span class="kn">import</span> <span class="n">Bookmark</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s">'^admin/'</span><span class="p">,</span> <span class="n">admin</span><span class="p">.</span><span class="n">site</span><span class="p">.</span><span class="n">urls</span><span class="p">),</span>
+
+    <span class="c1"># Class-based views for Bookmark app
+</span>    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s">'^bookmark/$'</span><span class="p">,</span> <span class="n">ListView</span><span class="p">.</span><span class="n">as_view</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">Bookmark</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s">'index'</span><span class="p">),</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s">'^bookmark/(?P&lt;pk&gt;\d+)/$'</span><span class="p">,</span> <span class="n">DetailView</span><span class="p">.</span><span class="n">as_view</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">Bookmark</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s">'detail'</span><span class="p">),</span>
+<span class="p">]</span>
+</code></pre></div></div>
+
+<h2 id="25-개발-코딩하기---뷰">2.5 개발 코딩하기 - 뷰</h2>
+
+<p>개발하고자 하는 애플리케이션의 로직을 분석해보고 가장 적합한 제네릭 뷰를 찾을 수 있어야 함.</p>
+
+<ul>
+  <li>bookmark/views.py</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">ListView</span><span class="p">,</span> <span class="n">DetailView</span> <span class="c1"># 1
+</span><span class="kn">from</span> <span class="nn">bookmark.models</span> <span class="kn">import</span> <span class="n">Bookmark</span> <span class="c1"># 2
+</span>
+<span class="k">class</span> <span class="nc">BookmarkLV</span><span class="p">(</span><span class="n">ListView</span><span class="p">):</span> <span class="c1"># 3
+</span>    <span class="n">model</span> <span class="o">=</span> <span class="n">Bookmark</span>
+
+<span class="k">class</span> <span class="nc">BookmarkDV</span><span class="p">(</span><span class="n">DetailView</span><span class="p">):</span> <span class="c1"># 4
+</span>    <span class="n">model</span> <span class="o">=</span> <span class="n">Bookmark</span>
+</code></pre></div></div>
+
+<h2 id="26-개발-코딩하기---템플릿">2.6 개발 코딩하기 - 템플릿</h2>
+
+<h3 id="261-bookmark_listhtml-템플릿-작성하기">2.6.1 bookmark_list.html 템플릿 작성하기</h3>
+
+<ul>
+  <li>bookmark/templates/bookmark/bookmark_list.html</li>
+</ul>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;!doctype html&gt;</span>
+<span class="nt">&lt;html&gt;</span>
+<span class="nt">&lt;head&gt;</span>
+    <span class="nt">&lt;title&gt;</span>Django Bookmark List<span class="nt">&lt;/title&gt;</span>
+<span class="nt">&lt;/head&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">"content"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;h1&gt;</span>Bookmark LIst<span class="nt">&lt;/h1&gt;</span>
+
+    <span class="nt">&lt;ul&gt;</span>
+        {% for bookmark in object_list %} # 1
+            <span class="nt">&lt;li&gt;&lt;a</span> <span class="na">href=</span><span class="s">"{% url 'detail' bookmark.id %}"</span><span class="nt">&gt;</span>{{ bookmark }}<span class="nt">&lt;/a&gt;&lt;/li&gt;</span> # 2
+        {% endfor %}
+    <span class="nt">&lt;/ul&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+
+<span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">title</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">{{ bookmark }}</code> 템플릿 변수를 프린트하면 해당 객체의 title이 출력됩니다.</p>
+
+<h3 id="262-bookmark_detailhtml-템플릿-작성하기">2.6.2 bookmark_detail.html 템플릿 작성하기</h3>
+
+<ul>
+  <li>bookmark/templates/bookmark/bookmark_detail.html</li>
+</ul>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;!doctype html&gt;</span>
+<span class="nt">&lt;html&gt;</span>
+<span class="nt">&lt;head&gt;</span>
+    <span class="nt">&lt;title&gt;</span>Django Bookmark Detail<span class="nt">&lt;/title&gt;</span>
+<span class="nt">&lt;/head&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">"content"</span><span class="nt">&gt;</span>
+
+    <span class="nt">&lt;h1&gt;</span>{{  object.title }}<span class="nt">&lt;/h1&gt;</span> # 1
+
+    <span class="nt">&lt;ul&gt;</span>
+        <span class="nt">&lt;li&gt;</span>URL: <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"{{ object.url }}"</span><span class="nt">&gt;</span>{{ object.url }}<span class="nt">&lt;/a&gt;&lt;/li&gt;</span> # 2
+    <span class="nt">&lt;/ul&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+<span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</code></pre></div></div>
+
+<h2 id="27-지금까지의-작업-확인하기">2.7 지금까지의 작업 확인하기</h2>
+
+<h3 id="271-admin에서-데이터-입력하기">2.7.1 Admin에서 데이터 입력하기</h3>
+
+<p>Bookmark 테이블에 입력할 데이터</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>title</th>
+      <th>url</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Google</td>
+      <td>http://www.google.com</td>
+    </tr>
+    <tr>
+      <td>Daum</td>
+      <td>http://wwww.daum.net</td>
+    </tr>
+    <tr>
+      <td>Naver</td>
+      <td>http://www.naver.com</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="272-브라우저로-확인하기">2.7.2 브라우저로 확인하기</h3>
+
+<p><code class="language-plaintext highlighter-rouge">http://127.0.0.1:8000/bookmark/</code> 으로 접속합니다.</p>
+
+<p>각 항목을 클릭하여 상세 화면도 확인해봅니다.</p>
+:ET

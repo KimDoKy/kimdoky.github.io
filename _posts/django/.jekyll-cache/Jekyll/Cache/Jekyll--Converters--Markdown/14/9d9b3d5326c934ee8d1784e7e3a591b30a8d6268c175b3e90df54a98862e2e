@@ -1,0 +1,10 @@
+I"�<p><a href="https://docs.djangoproject.com/en/2.0/ref/models/querysets/#contains">django doc</a></p>
+
+<p>장고 문서에 따르면 <code class="language-plaintext highlighter-rouge">contains</code>는 대소문자를 구분하고 <code class="language-plaintext highlighter-rouge">icontains</code>는 대소문자를 구별하지 않는다고 한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="n">q</span><span class="p">:</span>
+    <span class="n">qs</span> <span class="o">=</span> <span class="n">qs</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">title__contains</span><span class="o">=</span><span class="n">q</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>하지만 테스트 서버에서는 제대로 대소문자 구별이 제대로 적용이 안되었다. SQLite는 대소문자를 구별하는 LIKE 문을 지원하지 않기 때문이다.</p>
+:ET

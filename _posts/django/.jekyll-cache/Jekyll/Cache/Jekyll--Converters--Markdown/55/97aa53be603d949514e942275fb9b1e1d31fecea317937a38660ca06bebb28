@@ -1,0 +1,55 @@
+I"<h1 id="django-rest-framework---returning-urls">Django REST Framework - Returning URLs</h1>
+
+<hr />
+
+<p><em>“The central feature that distinguishes the REST architectural style from other network-based styles is its emphasis on a uniform interface between components.”</em></p>
+
+<p><em>“REST 아키텍처 스타일을 다른 네트워크 기반 스타일과 구별하는 핵심 기능은 구성 요소 간의 균일한 인터페리스에 중점을 둡니다.”</em></p>
+
+<p><em>— Roy Fielding, Architectural Styles and the Design of Network-based Software Architectures</em></p>
+
+<hr />
+
+<h2 id="returning-urls">Returning URLs</h2>
+<p>일반적으로 <code class="language-plaintext highlighter-rouge">/foobar</code>와 같은 상대URL를 반환하는 것이 아니라 <code class="language-plaintext highlighter-rouge">http://example.com/foobar</code>와 같이 웹 API에서 절대 URI를 반환하는 것이 좋습니다.</p>
+
+<p>이렇게 하는 이점은 다음과 같습니다.</p>
+
+<ul>
+  <li>이것이 더 명시적입니다.</li>
+  <li>당신의 API 클라이언트에 대한 작업을 적게 남겨둡니다.</li>
+  <li>네이티브 URI 유형이 없는 JSON과 같은 표현에서 문자열의 의미에 대한 모호성이 없습니다.</li>
+  <li>하이퍼링크를 사용하여 마크업 HTML 표현과 같은 작업을 쉽게 수행할 수 있습니다.</li>
+</ul>
+
+<p>REST 프레임워크는 웹 API에서 절대 URI를 리턴하는 것을 보다 간단하게 해주는 두가지 유틸리티 함수를 제공합니다.<br />
+사용자가 직접 사용하도록 요구할 필요는 없지만 사용자가 직접 입력하면 자체 설명 API가 출력을 자동으로 하이퍼링크로 연결할 수 있으므로 API를 훨씬 쉽게 찾을 수 있습니다.</p>
+
+<h3 id="reverse">reverse</h3>
+<p><strong>Signature</strong>: <code class="language-plaintext highlighter-rouge">reverse(viewname, *args, **kwargs)</code><br />
+<a href="https://docs.djangoproject.com/en/1.10/topics/http/urls/#reverse"><code class="language-plaintext highlighter-rouge">django.urls.reverse</code></a>와 동일한 동작을 하지만 호스트와 포트를 결정하기 위한 요청을 사용하여 정규화 된 URL을 반환합니다.<br />
+함수에 대한 <strong>키워드 인수로 request을 포함</strong>해야합니다. 예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework.reverse</span> <span class="kn">import</span> <span class="n">reverse</span>
+<span class="kn">from</span> <span class="nn">rest_framework.views</span> <span class="kn">import</span> <span class="n">APIView</span>
+<span class="kn">from</span> <span class="nn">django.utils.timezone</span> <span class="kn">import</span> <span class="n">now</span>
+
+<span class="k">class</span> <span class="nc">APIRootView</span><span class="p">(</span><span class="n">APIView</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="n">year</span> <span class="o">=</span> <span class="n">now</span><span class="p">().</span><span class="n">year</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="p">...</span>
+            <span class="s">'year-summary-url'</span><span class="p">:</span> <span class="n">reverse</span><span class="p">(</span><span class="s">'year-summary'</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">year</span><span class="p">],</span> <span class="n">request</span><span class="o">=</span><span class="n">request</span><span class="p">)</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="reverse_lazy">reverse_lazy</h3>
+
+<p><strong>Signature</strong>: <code class="language-plaintext highlighter-rouge">reverse_lazy(viewname, *args, **kwargs)</code><br />
+<code class="language-plaintext highlighter-rouge">django.urls.reverse_lazy</code>와 동일한 동작을 하지만 호스트와 포트를 결정하기위한 요청을 사용하여 정규화 된 URL을 반환한다는 점만 다릅니다.<br />
+<code class="language-plaintext highlighter-rouge">reverse</code> 함수와 마찬가지로 함수에 대한 <strong>키워드 인수로 request를 포함</strong>해야합니다. 예:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>api_root = reverse_lazy('api-root', request=request)
+</code></pre></div></div>
+:ET

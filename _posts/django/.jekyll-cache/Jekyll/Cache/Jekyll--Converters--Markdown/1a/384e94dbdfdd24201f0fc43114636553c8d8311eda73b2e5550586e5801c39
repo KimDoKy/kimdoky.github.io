@@ -1,0 +1,360 @@
+I"�v<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<p>Django 폼에서 꼭 기억해야 할 점: 어떤 데이터든 입력 데이터는 Django 폼을 이용해 유효성 검사를 해야 합니다.</p>
+
+<h2 id="131-validate-all-incoming-data-with-django-forms">13.1 Validate All Incoming Data With Django Forms</h2>
+
+<ul>
+  <li>
+    <p>Django 폼은 dict의 유효성 검사하는데 최상의 도구</p>
+  </li>
+  <li>
+    <p>csv 파일을 받아 모델을 업데이트 하는 경우</p>
+  </li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 나쁜 예
+</span><span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">from</span> <span class="nn">django.utils.six</span> <span class="kn">import</span> <span class="n">StringIO</span> 
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Purchase</span>
+
+<span class="k">def</span> <span class="nf">add_csv_purchases</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> 
+    <span class="n">records_added</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">csv</span><span class="p">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s">','</span><span class="p">):</span>
+       <span class="c1"># 유효성 검사를 하지 않고 생성함
+</span>       <span class="n">Purchase</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">create</span><span class="p">(</span><span class="o">**</span><span class="n">row</span><span class="p">)</span>
+       <span class="n">records_added</span> <span class="o">+=</span> <span class="mi">1</span> 
+    <span class="k">return</span> <span class="n">records_added</span>
+
+<span class="c1"># 유효성 검사 코드를 추가할 수도 있지만,
+# 데이터가 바뀔때마다 유효성 검사 코드를 유지/관리하기 어려움
+</span></code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 좋은 예
+# 일일이 유효성 검사 코드를 직접 만들지 않고
+# Django에서 제공하는 검증된 데이터 테스트 프레임워크를 이용하자
+</span><span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">from</span> <span class="nn">django.utils.six</span> <span class="kn">import</span> <span class="n">StringIO</span> 
+<span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Purchase</span><span class="p">,</span> <span class="n">Seller</span> 
+
+<span class="k">class</span> <span class="nc">PurchaseForm</span><span class="p">(</span><span class="n">forms</span><span class="p">.</span><span class="n">ModelForm</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Purchase</span>
+        
+    <span class="k">def</span> <span class="nf">clean_seller</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">seller</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">cleaned_data</span><span class="p">[</span><span class="s">'seller'</span><span class="p">]</span> 
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">Seller</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">seller</span><span class="p">)</span> 
+        <span class="k">except</span> <span class="n">Seller</span><span class="p">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s">'{0} does not exist in purchase #{1}.'</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span>
+                <span class="n">seller</span><span class="p">,</span> <span class="bp">self</span><span class="p">.</span><span class="n">cleaned_data</span><span class="p">[</span><span class="s">'purchase_number'</span><span class="p">])</span>
+            <span class="k">raise</span> <span class="n">forms</span><span class="p">.</span><span class="n">ValidationError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> 
+        <span class="k">return</span> <span class="n">seller</span>
+
+<span class="k">def</span> <span class="nf">add_csv_purchases</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+    <span class="n">records_added</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">csv</span><span class="p">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s">','</span><span class="p">):</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">PurchaseForm</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">form</span><span class="p">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="n">form</span><span class="p">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="n">records_added</span> <span class="o">+=</span> <span class="mi">1</span> 
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">errors</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">form</span><span class="p">.</span><span class="n">errors</span><span class="p">)</span> 
+    <span class="k">return</span> <span class="n">records_added</span><span class="p">,</span> <span class="n">errors</span>
+</code></pre></div></div>
+
+<ul>
+  <li>ValidationError의 code 파라미터를 전달할 것을 추천
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">forms.ValidationError(_('Invalid value'), code='invalid')</code></li>
+      <li><a href="https://docs.djangoproject.com/en/3.2/ref/forms/validation/#raising-validationerror">doc</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="132-use-the-post-method-in-html-forms">13.2 Use the POST Method in HTML Forms</h2>
+
+<ul>
+  <li>데이터를 변경하는 모든 HTML 폼은 POST 메서드를 이용해야합니다.</li>
+</ul>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;form</span> <span class="na">action=</span><span class="s">"{% url 'flavor_add' %}"</span> <span class="na">method=</span><span class="s">"POST"</span><span class="nt">&gt;</span>
+</code></pre></div></div>
+
+<h2 id="133-always-use-csrf-protection-with-http-froms-that-modify-data">13.3 Always Use CSRF Protection With HTTP Froms That Modify Data</h2>
+
+<ul>
+  <li>Django에는 CSRF(cross-site request forgery protection, 사이트 간 위조 요청 방지)가 내장됨</li>
+  <li>CSRF 보안을 꺼도 되는 경우는 머신들 사이에 이용되는 API 사이트를 제작할 때</li>
+  <li><code class="language-plaintext highlighter-rouge">CsrfViewMiddleware</code>를 사용하여 <code class="language-plaintext highlighter-rouge">csrf_protect</code>를 데코레이팅 하지 않아도 사이트 전체에 적용됩니다.</li>
+</ul>
+
+<h3 id="1331-posting-data-via-ajax">13.3.1 Posting Data via AJAX</h3>
+
+<ul>
+  <li>AJAX를 이용시, 반드시 Django의 CSRF 보안을 사용해야 합니다.(예외처리 금지)</li>
+  <li>AJAX으로 데이터를 보낼땐, HTTP 헤더에 <code class="language-plaintext highlighter-rouge">X-CSRFToken</code>을 설정해야 합니다.
+    <ul>
+      <li><a href="https://docs.djangoproject.com/en/3.2/ref/csrf/#ajax">doc</a></li>
+    </ul>
+  </li>
+  <li><a href="">Section 19.3.5: AJAX and the CSRF Token</a></li>
+</ul>
+
+<h2 id="134-understand-how-to-add-django-form-instance-attributes">13.4 Understand How to Add Django Form Instance Attributes</h2>
+
+<ul>
+  <li>Django 폼의 <code class="language-plaintext highlighter-rouge">clean()</code>, <code class="language-plaintext highlighter-rouge">clean_FOO()</code>, <code class="language-plaintext highlighter-rouge">save()</code> 메서드에 추가적인 폼 인스턴스 속성이 필요한 경우
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">request.user</code> 객체를 이용합니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># forms.py
+</span><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Taster</span>
+
+<span class="k">class</span> <span class="nc">TasterForm</span><span class="p">(</span><span class="n">forms</span><span class="p">.</span><span class="n">ModelForm</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Taster</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># user 속성에 폼 추가하기
+</span>        <span class="bp">self</span><span class="p">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">.</span><span class="n">pop</span><span class="p">(</span><span class="s">'user'</span><span class="p">)</span> 
+        <span class="nb">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>위 방식을 사용하면, 특히 다중 상속시 강력한 효과를 발휘합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># views.py
+</span><span class="kn">from</span> <span class="nn">django.contrib.auth.mixins</span> <span class="kn">import</span> <span class="n">LoginRequiredMixin</span> 
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">UpdateView</span>
+<span class="kn">from</span> <span class="nn">.forms</span> <span class="kn">import</span> <span class="n">TasterForm</span> 
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Taster</span>
+
+<span class="k">class</span> <span class="nc">TasterUpdateView</span><span class="p">(</span><span class="n">LoginRequiredMixin</span><span class="p">,</span> <span class="n">UpdateView</span><span class="p">):</span> 
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Taster</span>
+    <span class="n">form_class</span> <span class="o">=</span> <span class="n">TasterForm</span>
+    <span class="n">success_url</span> <span class="o">=</span> <span class="s">'/someplace/'</span>
+
+    <span class="k">def</span> <span class="nf">get_form_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># 키워드 인자들로 폼을 추가하는 메서드
+</span>        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">super</span><span class="p">().</span><span class="n">get_form_kwargs</span><span class="p">()</span>
+        <span class="c1"># kwargs의 user_id 업데이트
+</span>        <span class="n">kwargs</span><span class="p">[</span><span class="s">'user'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">request</span><span class="p">.</span><span class="n">user</span>
+        <span class="k">return</span> <span class="n">kwargs</span>
+</code></pre></div></div>
+
+<ul>
+  <li>django-braces의 모델폼 믹스인
+    <ul>
+      <li><a href="https://django-braces.readthedocs.io/en/latest/form.html#userformkwargsmixin">UserFormKwargsMixin</a></li>
+      <li><a href="https://django-braces.readthedocs.io/en/latest/form.html#userkwargmodelformmixin">UserKwargModelFormMixin</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="135-know-how-form-validation-works">13.5 Know How Form Validation Works</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">forms.is_valid()</code> 호출시 내부 로직
+    <ul>
+      <li>폼이 데이터를 받으면 <code class="language-plaintext highlighter-rouge">forms.is_valid()</code>는 <code class="language-plaintext highlighter-rouge">form.full_clean()</code> 메서드를 호출</li>
+      <li><code class="language-plaintext highlighter-rouge">form.full_clean()</code>은 폼 필드들과 각각의 필드 유효성을 하나하나 검사하면서 다음 과정들을 수행
+        <ul>
+          <li>필드에 들어온 데이터에 대해 <code class="language-plaintext highlighter-rouge">to_python()</code>을 이용하여 파이썬 형식으로 변환 / 문제 발생시  <code class="language-plaintext highlighter-rouge">ValidationError</code>을 일으킴</li>
+          <li>커스텀 유효성 검사기를 포함한 각 필드에 유효성을 검사. 문제 발생시 <code class="language-plaintext highlighter-rouge">ValidationError</code>를 일으킴</li>
+          <li>폼에 <code class="language-plaintext highlighter-rouge">clean_&lt;field&gt;</code>가 있으면 실행</li>
+        </ul>
+      </li>
+      <li><code class="language-plaintext highlighter-rouge">form.full_clean()</code>이 <code class="language-plaintext highlighter-rouge">form.clean()</code> 메서드를 실행</li>
+      <li><code class="language-plaintext highlighter-rouge">ModelForm</code> 인스턴스인 경우 <code class="language-plaintext highlighter-rouge">form.post_clean()</code>이 다음 작업을 함
+        <ul>
+          <li><code class="language-plaintext highlighter-rouge">form.is_valid()</code>가 True/False과는 상관없이 ModelForm의 데이터를 모델 인스턴스로 설정</li>
+          <li>모델의 <code class="language-plaintext highlighter-rouge">clean()</code> 메서드를 호출. 참고로 ORM을 통한 모델 인스턴스 저장은 이를 수행하지 않음</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="1351-modelform-data-is-saved-to-the-form-then-the-model-instance">13.5.1 ModelForm Data Is Saved to the Form, Then the Model Instance</h3>
+
+<ul>
+  <li>ModelForm에서 폼 데이터는 2가지 각기 다른 단계를 통해 저장
+    <ul>
+      <li>첫 번째로 폼 데이터가 폼 인스턴스에 저장</li>
+      <li>그 다음에 폼 데이터가 모델 인스턴스에 저장</li>
+    </ul>
+  </li>
+  <li><code class="language-plaintext highlighter-rouge">form.save()</code> 메서드 전까지 ModelForm이 모델 인스턴스로 저장되지 않기 때문에, 분리된 로직을 추가할 수 있습니다.</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># core/models.py
+</span><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="k">class</span> <span class="nc">ModelFormFailureHistory</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span> 
+    <span class="n">form_data</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">()</span> 
+    <span class="n">model_data</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># flavors/views.py
+</span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">messages</span>
+<span class="kn">from</span> <span class="nn">django.core</span> <span class="kn">import</span> <span class="n">serializers</span>
+<span class="kn">from</span> <span class="nn">core.models</span> <span class="kn">import</span> <span class="n">ModelFormFailureHistory</span> 
+
+<span class="k">class</span> <span class="nc">FlavorActionMixin</span><span class="p">:</span>
+
+    <span class="o">@</span><span class="nb">property</span>
+    <span class="k">def</span> <span class="nf">success_msg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
+        <span class="k">return</span> <span class="nb">NotImplemented</span>
+
+    <span class="k">def</span> <span class="nf">form_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">):</span> 
+        <span class="n">messages</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">request</span><span class="p">,</span> <span class="bp">self</span><span class="p">.</span><span class="n">success_msg</span><span class="p">)</span> 
+        <span class="k">return</span> <span class="nb">super</span><span class="p">().</span><span class="n">form_valid</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">form_invalid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">):</span>
+        <span class="c1"># 실패 내역을 확인하기 위해 실패한 폼과 모델을 저장
+</span>        <span class="n">form_data</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">form</span><span class="p">.</span><span class="n">cleaned_data</span><span class="p">)</span>
+        <span class="n">model_data</span> <span class="o">=</span> <span class="n">serializers</span><span class="p">.</span><span class="n">serialize</span><span class="p">(</span><span class="s">'json'</span><span class="p">,</span> <span class="p">[</span><span class="n">form</span><span class="p">.</span><span class="n">instance</span><span class="p">])</span>
+        <span class="n">model_data</span> <span class="o">=</span> <span class="n">model_data</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">ModelFormFailureHistory</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">create</span><span class="p">(</span>
+           <span class="n">form_data</span><span class="o">=</span><span class="n">form_data</span><span class="p">,</span>
+           <span class="n">model_data</span><span class="o">=</span><span class="n">model_data</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">().</span><span class="n">form_invalid</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">form_invalid()</code>는 유효성 검사에 실패한 후에 호출됩니다.</li>
+</ul>
+
+<h2 id="136-add-errors-to-forms-with-formadd_error">13.6 Add Errors to Forms With <code class="language-plaintext highlighter-rouge">Form.add_error()</code></h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">Form.add_error()</code>를 사용하면 <code class="language-plaintext highlighter-rouge">Form.clean()</code>을 더 간소화 할 수 있습니다.</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+
+<span class="k">class</span> <span class="nc">IceCreamReviewForm</span><span class="p">(</span><span class="n">forms</span><span class="p">.</span><span class="n">Form</span><span class="p">):</span>
+    <span class="p">...</span>
+
+    <span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cleaned_data</span> <span class="o">=</span> <span class="nb">super</span><span class="p">().</span><span class="n">clean</span><span class="p">()</span> 
+        <span class="n">flavor</span> <span class="o">=</span> <span class="n">cleaned_data</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'flavor'</span><span class="p">)</span> 
+        <span class="n">age</span> <span class="o">=</span> <span class="n">cleaned_data</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'age'</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flavor</span> <span class="o">==</span> <span class="s">'coffee'</span> <span class="ow">and</span> <span class="n">age</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s">'Coffee Ice Cream is not for Babies.'</span> 
+            <span class="bp">self</span><span class="p">.</span><span class="n">add_error</span><span class="p">(</span><span class="s">'flavor'</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span> 
+            <span class="bp">self</span><span class="p">.</span><span class="n">add_error</span><span class="p">(</span><span class="s">'age'</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+
+        <span class="c1"># 항상 처리된 데이터 전체를 반환
+</span>        <span class="k">return</span> <span class="n">cleaned_data</span>
+</code></pre></div></div>
+
+<h3 id="1361-other-useful-form-methods">13.6.1 Other Useful Form Methods</h3>
+
+<ul>
+  <li>폼 유효성 검사 메서드들
+    <ul>
+      <li><a href="https://docs.djangoproject.com/en/3.2/ref/forms/api/#django.forms.Form.errors.as_data"><code class="language-plaintext highlighter-rouge">Form.errors.as_data()</code></a></li>
+      <li><a href="https://docs.djangoproject.com/en/3.2/ref/forms/api/#django.forms.Form.errors.as_json"><code class="language-plaintext highlighter-rouge">Form.errors.as_json(escape_html=False)</code></a></li>
+      <li><a href="https://docs.djangoproject.com/en/3.2/ref/forms/api/#django.forms.Form.non_field_errors"><code class="language-plaintext highlighter-rouge">Form.non_field_errors()</code></a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="137-fields-without-pre-made-widgets">13.7 Fields Without Pre-Made Widgets</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">django.contrib.postgres</code> 필드의 <code class="language-plaintext highlighter-rouge">ArrayField</code>와 <code class="language-plaintext highlighter-rouge">HStoreField</code>는 Django의 HTML 필드들과 제대로 작동하지 않습니다. 해당하는 위젯이 없습니다. 하지만 해당 필드들은 폼에 이용할 수 있습니다.</li>
+  <li>Section 13.1: Validate All Incoming Data With Django Forms 참고</li>
+</ul>
+
+<h2 id="138-customizing-widgets">13.8 Customizing Widgets</h2>
+
+<ul>
+  <li>간단하게 유지하세요! 프레젠테이션에 집중하세요.</li>
+  <li>어떤 위젯도 데이터를 변경하면 안됩니다. 보여주는 용도로만 사용해야 합니다.</li>
+  <li>widget.py라는 모듈에 넣어두어야 합니다.(Django 패턴)</li>
+</ul>
+
+<h3 id="1381-overriding-the-html-of-built-in-widgets">13.8.1 Overriding the HTML of Built-In Widgets</h3>
+
+<ul>
+  <li>Bootstrap, Zurb 등 반응형 프론트엔드 프레임워크와 같은 도구를 통합시 유용</li>
+  <li>단점: 기본 템플릿을 재정의하면 모든 양식 요소에도 적용</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># settings.py
+</span>   <span class="n">FORM_RENDERER</span> <span class="o">=</span> <span class="s">'django.forms.renderers.TemplatesSetting'</span>
+   <span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">[</span>
+       <span class="p">...</span>
+       <span class="s">'django.forms'</span><span class="p">,</span>
+<span class="p">...</span>
+<span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">templates</code>안에 디렉터리를 만들고 템플릿을 재정의합니다.</li>
+  <li><a href="https://github.com/django/django/tree/main/django/forms/templates/django/forms/widgets">django</a></li>
+  <li><a href="https://docs.djangoproject.com/en/3.2/ref/forms/renderers/#overriding-built-in-widget-templates">Overriding built-in widget templates</a></li>
+  <li><a href="https://docs.djangoproject.com/en/3.2/ref/forms/renderers/#templatessetting">TemplatesSetting</a></li>
+</ul>
+
+<h3 id="1382-creating-new-custom-widgets">13.8.2 Creating New Custom Widgets</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># example
+# flavors/widgets.py
+</span><span class="kn">from</span> <span class="nn">django.forms.widgets</span> <span class="kn">import</span> <span class="n">TextInput</span> 
+
+<span class="k">class</span> <span class="nc">IceCreamFlavorInput</span><span class="p">(</span><span class="n">TextInput</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">get_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="nb">super</span><span class="p">().</span><span class="n">get_context</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span> 
+        <span class="n">value</span> <span class="o">=</span> <span class="n">context</span><span class="p">[</span><span class="s">'widget'</span><span class="p">][</span><span class="s">'value'</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">.</span><span class="n">strip</span><span class="p">().</span><span class="n">lower</span><span class="p">().</span><span class="n">endswith</span><span class="p">(</span><span class="s">'ice cream'</span><span class="p">):</span>
+            <span class="n">context</span><span class="p">[</span><span class="s">'widget'</span><span class="p">][</span><span class="s">'value'</span><span class="p">]</span> <span class="o">=</span> <span class="s">'{} Ice Cream'</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">context</span>
+</code></pre></div></div>
+
+<ul>
+  <li>위 위젯의 유의점
+    <ul>
+      <li>값이 표시되는 방식만 수정</li>
+      <li>브라우저에서 되돌아오는 데이터를 확인/수정하지 않음</li>
+      <li>작동을 위해 <code class="language-plaintext highlighter-rouge">django.forms.widgets.TextInput</code>의 최소값을 확장</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="139-additional-resource">13.9 Additional Resource</h2>
+
+<ul>
+  <li><a href="https://cdf.9vo.lt/">Classy Django Forms</a></li>
+  <li><a href="https://www.mattlayman.com/understand-django/user-interaction-forms">User Interaction With Forms</a></li>
+  <li><a href="https://bradmontgomery.net/blog/2015/04/25/nice-arrayfield-widgets-choices-and-chosenjs/">Nice ArrayField widgets with choices and chosen.js</a></li>
+  <li><a href="https://docs.djangoproject.com/en/3.2/ref/forms/renderers/">The form rendering API</a></li>
+</ul>
+
+<h2 id="1310-summary">13.10 Summary</h2>
+
+<ul>
+  <li>폼을 작성하기 시작했다면, 코드의 명료성, 테스트를 염두해야 합니다.</li>
+  <li>폼은 Django 프로젝트에서 주된 유효성 검사 도구이며, 데이터 충돌에 대한 중요한 방어 수단입니다.</li>
+</ul>
+
+:ET

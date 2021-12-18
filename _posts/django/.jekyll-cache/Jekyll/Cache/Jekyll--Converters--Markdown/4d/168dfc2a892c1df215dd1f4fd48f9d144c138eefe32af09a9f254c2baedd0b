@@ -1,0 +1,218 @@
+I" b<p>원문: <a href="https://medium.com/better-programming/understanding-django-database-querysets-and-its-optimizations-1765cb9c36e5">Understanding Django QuerySets Evaluation and Caching</a></p>
+
+<p>추가로 읽어 볼 만한 포스팅<br />
+<a href="https://dizballanze.com/django-project-optimization-part-2/">Django project optimization guide (part 2)</a><br />
+<a href="https://medium.com/better-programming/django-database-optimization-tips-4e11631dbc2c">Django Database Optimization Tips</a>
+—</p>
+
+<p>Django는 QuerySet을 평가될 때까지 실제로 DB 활동이 발생하지 않기 때문에, DB와 충돌하지 않고 필터링, 슬라이스 등을 할 수 있다.</p>
+
+<p>여기서 설명할 사용할 모델이다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="k">class</span> <span class="nc">Blog</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">tagline</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">name</span>
+
+<span class="k">class</span> <span class="nc">Entry</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">blog</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Blog</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="n">headline</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">body_text</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">default_related_name</span> <span class="o">=</span> <span class="s">'entries'</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">headline</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">q1</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">blog</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">q2</span> <span class="o">=</span> <span class="n">q1</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">headline__contains</span><span class="o">=</span><span class="s">'food'</span><span class="p">)</span>
+<span class="n">entry_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">q3</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>위 q1, q2는 모두 데이터베이스에 실행한 것처럼 보이지만 실제론 마지막 코드(<code class="language-plaintext highlighter-rouge">entry_list = list(q3)</code>)만 데이터베이스에 실행한다.</p>
+
+<p>QuerySet을 세분화 할 때는 이전 쿼리와 상관없는 별도의 QuerySet을 가져와서 저장, 사용, 재사용을 할 수 있다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">q</span> <span class="o">=</span><span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">blog</span><span class="o">=</span><span class="mi">2</span><span class="p">).</span><span class="n">exclude</span><span class="p">(</span><span class="n">body_text__icontains</span><span class="o">=</span><span class="s">"food"</span><span class="p">)</span>
+
+<span class="n">q1</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">blog</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">q2</span> <span class="o">=</span> <span class="n">q1</span><span class="p">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">body_text__icontains</span><span class="o">=</span><span class="s">"food"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>q, q2는 데이터베이스 작업을 수행한다.</p>
+
+<p>평가(Evaluation)는 실제로 데이터베이스에 도달하는 것을 의미한다. QuerySet에서 반복을 시작하면 QuerySet과 일치하는 모든 raw가 데이터베이스에서 패치되어 Django 모델로 변환된다. 그 후 이러한 모델은 QuerySet의 내장 캐시에 저장되기 때문에 QuerySet을 반복 할 때는 데이터베이스를 다시 평가할 필요가 없다.</p>
+
+<h2 id="cache-활성화">Cache 활성화</h2>
+
+<p>QuerySet에서 캐시를 사용하려면 QuerySet을 변수에 저장하여 재사용하면 된다. Django의 QuerySet 클래스에는 쿼리 결과(Django models)를 list에 저장하는 <code class="language-plaintext highlighter-rouge">_result_cache</code> 라는 변수가 있다. QuerySet에 캐시가 없으면 <code class="language-plaintext highlighter-rouge">_result_cache</code>는 <code class="language-plaintext highlighter-rouge">None</code>을, 그렇지 않으면 모델 객체 list가 된다. 캐시된 QuerySet을 반복하는 경우 기본적으로 <code class="language-plaintext highlighter-rouge">_result_cache</code>를 반복한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 다음 두 개의 QuerySet을 작성하고 평가한 후 QuerySet을 저장하지 않아서 재사용을 할 수 없다.
+</span><span class="k">print</span><span class="p">([</span><span class="n">e</span><span class="p">.</span><span class="n">headline</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()])</span>
+<span class="k">print</span><span class="p">([</span><span class="n">e</span><span class="p">.</span><span class="n">pub_date</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()])</span>
+
+<span class="c1"># 다음 코드는 QuerySet을 변수에 저장한다.
+# 평가 할 때 결과를 캐시(_result_cache)에 저장한다.
+</span><span class="n">queryset</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+<span class="c1"># 평가를 반복
+</span><span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">headline</span><span class="p">)</span>
+
+<span class="c1"># 이전 평가의 캐시를 사용
+</span><span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="nb">id</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>반복하는 것이 평가하는 유일한 방법은 아니다.</p>
+
+<h2 id="iteration">Iteration</h2>
+
+<p>QuerySet은 반복이 가능하며, 첫 번째 행을 반복하기 전에 데이터베이스 적중이 발생하고 결과는 캐시에 저장된다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 처음 headline을 출력하기 전에 데이터베이스 적중, 캐싱이 발생한다.
+</span><span class="n">queryset</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>    
+<span class="c1"># 평가와 캐싱이 일어나는 시점
+</span><span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">headline</span><span class="p">)</span>
+
+<span class="c1"># 이전 평가의 캐시를 사용
+</span><span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">headline</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="slicing">Slicing</h2>
+
+<p>평가되기 전의 QuerySet을 슬라이스하면 새 QuerySet이 반환된다. 반환된 QuerySet은 추가 수정(더 많은 필터나 순서 수정 등)을 허용하지 않지만, 추가 슬라이싱은 허용한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 더 이상 필터를 사용하여 QuerySet을 사용할 수 없다.
+</span><span class="n">queryset</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()[</span><span class="mi">10</span><span class="p">:</span><span class="mi">100</span><span class="p">]</span>
+<span class="c1"># q1은 필터를 사용할 수 있지만, q2, q3은 필터를 사용할 수 없다.
+</span><span class="n">q1</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+<span class="n">q2</span> <span class="o">=</span> <span class="n">q1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">10</span><span class="p">]</span>
+<span class="n">q3</span> <span class="o">=</span> <span class="n">q2</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span>
+
+<span class="c1"># q1의 캐시에 결과를 저장한다.
+</span><span class="n">lst1</span> <span class="o">=</span> <span class="p">[</span><span class="n">each</span><span class="p">.</span><span class="n">blog</span><span class="p">.</span><span class="nb">id</span> <span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">q1</span><span class="p">]</span>
+<span class="c1"># q2의 캐시에 결과를 저장한다.
+</span><span class="n">lst2</span> <span class="o">=</span> <span class="p">[</span><span class="n">each</span><span class="p">.</span><span class="n">blog</span><span class="p">.</span><span class="nb">id</span> <span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">q2</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>이미 평가된 QuerySet을 슬라이스하면 QuerySet 객체가 아니라 객체 list를 반환한다. 평가한 후에 다시 반복하면 QuerySet은 캐시(<code class="language-plaintext highlighter-rouge">_result_cache</code>) 된 list를 사용한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">queryset</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+<span class="n">lst</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">queryset</span><span class="p">)</span>
+<span class="c1"># 초기 객체의 리스트를 반환한다.
+</span><span class="n">first_ten</span> <span class="o">=</span> <span class="n">queryset</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span>
+<span class="c1"># QuerySet을 슬라이싱하는게 아니라 first_ten을 슬라이싱한다.
+</span><span class="n">first_five</span> <span class="o">=</span> <span class="n">first_ten</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>평가되지 않은 QuerySet에서 index를 사용하여 하나의 요소를 선택하면 데이터베이스 적중이 발생하지만, 이미 평가된 QuerySet에서 선택하면 캐시를 사용한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">queryset</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+<span class="c1"># QuerySet이 평가되기 전이기 때문에 데이터베이스를 조회한다.
+</span><span class="k">print</span><span class="p">(</span><span class="n">queryset</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+<span class="n">lst</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">queryset</span><span class="p">)</span>
+<span class="c1"># list()에서 평가가 발생했기 때문에 캐시를 사용한다.
+</span><span class="k">print</span><span class="p">(</span><span class="n">queryset</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+<span class="k">print</span><span class="p">(</span><span class="n">queryset</span><span class="p">[</span><span class="mi">10</span><span class="p">])</span>
+</code></pre></div></div>
+
+<p>파이썬의 슬라이스 문법에서 step 파라미터를 평가 전의 QuerySet에 사용하는 경우는 예외이다. 이 경우는 쿼리를 즉시 실행하고 QuerySet 객체가 아닌 모델 객체 리스트를 반환한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">entry_list</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()[</span><span class="mi">1</span><span class="p">:</span><span class="mi">100</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+</code></pre></div></div>
+
+<h2 id="pickling--caching">Pickling / Caching</h2>
+
+<p>QuerySet을 피클하면 평가된다. QuerySet을 캐시에 저장하면 다음에 평가할 때 캐시에서 모델 객체 리스트를 제공한다.</p>
+<blockquote>
+  <p><a href="https://docs.python.org/3/library/pickle.html">pickle</a></p>
+</blockquote>
+
+<h2 id="repr">repr()</h2>
+
+<p>QuerySet은 <code class="language-plaintext highlighter-rouge">repr()</code>을 호출할 때 평가되지만, 결과를 캐시에 저장하지는 않는다.<br />
+<code class="language-plaintext highlighter-rouge">print()</code>도 마찬가지이다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># repr()는 평가는 하지만 결과를 캐시에 저장하지는 않는다.
+</span><span class="n">queryset</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+<span class="n">str_repr</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="n">queryset</span><span class="p">)</span>
+<span class="c1"># 캐시를 사용하지 못하기 떄문에 다시 데이터베이스를 실행한다.
+</span><span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">headline</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="len">len()</h2>
+
+<p><code class="language-plaintext highlighter-rouge">len()</code>을 호출하면 QuerySet이 평가되고 평가된 결과가 캐시에 저장된다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># len()은 평가와 함께 결과를 캐시에 저장한다.
+</span><span class="n">queryset</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+<span class="n">ln</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">queryset</span><span class="p">)</span>
+<span class="c1"># 이전 평가의 캐시를 사용
+</span><span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">headline</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>그렇기 때문에 단지 항목의 갯수만 알아보기 위해 <code class="language-plaintext highlighter-rouge">len()</code> 대신 <code class="language-plaintext highlighter-rouge">count()</code>를 사용해야 한다.</p>
+
+<h2 id="list">list()</h2>
+
+<p><code class="language-plaintext highlighter-rouge">list()</code>는 QuerySet을 강제로 평가하고, 모델 객체 리스트를 반환하고 결과를 캐시에 저장한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># queryset을 평가하고 결과를 캐시에 저장한다.
+</span><span class="n">queryset</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+<span class="n">lst</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">queryset</span><span class="p">)</span>
+<span class="c1"># 이전 list() 평가의 캐시를 사용
+</span><span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">headline</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="if-statement">If Statement</h2>
+
+<p>if문은 쿼리를 실행하고 결과를 캐시에 저장한다.<br />
+결과가 하나 이상 있으면 True, 아니면 False이다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">queryset</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">queryset</span><span class="p">:</span>
+    <span class="c1"># if문에서 평가된 캐시를 사용
+</span>    <span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>         
+        <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">headline</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="related-model-attributes는-캐시되지-않는다">Related Model Attributes는 캐시되지 않는다.</h2>
+
+<p>Django가 QuerySet을 평가할 때 <code class="language-plaintext highlighter-rouge">select_related</code>나 <code class="language-plaintext highlighter-rouge">prefetch_related</code>를 사용하지 않으면 관계 필드가 쿼리에 포함되지 않기 떄문에 캐시에 포함되지 않는다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">queryset</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">headline</span><span class="p">)</span>
+        <span class="c1"># blog를 위해 데이터베이스 사용
+</span>        <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">blog</span><span class="p">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+        <span class="c1"># 캐시 사용
+</span>        <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">headline</span><span class="p">)</span>
+        <span class="c1"># 캐시를 사용하지 못하여, blog를 위해 다시 데이터베이스 사용
+</span>        <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">blog</span><span class="p">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="c1"># select_related 나 prefetch_related를 사용하여 관련 객체를 캐시한다.
+</span>    <span class="n">queryset</span> <span class="o">=</span> <span class="n">Entry</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">select_related</span><span class="p">(</span><span class="s">'blog'</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">headline</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">blog</span><span class="p">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+        <span class="c1"># 캐시 사용
+</span>        <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">headline</span><span class="p">)</span>
+        <span class="c1"># 캐시 사용
+</span>        <span class="k">print</span><span class="p">(</span><span class="n">each</span><span class="p">.</span><span class="n">blog</span><span class="p">.</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div></div>
+:ET

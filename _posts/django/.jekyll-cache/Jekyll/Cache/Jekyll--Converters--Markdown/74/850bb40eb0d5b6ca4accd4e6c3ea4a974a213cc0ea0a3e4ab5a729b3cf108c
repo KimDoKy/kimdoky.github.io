@@ -1,0 +1,319 @@
+I"܇<h1 id="django-rest-framework---routers">Django REST Framework - Routers</h1>
+
+<hr />
+
+<p><em>“Resource routing allows you to quickly declare all of the common routes for a given resourceful controller. Instead of declaring separate routes for your index… a resourceful route declares them in a single line of code.”</em></p>
+
+<p><em>“리소스 라우팅을 사용하면 주어진 리소스가 많은 컨트롤러에 대한 모든 일반 경로를 빠르게 선언 할 수 있습니다. 인덱스에 대해 별도의 경로를 선언하는 대신… 유용한 루트는 코드 한 줄로 선언합니다.”</em></p>
+
+<p><em>— Ruby on Rails Documentation</em></p>
+
+<hr />
+
+<h2 id="routers">Routers</h2>
+<p><code class="language-plaintext highlighter-rouge">Rails</code>와 같은 일부 웹 프레임워크는 응용 프로그램의 URL을 들어오는 요청을 처리하는 논리에 매핑하는 방법을 자동으로 결정하는 기능을 제공합니다.<br />
+REST 프레임워크는 Django에 대한 자동 URL라우팅을 지원을 추가하고 뷰 로직을 URL set에 간단하고 빠르게 연관되게 연결하는 방법을 제공합니다.</p>
+
+<h3 id="usage">Usage</h3>
+<p>다음은 <code class="language-plaintext highlighter-rouge">SimpleRouter</code>를 사용하는 간단한 URL 구성의 예입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework</span> <span class="kn">import</span> <span class="n">routers</span>
+
+<span class="n">router</span> <span class="o">=</span> <span class="n">routers</span><span class="p">.</span><span class="n">SimpleRouter</span><span class="p">()</span>
+<span class="n">router</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="sa">r</span><span class="s">'users'</span><span class="p">,</span> <span class="n">UserViewSet</span><span class="p">)</span>
+<span class="n">router</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="sa">r</span><span class="s">'accounts'</span><span class="p">,</span> <span class="n">AccountViewSet</span><span class="p">)</span>
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="n">router</span><span class="p">.</span><span class="n">urls</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">register()</code>메서드는 두 가지 필수 인수가 있습니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">prefix</code> : router의 set에 사용할 URL접두어 입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">viewset</code> : <code class="language-plaintext highlighter-rouge">viewset</code>클래스입니다.</li>
+</ul>
+
+<p>선택적으로 추가 인수를 지정할 수도 있습니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">Base_name</code> : 작성된 URL 이름에 사용합니다. 설정되지 않은 경우 기본이름은 viewset의 쿼리셋 속성을 기반으로 자동 생성됩니다. viewset에 쿼리셋 특성이 포함되어 있지 않으면 viewset을 등록할 때  <code class="language-plaintext highlighter-rouge">base_name</code>을 설정해야 합니다.</li>
+</ul>
+
+<p>위의 예는 다음 URL패턴을 생성합니다.</p>
+
+<ul>
+  <li>URL pattern: <code class="language-plaintext highlighter-rouge">^users/$</code> Name: <code class="language-plaintext highlighter-rouge">'user-list'</code></li>
+  <li>URL pattern: <code class="language-plaintext highlighter-rouge">^users/{pk}/$</code> Name: <code class="language-plaintext highlighter-rouge">'user-detail'</code></li>
+  <li>URL pattern: <code class="language-plaintext highlighter-rouge">^accounts/$</code> Name: <code class="language-plaintext highlighter-rouge">'account-list'</code></li>
+  <li>URL pattern: <code class="language-plaintext highlighter-rouge">^accounts/{pk}/$</code> Name: <code class="language-plaintext highlighter-rouge">'account-detail'</code></li>
+</ul>
+
+<hr />
+<p><strong>Note</strong>: <code class="language-plaintext highlighter-rouge">base_name</code>인수는 뷰 이름 패턴의 초기 부분을 지정하는데 사용됩니다. 위의 예에서는 사용자나 계정 부분입니다.<br />
+일반적으로 <code class="language-plaintext highlighter-rouge">base_name</code>인수를 지정할 필요는 없지만, custom <code class="language-plaintext highlighter-rouge">get_queryset</code>메서드를 정의한 viewset이 있는 경우, viewset에는 <code class="language-plaintext highlighter-rouge">.queryset</code> 속성 set이 없을 수 있습니다. 해당 viewset을 등록하려고하면 다음과 같은 오류가 표시됩니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>'base_name' argument not specified, and could not automatically determine the name from the viewset, as it does not have a '.queryset' attribute.
+</code></pre></div></div>
+<p>즉, 모델 이름에서 자동으로 결정할 수 없으므로 viewset을 등록할 때 <code class="language-plaintext highlighter-rouge">base_name</code>인수를 명시적으로 설정해야 합니다.</p>
+
+<hr />
+
+<h4 id="using-include-with-routers">Using include with routers</h4>
+<p>라우터 인스턴스의 <code class="language-plaintext highlighter-rouge">.urls</code>속성은 URL 패턴의 표준 list일 뿐입니다. 이러한 URL을 포함할 수 있는 방법에는 여러 스타일이 있습니다.<br />
+예를 들어 <code class="language-plaintext highlighter-rouge">router.urls</code>를 views 목록에 추가할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">router</span> <span class="o">=</span> <span class="n">routers</span><span class="p">.</span><span class="n">SimpleRouter</span><span class="p">()</span>
+<span class="n">router</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="sa">r</span><span class="s">'users'</span><span class="p">,</span> <span class="n">UserViewSet</span><span class="p">)</span>
+<span class="n">router</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="sa">r</span><span class="s">'accounts'</span><span class="p">,</span> <span class="n">AccountViewSet</span><span class="p">)</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s">'^forgot-password/$'</span><span class="p">,</span> <span class="n">ForgotPasswordFormView</span><span class="p">.</span><span class="n">as_view</span><span class="p">()),</span>
+<span class="p">]</span>
+
+<span class="n">urlpatterns</span> <span class="o">+=</span> <span class="n">router</span><span class="p">.</span><span class="n">urls</span>
+</code></pre></div></div>
+<p>또는 Django의 <code class="language-plaintext highlighter-rouge">include</code> 함수를 사용할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s">'^forgot-password/$'</span><span class="p">,</span> <span class="n">ForgotPasswordFormView</span><span class="p">.</span><span class="n">as_view</span><span class="p">()),</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s">'^'</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="n">router</span><span class="p">.</span><span class="n">urls</span><span class="p">)),</span>
+<span class="p">]</span>
+</code></pre></div></div>
+<p>라우터 URL 패턴도 네임스페이스가 될 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s">'^forgot-password/$'</span><span class="p">,</span> <span class="n">ForgotPasswordFormView</span><span class="p">.</span><span class="n">as_view</span><span class="p">()),</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s">'^api/'</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="n">router</span><span class="p">.</span><span class="n">urls</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="s">'api'</span><span class="p">)),</span>
+<span class="p">]</span>
+</code></pre></div></div>
+<p>하이퍼링크가 있는 serializer와 함께 네임 스페이스를 사용하는 경우  serializer의 <code class="language-plaintext highlighter-rouge">view_name</code> parameter가 네임 스페이스를 올바르게 반영하는지 확인해야 합니다. 위의 예제에서 사용자 detail view에 하이퍼링크 된 serializer 필드에 대해 <code class="language-plaintext highlighter-rouge">view_name='api:user-detail'</code>과 같은 parameter를 포함해야합니다.</p>
+
+<h4 id="extra-link-and-actions">Extra link and actions</h4>
+<p><code class="language-plaintext highlighter-rouge">@detail_route</code>나 <code class="language-plaintext highlighter-rouge">@list_route</code>로 장식 된 viewset의 모든 메서드도 라우트됩니다. 예를 들어, <code class="language-plaintext highlighter-rouge">UserViewSet</code>클래스에서 다음과 같은 메서드가 제공됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">myapp.permissions</span> <span class="kn">import</span> <span class="n">IsAdminOrIsSelf</span>
+<span class="kn">from</span> <span class="nn">rest_framework.decorators</span> <span class="kn">import</span> <span class="n">detail_route</span>
+
+<span class="k">class</span> <span class="nc">UserViewSet</span><span class="p">(</span><span class="n">ModelViewSet</span><span class="p">):</span>
+    <span class="p">...</span>
+
+    <span class="o">@</span><span class="n">detail_route</span><span class="p">(</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s">'post'</span><span class="p">],</span> <span class="n">permission_classes</span><span class="o">=</span><span class="p">[</span><span class="n">IsAdminOrIsSelf</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">set_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="p">...</span>
+</code></pre></div></div>
+<p>다음 URL패턴이 추가로 생성됩니다.</p>
+
+<ul>
+  <li>URL pattern: <code class="language-plaintext highlighter-rouge">^users/{pk}/set_password/$</code> Name: <code class="language-plaintext highlighter-rouge">'user-set-password'</code></li>
+</ul>
+
+<p>custom 작업에 대해 생성 된 기본 URL을 사용하지 않으려면  대신 <code class="language-plaintext highlighter-rouge">url_path</code> parameter를 사용하여 custom 할 수 있습니다.<br />
+예를 들어 custom 액션의 URL을 <code class="language-plaintext highlighter-rouge">^users/{pk}/change-password/$</code>으로 변경하려면 다음과 같이 작성하세요.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">myapp.permissions</span> <span class="kn">import</span> <span class="n">IsAdminOrIsSelf</span>
+<span class="kn">from</span> <span class="nn">rest_framework.decorators</span> <span class="kn">import</span> <span class="n">detail_route</span>
+
+<span class="k">class</span> <span class="nc">UserViewSet</span><span class="p">(</span><span class="n">ModelViewSet</span><span class="p">):</span>
+    <span class="p">...</span>
+
+    <span class="o">@</span><span class="n">detail_route</span><span class="p">(</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s">'post'</span><span class="p">],</span> <span class="n">permission_classes</span><span class="o">=</span><span class="p">[</span><span class="n">IsAdminOrIsSelf</span><span class="p">],</span> <span class="n">url_path</span><span class="o">=</span><span class="s">'change-password'</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">set_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="p">...</span>
+</code></pre></div></div>
+<p>위의 예제는 이제 다음 URL패턴을 생성합니다.</p>
+
+<ul>
+  <li>URL pattern: <code class="language-plaintext highlighter-rouge">^users/{pk}/change-password/$</code> Name: <code class="language-plaintext highlighter-rouge">'user-change-password'</code></li>
+</ul>
+
+<p>custom 액션에 대해 생성된 기본 이름을 사용하지 않으려는 경우 <code class="language-plaintext highlighter-rouge">url_name</code>parameter를 사용하여 custom 할 수 있습니다.<br />
+예를 들어, custo,액션의 이름을 <code class="language-plaintext highlighter-rouge">'user-change-password'</code>로 변경하려면 다음과 같이 작성할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">myapp.permissions</span> <span class="kn">import</span> <span class="n">IsAdminOrIsSelf</span>
+<span class="kn">from</span> <span class="nn">rest_framework.decorators</span> <span class="kn">import</span> <span class="n">detail_route</span>
+
+<span class="k">class</span> <span class="nc">UserViewSet</span><span class="p">(</span><span class="n">ModelViewSet</span><span class="p">):</span>
+    <span class="p">...</span>
+
+    <span class="o">@</span><span class="n">detail_route</span><span class="p">(</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s">'post'</span><span class="p">],</span> <span class="n">permission_classes</span><span class="o">=</span><span class="p">[</span><span class="n">IsAdminOrIsSelf</span><span class="p">],</span> <span class="n">url_name</span><span class="o">=</span><span class="s">'change-password'</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">set_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="p">...</span>
+</code></pre></div></div>
+<p>위의 예제는 이제 다음 URL패턴을 생성합니다.</p>
+
+<ul>
+  <li>URL pattern: <code class="language-plaintext highlighter-rouge">^users/{pk}/set_password/$</code> Name: <code class="language-plaintext highlighter-rouge">'user-change-password'</code></li>
+</ul>
+
+<p>또한 <code class="language-plaintext highlighter-rouge">url_path</code>와 <code class="language-plaintext highlighter-rouge">url_name</code> parameter를 함께 사용하여 custom view에 대한 URL생성을 제어할 수 있습니다.<br />
+더 자세한 내용은 <a href="http://www.django-rest-framework.org/api-guide/viewsets/#marking-extra-actions-for-routing">marking extra actions for routing</a>참조하세요.</p>
+
+<h2 id="api-guide">API Guide</h2>
+<h3 id="simplerouter">SimpleRouter</h3>
+<p>이 라우터에는 <code class="language-plaintext highlighter-rouge">list</code>, <code class="language-plaintext highlighter-rouge">create</code>, <code class="language-plaintext highlighter-rouge">retrieve</code>, <code class="language-plaintext highlighter-rouge">update</code>, <code class="language-plaintext highlighter-rouge">partial_update</code>, <code class="language-plaintext highlighter-rouge">destroy</code> 표준 set 작업에 대한 경로가 포함됩니다. viewset은 <code class="language-plaintext highlighter-rouge">@detail_route</code>나 <code class="language-plaintext highlighter-rouge">@list_route</code>데코레이터를 사용하여 라우트 될 추가 메서드를 표시 할 수고 있습니다.
+<img src="./images/SimpleRouter.png" alt="" />
+기본적으로 <code class="language-plaintext highlighter-rouge">SimpleRouter</code>로 만든 URL 뒤에는 슬래시가 추가됩니다. 이 동작은 라우터를 인스턴스화 할때 <code class="language-plaintext highlighter-rouge">trailing_slash</code> 인수를 <code class="language-plaintext highlighter-rouge">False</code>로 설정하여 수정할 수 있습니다. 예:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>router = SimpleRouter(trailing_slash=False)
+</code></pre></div></div>
+<p>뒤에 오는 슬래시는 Django에서는 일반적이지만 레일스와 같은 다른 프레임워크에서는 기본적으로 사용되지 않습니다. 어떤 자바스크립트 프레임워크가 특정 라우팅 스타일을 기대할지라도, 어떤 스타일을 선탣 하느냐는 대부분 환경 설정의 문제입니다.<br />
+라우터는 슬래시와 마침표를 제외한 문자가 포함 된 조회값을 매치시킵니다. 보다 제한적인(혹은 관대한) 검색 패턴의 경우, viewset에 <code class="language-plaintext highlighter-rouge">lookup_value_regex</code>속성을 설정하세요. 예를 들어, 조회를 유효한 <code class="language-plaintext highlighter-rouge">UUID</code>로 제한할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MyModelViewSet</span><span class="p">(</span><span class="n">mixins</span><span class="p">.</span><span class="n">RetrieveModelMixin</span><span class="p">,</span> <span class="n">viewsets</span><span class="p">.</span><span class="n">GenericViewSet</span><span class="p">):</span>
+    <span class="n">lookup_field</span> <span class="o">=</span> <span class="s">'my_model_id'</span>
+    <span class="n">lookup_value_regex</span> <span class="o">=</span> <span class="s">'[0-9a-f]{32}'</span>
+</code></pre></div></div>
+
+<h3 id="defaultrouter">DefaultRouter</h3>
+<p>이 라우터는 위와 같이 <code class="language-plaintext highlighter-rouge">SimpleRouter</code>와 비슷하지만 모든 list views에 대한 하이퍼링크가 포함 된 response을 반환하는 기본 API root view를 추가로 포함합니다. 선택적 <code class="language-plaintext highlighter-rouge">.json</code> 스타일 형식 접미사에 대한 경로도 생성합니다.<br />
+<img src="./images/DefaultRouter.png" alt="" /><br />
+<code class="language-plaintext highlighter-rouge">SimpleRouter</code>과 마찬가지로 라우터를 인스턴스화 할때 <code class="language-plaintext highlighter-rouge">trailing_slash</code> 인수를  <code class="language-plaintext highlighter-rouge">False</code>로 설정하면 URL 경로에 따라오는 슬래시를 제거할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">router</span> <span class="o">=</span> <span class="n">DefaultRouter</span><span class="p">(</span><span class="n">trailing_slash</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="custom-routers">Custom Routers</h2>
+<p><code class="language-plaintext highlighter-rouge">custom router</code>를 구현하는 것은 자주해야 할 일은 아니지만 <code class="language-plaintext highlighter-rouge">API URL</code>이 어떻게 구성되는지에 대한 요구사항이 있는 경우 유용합니다. 이렇게 하면 재사용 할 수 있는 방식으로 URL구조를 캡슐화 할 수 있으므로 각 새로운 view에 대해 명시적으로 URL 패턴을 작성 할 필요가 없습니다.<br />
+<code class="language-plaintext highlighter-rouge">custom router</code>를 구현하는 가장 간단한 방법은 기본 라우터 클래스 중 하나를 서브 클래스로 만드는 것입니다. <code class="language-plaintext highlighter-rouge">.routes</code> 속성은 각 viewset에 맵핑 될 URL 패턴을 template하는데 사용됩니다. <code class="language-plaintext highlighter-rouge">.routes</code>속성은 경로지정 튜플의 list입니다.<br />
+<code class="language-plaintext highlighter-rouge">Route</code>라는 튜플에 대한 인수는 다음과 같습니다.</p>
+
+<p><strong>url</strong> : 라우트 될 URL을 나타내는 문자열. 다음 타입의 문자열을 포함할 수 있습니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">{prefix}</code> : 이 경로 집합에 사용할 URL 접두사입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">{lookup}</code> : 단일 인스턴스와 매치시키는데 사용되는 조회 필드입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">{trailing_slash}</code> : <code class="language-plaintext highlighter-rouge">trailing_slash</code>인수에 따라 <code class="language-plaintext highlighter-rouge">'/'</code>나 빈 문자열입니다.</li>
+</ul>
+
+<p><strong>mapping</strong> : HTTP 메서드 이름을 뷰 메서드에 매핑.</p>
+
+<p><strong>name</strong> : <code class="language-plaintext highlighter-rouge">reverse</code> 호출에 사용되는 URL의 이름입니다. 다음 타입의 문자열을 포함 할 수 있씁니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">{basename}</code> : 생성된 URL 이름에 사용할 기준입니다.</li>
+</ul>
+
+<p><strong>initkwargs</strong> : view를 인스턴스화 할 때 전달되어야하는 추가 인수의 dict. <code class="language-plaintext highlighter-rouge">suffix</code>인수는 뷰 이름과 탐색 경로 링크를 생성 할 떄 사용되는 viewset 유형을 식별하기 위해 예약되어 있습니다.</p>
+
+<h3 id="customizing-dynamic-routes">Customizing dynamic routes</h3>
+<p><code class="language-plaintext highlighter-rouge">@list_route</code>와 <code class="language-plaintext highlighter-rouge">@detail_route</code>데코레이터가 라우팅되는 방법을 custom 할 수 있습니다. 이 데코레이터 중 하나나 모두를 라우트하려면 <code class="language-plaintext highlighter-rouge">.routes</code>목록에 <code class="language-plaintext highlighter-rouge">DynamicListRoute</code>와 <code class="language-plaintext highlighter-rouge">/</code>이나 <code class="language-plaintext highlighter-rouge">DynamicDetailRoute</code>라는 이름의 튜플을 포함하세요.<br />
+<code class="language-plaintext highlighter-rouge">DynamicListRoute</code>와 <code class="language-plaintext highlighter-rouge">DynamicDetailRoute</code>의 인수는 다음과 같습니다.</p>
+
+<p><strong>url</strong> : 라우트 될 URL을 나타내는 문자열. <code class="language-plaintext highlighter-rouge">Route</code>와 동일한 타입의 문자열을 포함할 수 있으며, <code class="language-plaintext highlighter-rouge">{methodname}</code>과 <code class="language-plaintext highlighter-rouge">{methodnamehyphen}</code>형식 문자열을 추가로 허용합니다.</p>
+
+<p><strong>name</strong> : <code class="language-plaintext highlighter-rouge">reverse</code>호출에 사용되는 URL의 이름입니다. <code class="language-plaintext highlighter-rouge">{basename}</code>, <code class="language-plaintext highlighter-rouge">{methodname}</code> 및 <code class="language-plaintext highlighter-rouge">{methodnamehyphen}</code>과 같은 형식 문자열을 포함합니다.</p>
+
+<p><strong>initkwargs</strong> : 뷰를 인스턴스화 할 때 전달되어야 하는 추가 인수의 dict</p>
+
+<h3 id="example">Example</h3>
+<p>다음 예는 ‘list’와 ‘retrieve`의 액션에만 라우팅하며, 후행 슬래시 규칙은 사용하지 않습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework.routers</span> <span class="kn">import</span> <span class="n">Route</span><span class="p">,</span> <span class="n">DynamicDetailRoute</span><span class="p">,</span> <span class="n">SimpleRouter</span>
+
+<span class="k">class</span> <span class="nc">CustomReadOnlyRouter</span><span class="p">(</span><span class="n">SimpleRouter</span><span class="p">):</span>
+    <span class="s">"""
+    A router for read-only APIs, which doesn't use trailing slashes.
+    """</span>
+    <span class="n">routes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">Route</span><span class="p">(</span>
+            <span class="n">url</span><span class="o">=</span><span class="sa">r</span><span class="s">'^{prefix}$'</span><span class="p">,</span>
+            <span class="n">mapping</span><span class="o">=</span><span class="p">{</span><span class="s">'get'</span><span class="p">:</span> <span class="s">'list'</span><span class="p">},</span>
+            <span class="n">name</span><span class="o">=</span><span class="s">'{basename}-list'</span><span class="p">,</span>
+            <span class="n">initkwargs</span><span class="o">=</span><span class="p">{</span><span class="s">'suffix'</span><span class="p">:</span> <span class="s">'List'</span><span class="p">}</span>
+        <span class="p">),</span>
+        <span class="n">Route</span><span class="p">(</span>
+            <span class="n">url</span><span class="o">=</span><span class="sa">r</span><span class="s">'^{prefix}/{lookup}$'</span><span class="p">,</span>
+            <span class="n">mapping</span><span class="o">=</span><span class="p">{</span><span class="s">'get'</span><span class="p">:</span> <span class="s">'retrieve'</span><span class="p">},</span>
+            <span class="n">name</span><span class="o">=</span><span class="s">'{basename}-detail'</span><span class="p">,</span>
+            <span class="n">initkwargs</span><span class="o">=</span><span class="p">{</span><span class="s">'suffix'</span><span class="p">:</span> <span class="s">'Detail'</span><span class="p">}</span>
+        <span class="p">),</span>
+        <span class="n">DynamicDetailRoute</span><span class="p">(</span>
+            <span class="n">url</span><span class="o">=</span><span class="sa">r</span><span class="s">'^{prefix}/{lookup}/{methodnamehyphen}$'</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s">'{basename}-{methodnamehyphen}'</span><span class="p">,</span>
+            <span class="n">initkwargs</span><span class="o">=</span><span class="p">{}</span>
+        <span class="p">)</span>
+    <span class="p">]</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">CustomReadOnlyRouter</code>가 간단한 viewset을 위해 생성 할 라우트를 살펴 보겠습니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">views.py</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">UserViewSet</span><span class="p">(</span><span class="n">viewsets</span><span class="p">.</span><span class="n">ReadOnlyModelViewSet</span><span class="p">):</span>
+    <span class="s">"""
+    A viewset that provides the standard actions
+    """</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">UserSerializer</span>
+    <span class="n">lookup_field</span> <span class="o">=</span> <span class="s">'username'</span>
+
+    <span class="o">@</span><span class="n">detail_route</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">group_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="s">"""
+        Returns a list of all the group names that the given
+        user belongs to.
+        """</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">get_object</span><span class="p">()</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="n">user</span><span class="p">.</span><span class="n">groups</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">([</span><span class="n">group</span><span class="p">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">])</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">urls.py</code> :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">router</span> <span class="o">=</span> <span class="n">CustomReadOnlyRouter</span><span class="p">()</span>
+<span class="n">router</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="s">'users'</span><span class="p">,</span> <span class="n">UserViewSet</span><span class="p">)</span>
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="n">router</span><span class="p">.</span><span class="n">urls</span>
+</code></pre></div></div>
+<p>다음과 같은 매칭이 생성됩니다…</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>URL</th>
+      <th>HTTP Method</th>
+      <th>Action</th>
+      <th>URL Name</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>/users</td>
+      <td>GET</td>
+      <td>list</td>
+      <td>user-list</td>
+    </tr>
+    <tr>
+      <td>/users/{username}</td>
+      <td>GET</td>
+      <td>retrieve</td>
+      <td>user-detail</td>
+    </tr>
+    <tr>
+      <td>/users/{username}/group-names</td>
+      <td>GET</td>
+      <td>group_names</td>
+      <td>user-group-names</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><code class="language-plaintext highlighter-rouge">.routes</code>속성을 설정하는 다른 예제는 <code class="language-plaintext highlighter-rouge">SimpleRouter</code>클래스의 소스 코드를 참조하세요.</p>
+
+<h3 id="advanced-custom-routers">Advanced custom routers</h3>
+<p>완전히 custom된 동작을 제공하려면 <code class="language-plaintext highlighter-rouge">BaseRouter</code>를 대체하고 <code class="language-plaintext highlighter-rouge">get_urls(self)</code>메서드를 대체할 수 있습니다. 이 메서드는 등록 된 viewset을 검사하고, URL 패턴 list를 리턴해야합니다. 등록된 prefix, viewset, basename 튜플은 <code class="language-plaintext highlighter-rouge">self.registry</code>속성에 액서스하여 검사할 수 있습니다.<br />
+<code class="language-plaintext highlighter-rouge">get_default_base_name(self, viewset)</code>메서드를 오버라이드하거나, viewset을 라우터에 등록 할 때 항상 <code class="language-plaintext highlighter-rouge">base_name</code> 인수를 명시적으로 설정할 수 있습니다.</p>
+
+<h2 id="third-party-packages">Third Party Packages</h2>
+<p>다음의 타사 패키지도 제공됩니다.</p>
+
+<h3 id="drf-nested-routers">DRF Nested Routers</h3>
+<p><a href="https://github.com/alanjds/drf-nested-routers"><code class="language-plaintext highlighter-rouge">drf-nested-routers</code>패키지</a>는 중첩된 리소스로 작업하기 위한 라우터와 관계 필드를 제공합니다.</p>
+
+<h3 id="modelrouter-wqdbrest">ModelRouter (wq.db.rest)</h3>
+<p><a href="https://wq.io/wq.db"><code class="language-plaintext highlighter-rouge">wq.db 패키지</code></a>는 <code class="language-plaintext highlighter-rouge">register_model()</code> API로 <code class="language-plaintext highlighter-rouge">DefaultRouter</code>를 확장하는 고급 <a href="https://wq.io/1.0/docs/router"><code class="language-plaintext highlighter-rouge">ModelRouter</code></a> 클래스(및 싱글 톤 인스턴스)를 제공합니다. Django의 <code class="language-plaintext highlighter-rouge">admin.site.register</code>와 마찬가지로 <code class="language-plaintext highlighter-rouge">rest.router.register_model</code>에 필요한 유일한 인수는 모델 클래스입니다. url prefix, serializer, viewset에 대한 합리적인 기본값은 모델과 전역구성에서 유추됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">wq.db</span> <span class="kn">import</span> <span class="n">rest</span>
+<span class="kn">from</span> <span class="nn">myapp.models</span> <span class="kn">import</span> <span class="n">MyModel</span>
+
+<span class="n">rest</span><span class="p">.</span><span class="n">router</span><span class="p">.</span><span class="n">register_model</span><span class="p">(</span><span class="n">MyModel</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="drf-extensions">DRF-extensions</h3>
+<p><a href="http://chibisov.github.io/drf-extensions/docs/"><code class="language-plaintext highlighter-rouge">DRF-extensions</code> package</a>는 <a href="http://chibisov.github.io/drf-extensions/docs/#nested-routes">중첩된 viewset</a>, <a href="http://chibisov.github.io/drf-extensions/docs/#controller-endpoint-name">custom가 가능한 엔드포인트 이름</a>을 가진 <a href="http://chibisov.github.io/drf-extensions/docs/#collection-level-controllers">콜렉션 레벨 컨트롤러</a>를 작성하기 위한 <a href="http://chibisov.github.io/drf-extensions/docs/#routers">라우터</a>를 제공합니다.</p>
+:ET

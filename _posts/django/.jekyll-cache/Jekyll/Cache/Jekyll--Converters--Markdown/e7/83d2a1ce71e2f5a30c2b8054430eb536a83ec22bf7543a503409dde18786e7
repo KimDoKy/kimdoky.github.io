@@ -1,0 +1,14 @@
+I"P<p>때로는 urls.py에서 view를 지정하지 않고 template을 바로 지정해야 할 경우가 있다.</p>
+
+<p>이때 사용하는 것이 <code class="language-plaintext highlighter-rouge">TemplateView</code>이다.</p>
+
+<h3 id="사용법">사용법</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">path</span>
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">TemplateView</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">path</span><span class="p">(</span><span class="s">'foo/'</span><span class="p">,</span> <span class="n">TemplateView</span><span class="p">.</span><span class="n">as_view</span><span class="p">(</span><span class="n">template_name</span><span class="o">=</span><span class="s">'foo.html'</span><span class="p">))</span>
+<span class="p">]</span>
+</code></pre></div></div>
+:ET

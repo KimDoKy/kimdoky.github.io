@@ -1,0 +1,527 @@
+I"\�<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<p>모델은 장고 프로젝트의 토대가 되는 부분이기 때문에, 새 모델을 추가하거나 기존 모델을 수정해야 할 때는, 한 번 더 깊이 생각하고 프로젝트의 토대를 탄탄하고 안전하게 다질 수 있는 방향의 디자인을 고려해야 합니다.</p>
+
+<h3 id="유용한-모델-관련-패키지들">유용한 모델 관련 패키지들</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">django-model-utils</code>: TimeStampedModel 같은 일반적인 패턴들 처리하는데 유용</li>
+  <li><code class="language-plaintext highlighter-rouge">django-extensions</code>: 모든 앱에 모델 클래스를 자동으로 로드해 주는 <code class="language-plaintext highlighter-rouge">shell_plus</code>라는 명령을 제공. 너무 많은 기능이 있다는 것이 단점</li>
+</ul>
+
+<h2 id="61-basics">6.1 Basics</h2>
+
+<h3 id="611-break-up-apps-with-too-many-models">6.1.1 Break Up Apps with Too Many Models</h3>
+
+<p>하나의 앱에 모델이 20+ 이라면 작은 앱으로 나눠야 합니다.
+5개 이하를 추천합니다.</p>
+
+<h3 id="612-be-careful-with-model-inheritance">6.1.2 Be Careful With Model Inheritance</h3>
+
+<p>Django는 3가지 모델 상속 방법을 제공합니다.</p>
+
+<ol>
+  <li>추상화 기초 클래스(abstract base classes)</li>
+  <li>멀티테이블 상속(multi-table inheritance)</li>
+  <li>프락시 모델(proxy-model)</li>
+</ol>
+
+<table>
+  <thead>
+    <tr>
+      <th>모델 상속 스타일</th>
+      <th>장점</th>
+      <th>단점</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>상속X<br />공통 필드가 있다면 모두 해당 필드를 선언</td>
+      <td>Django 모델을 이해하기 쉬움</td>
+      <td>중복되는 테이블이 많아지면 관리하기 어려움</td>
+    </tr>
+    <tr>
+      <td>추상화 기초 클래스<br />상속받은 모델만 테이블이 생성</td>
+      <td>추가 테이블 생성 없음<br />테이블 조인으로 인한 성능 저하 없음</td>
+      <td>부모 클래스를 독립적으로 이용 불가</td>
+    </tr>
+    <tr>
+      <td>멀티테이블 상속<br />OneToOneField</td>
+      <td>부모 or 자식 모델 어디든 쿼리를 할 수 있음</td>
+      <td>자식 테이블에 대한 각 쿼리에 대해 부모 테이블과 조인이 필요하여 부하가 발생<br />비추</td>
+    </tr>
+    <tr>
+      <td>프락시 모델<br />원래 모델에 대해서만 테이블 생성</td>
+      <td>각기 다른 파이썬 작용을 하는 모델들의 별칭을 가질 수 있음</td>
+      <td>모델의 필드 변경 불가</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>모델들 사이에 중복되는 필드가 최소(1~2개)라면, 모델 상속보다는 각각 구현하면 된다.</li>
+  <li>모델들 사이에 중복된 필드가 많다면, 추상화 기초 모델로 리팩터링할 수 있다.</li>
+  <li>프락시 모델은 편리하지만, 다른 2가지 모델 상속 방식과는 다르게 동작하므로 주의해야 한다.</li>
+  <li>멀티테이블 상속은 혼란과 상단한 부하를 일으키므로 반드시 피해야 한다. 대신 <code class="language-plaintext highlighter-rouge">OneToOneField</code>이나 <code class="language-plaintext highlighter-rouge">ForeignKeys</code>를 이용하여 조인을 좀 더 수월하게 컨트롤할 수 있다.</li>
+</ul>
+
+<h3 id="613-model-inheritance-in-practice-the-timestampedmodel">6.1.3 Model Inheritance in Practice: The TimeStampedModel</h3>
+
+<p>Django의 모든 모델은 <code class="language-plaintext highlighter-rouge">created</code>와 <code class="language-plaintext highlighter-rouge">modified</code> 타임스탬프 필드를 생성해 두는 것이 일반적이지만, 매번 작업하기엔 비효율적입니다. 이를 위해 <code class="language-plaintext highlighter-rouge">TimeStampedModel</code>을 만들어 자동으로 필드를 추가하게 할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># core/models.py
+</span><span class="n">form</span> <span class="n">django</span><span class="p">.</span><span class="n">db</span> <span class="kn">import</span> <span class="nn">models</span>
+
+<span class="k">class</span> <span class="nc">TimeStampedModel</span><span class="p">(</span><span class="n">Models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+	<span class="n">created</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+	<span class="n">modified</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+	<span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+		<span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># flavors/models.py
+</span><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">core.models</span> <span class="kn">import</span> <span class="n">TimeStampedModel</span>
+
+<span class="k">class</span> <span class="nc">Flavor</span><span class="p">(</span><span class="n">TimeStampedModel</span><span class="p">):</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">TimeStampedModel</code>을 상속 받음으로써 자동으로 두 필드를 추가 할 수 있습니다.(추상화 기초 클래스 상속 패턴)</p>
+
+<h2 id="62-database-migrations">6.2 Database Migrations</h2>
+
+<h3 id="621-tips-for-creating-migrations">6.2.1 Tips for Creating Migrations</h3>
+
+<ul>
+  <li>새로운 앱이나 모델이 생성되면 <code class="language-plaintext highlighter-rouge">django.db.migrations</code>를 실행한다. (<code class="language-plaintext highlighter-rouge">$ python manage.py makemigrations</code>)</li>
+  <li>생성된 마이그레이션을 실행하기 전에 꼼꼼히 체크해야 한다. <code class="language-plaintext highlighter-rouge">sqlmigrate</code>를 통해 SQL 문을 확인할 수 있다.</li>
+  <li><code class="language-plaintext highlighter-rouge">django.db.migrations</code> 스타일로 이루어 지지 않은 외부 앱에 대한 마이그레이션은 <code class="language-plaintext highlighter-rouge">MIGRATION_MODULES</code> 세팅을 이용한다.</li>
+  <li>생성되는 마이그레이션 개수는 상관없지만, 신경쓰인다면 <code class="language-plaintext highlighter-rouge">squashmigrations</code>를 이용한다.</li>
+  <li>마이그레이션 실행 전에는 반드시 백업해라.</li>
+</ul>
+
+<h3 id="622-adding-python-functions-and-custom-sql-to-migrations">6.2.2 Adding Python Functions and Custom SQL to Migrations</h3>
+
+<ul>
+  <li><a href="https://docs.djangoproject.com/en/3.2/ref/migration-operations/#runpython">RunPython</a></li>
+  <li><a href="https://docs.djangoproject.com/en/3.2/ref/migration-operations/#runsql">RunSQL</a></li>
+</ul>
+
+<h2 id="63-overcoming-common-obstracles-of-runpython">6.3 Overcoming Common Obstracles of RunPython</h2>
+
+<h3 id="631-getting-access-to-a-custom-model-managers-methods">6.3.1 Getting Access to a Custom Model Manager’s Methods</h3>
+
+<ul>
+  <li>모델 매니저 메서드로 filter, exclude, create, modify를 동작해야 할 경우</li>
+  <li>django.db.migrations는 이러한 구성 요소를 제외함</li>
+  <li><code class="language-plaintext highlighter-rouge">use_in_migrations = True</code> 플래그를 지정하여 기본 구성 요소를 무시할 수 있습니다.</li>
+  <li><a href="https://docs.djangoproject.com/en/3.2/topics/migrations/#model-managers">django doc</a></li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MyManager</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Manager</span><span class="p">):</span>
+    <span class="n">use_in_migrations</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">MyManager</span><span class="p">()</span>
+</code></pre></div></div>
+
+<h3 id="632-getting-access-to-a-custom-model-method">6.3.2 Getting Access to a Custom Model Method</h3>
+
+<ul>
+  <li>django.db.migrations가 모델을 직렬화하는 방법때문에 이 제한을 우회할 수 없습니다.</li>
+  <li>마이그레이션 중에는 커스텀 메서드를 호출할 수 없습니다.</li>
+  <li><a href="https://docs.djangoproject.com/en/3.2/topics/migrations/#historical-models">django doc</a></li>
+</ul>
+
+<h3 id="633-use-runpythonnoop-to-do-nothing">6.3.3 Use RunPython.noop to Do Nothing</h3>
+
+<ul>
+  <li>역마이그레이션이 작동하려면 <code class="language-plaintext highlighter-rouge">reserse_code</code> 호출이 가능해야 합니다.</li>
+  <li>ex) 기존 데이터를 새로 추가된 필드와 결합하는 경우</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">migrations</span><span class="p">,</span> <span class="n">models</span>
+
+<span class="k">def</span> <span class="nf">add_cones</span><span class="p">(</span><span class="n">apps</span><span class="p">,</span> <span class="n">schema_editor</span><span class="p">):</span>
+    <span class="n">Scoop</span> <span class="o">=</span> <span class="n">apps</span><span class="p">.</span><span class="n">get_model</span><span class="p">(</span><span class="s">'scoop'</span><span class="p">,</span> <span class="s">'Scoop'</span><span class="p">)</span>
+    <span class="n">Cone</span> <span class="o">=</span> <span class="n">apps</span><span class="p">.</span><span class="n">get_model</span><span class="p">(</span><span class="s">'cone'</span><span class="p">,</span> <span class="s">'Cone'</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">scoop</span> <span class="ow">in</span> <span class="n">Scoop</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">():</span>
+        <span class="n">Cone</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">scoop</span><span class="o">=</span><span class="n">scoop</span><span class="p">,</span>
+            <span class="n">style</span><span class="o">=</span><span class="s">'sugar'</span>
+        <span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Migration</span><span class="p">(</span><span class="n">migrations</span><span class="p">.</span><span class="n">Migration</span><span class="p">):</span>
+
+    <span class="n">initial</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s">'scoop'</span><span class="p">,</span> <span class="s">'0051_auto_20670724'</span><span class="p">),</span>
+    <span class="p">]</span>
+
+    <span class="n">operations</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">migrations</span><span class="p">.</span><span class="n">CreateModel</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s">'Cone'</span><span class="p">,</span>
+            <span class="n">fields</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">(</span><span class="s">'id'</span><span class="p">,</span> <span class="n">models</span><span class="p">.</span><span class="n">AutoField</span><span class="p">(</span><span class="n">auto_created</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                    <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                    <span class="n">serialize</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">verbose_name</span><span class="o">=</span><span class="s">'ID'</span><span class="p">)),</span>
+                <span class="p">(</span><span class="s">'style'</span><span class="p">,</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
+                    <span class="n">choices</span><span class="o">=</span><span class="p">[(</span><span class="s">'sugar'</span><span class="p">,</span> <span class="s">'Sugar'</span><span class="p">),</span> <span class="p">(</span><span class="s">'waffle'</span><span class="p">,</span> <span class="s">'Waffle'</span><span class="p">)]),</span>
+                <span class="p">(</span><span class="s">'scoop'</span><span class="p">,</span> <span class="n">models</span><span class="p">.</span><span class="n">OneToOneField</span><span class="p">(</span>
+                    <span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="s">'scoop.Scoop'</span><span class="p">,</span> 
+                    <span class="n">on_delete</span><span class="o">=</span><span class="n">django</span><span class="p">.</span><span class="n">db</span><span class="p">.</span><span class="n">models</span><span class="p">.</span><span class="n">deletion</span><span class="p">.</span><span class="n">SET_NULL</span><span class="p">)),</span>
+                <span class="p">],</span> 
+            <span class="p">),</span>
+
+        <span class="c1"># RunPython.noop는 역마이그레이션 발생만 허용
+</span>        <span class="n">migrations</span><span class="p">.</span><span class="n">RunPython</span><span class="p">(</span><span class="n">add_cones</span><span class="p">,</span> <span class="n">migrations</span><span class="p">.</span><span class="n">RunPython</span><span class="p">.</span><span class="n">noop</span><span class="p">)</span>
+    <span class="p">]</span>
+</code></pre></div></div>
+
+<h3 id="634-deployment-and-management-of-migrations">6.3.4 Deployment and Management of Migrations</h3>
+
+<ul>
+  <li>배포 전에 rollback 할 수 있는지 확인하자.</li>
+  <li>테이블의 수가 많다면 스테이징 서버에 비슷한 크기의 데이터로 충분히 테스트하자.</li>
+  <li>MySQL을 이용한다면
+    <ul>
+      <li>스키마 변환 전에 반드시 데이터베이스를 백업하자. MySQL은 스키마 변경에 대한 트랜잭션을 지원하지 않는다(롤백 불가)</li>
+      <li>가능하다면 데이터베이스 변환 전에 프로젝트를 ‘읽기 전용 모드’로 변경한다.</li>
+      <li>테이블의 크기가 크다면 오랜 시간이 걸릴 수도 있다.</li>
+    </ul>
+
+    <blockquote>
+      <p>‘읽기 전용 모드’에 대해 추가 학습 필요</p>
+    </blockquote>
+  </li>
+</ul>
+
+<h2 id="64-django-model-design">6.4 Django Model Design</h2>
+
+<h3 id="641-start-normalized">6.4.1 Start Normalized</h3>
+
+<ul>
+  <li><a href="https://en.wikipedia.org/wiki/Database_normalization">Database normalization</a></li>
+  <li><a href="https://en.wikibooks.org/wiki/Relational_Database_Design/Normalization">Relational Database Design/Normalization</a></li>
+</ul>
+
+<h3 id="642-cache-before-denormalizing">6.4.2 Cache Before Denormalizing</h3>
+
+<p>적절한 위치에 캐시를 세팅하면, 모델을 비정구화할 때 발생하는 문제점을 상단 부붕 해소시켜주기도 합니다. <a href="">Chapter 26: Finding and Reducing Bottlenecks</a>에서 자세히 다룰 예정</p>
+
+<h3 id="643-denormalize-only-if-absolutely-needed">6.4.3 Denormalize Only if Absolutely Needed</h3>
+
+<p>비정규화는 반드시 필요할 때만 사용해야 합니다. 정규화에 익숙해져야 합니다.
+비정규화를 하기 전에 캐시에 대해 더 고민해봐야 합니다.
+캐시로 해결할 수 없을 때 비정규화 도입을 생각해 볼 수 있습니다.</p>
+
+<h3 id="644-when-to-use-null-and-blank">6.4.4 When to Use Null and Blank</h3>
+
+<ul>
+  <li>기본값은 False</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>필드 타입</th>
+      <th>null=True</th>
+      <th>blank=True</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>CharField,<br />TextField,<br />SlugField,<br />EmailField,<br />CommaSeparatedIntegerField,<br />UUIDField</td>
+      <td><code class="language-plaintext highlighter-rouge">unique=True</code>, <code class="language-plaintext highlighter-rouge">blank=True</code>인 경우에는 okay</td>
+      <td>위젯이 빈 값을 허용하도록 하려면 Okay.<br />DB에는 빈 문자열로 저장됨</td>
+    </tr>
+    <tr>
+      <td>FileField,<br />ImageField</td>
+      <td>X<br /><code class="language-plaintext highlighter-rouge">MEDIA_ROOT</code>의 경로를 CharField에 파일 or 이미지를 저장함</td>
+      <td>Okay.<br />CharField에 적용된 것과 같은 규칙 적용</td>
+    </tr>
+    <tr>
+      <td>BooleanField</td>
+      <td>Okey</td>
+      <td>기본값 <code class="language-plaintext highlighter-rouge">True</code></td>
+    </tr>
+    <tr>
+      <td>IntegerField,<br />FloatField,<br />DecimalField,<br />DurationField,<br />etc</td>
+      <td>해당 값이 DB에 NULL로 들어가도 문제가 없다면 Okay</td>
+      <td>위젯에서 해당값이 빈값을 받아도 된다면 Okay<br /><code class="language-plaintext highlighter-rouge">null=True</code>도 같이 사용해야 함</td>
+    </tr>
+    <tr>
+      <td>DateTimeField,<br />DateField,<br />TimeField,<br />etc</td>
+      <td>DB에 해당 값들을 NULL로 설정할 수 있다면 Okay</td>
+      <td>위젯에 빈 값을 받아도 상관 없거나, <code class="language-plaintext highlighter-rouge">auto_now</code>나 <code class="language-plaintext highlighter-rouge">auto_now_add</code>를 사용한다면 Okay<br /><code class="language-plaintext highlighter-rouge">null=True</code>도 같이 사용해야 함</td>
+    </tr>
+    <tr>
+      <td>ForeignKey,<br />OneToOneField</td>
+      <td>DB에 해당 값들을 NULL로 설정할 수 있다면 Okay</td>
+      <td>위젯에서 해당값(ex.셀렉트박스)이 빈 값이어도 되면 Okay</td>
+    </tr>
+    <tr>
+      <td>ManyToManyField</td>
+      <td>X</td>
+      <td>위젯에 해당값(ex.셀렉트박스)이 빈 값이어도 되면 Okay</td>
+    </tr>
+    <tr>
+      <td>GenericIPAddressField</td>
+      <td>DB에 해당값들을 NULL로 설정할 수 있다면 Okay</td>
+      <td>위젯에 해당값이 빈 값이어도 괜찮다면 Okay</td>
+    </tr>
+    <tr>
+      <td>JSONField</td>
+      <td>Okay</td>
+      <td>Okay</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="645-when-to-use-binaryfield">6.4.5 When to Use BinaryField</h3>
+
+<ul>
+  <li>raw binary data 나 byte를 저장하는 필드입니다.</li>
+  <li>filter, exclude, other SQL action이 적용되지 않습니다.</li>
+</ul>
+
+<p>다음과 같은 경우에 사용할 수 있습니다.</p>
+
+<ul>
+  <li>메시지팩 형식의 콘텐츠</li>
+  <li>원본 센서 데이터</li>
+  <li>압축된 데이터</li>
+</ul>
+
+<p>사용하기 나름이지만, 바이너리 데이터는 크기가 방대할 수도 있기 때문에 DB가 느려질 수 있습니다.
+이런 경우 바이너리 데이터 저장이 병목 지점이 된다면 해당 데이터를 파일 형태로 저장하고 FileField에 레퍼런스하는 방식으로 해결할 수 있습니다.</p>
+
+<h4 id="binaryfield으로부터-파일을-직접-서비스는-금지">BinaryField으로부터 파일을 직접 서비스는 금지!</h4>
+
+<ul>
+  <li>데이터베이스의 ‘읽기/쓰기’ 속도는 파일 시스템의 ‘읽기/쓰기’ 속도보다 느리다.</li>
+  <li>데이터베이스 백업에 드는 공간과 시간이 점점 증가한다.</li>
+  <li>파일 자체에 접근하는 앱(장고) 레이어와 데이터베이스 레이어 둘다 거쳐야 한다.</li>
+  <li>자세한 내용은 <a href="https://www.revsys.com/tidbits/three-things-you-should-never-put-your-database/">Three things you should never put in your database</a> 참고</li>
+</ul>
+
+<h3 id="646-try-to-avoid-using-generic-relations">6.4.6 Try to Avoid Using Generic Relations</h3>
+
+<ul>
+  <li>범용 관계(generic relations): 한 테이블로부터 다른 테이블을 서로 제약 조건이 없는 외부 키(unconstrained foreign key, GenericForeignKey)로 바인딩하는 것이다.</li>
+</ul>
+
+<h4 id="문제점">문제점</h4>
+
+<ul>
+  <li>모델 간의 인덱싱이 존재하지 않으면 쿼리 속도에 손해를 가져오게 된다.</li>
+  <li>다른 테이블에 존재하지 않는 레코드를 참조할 수 있는 데이터 충돌의 위험성이 존재한다.</li>
+</ul>
+
+<h4 id="장점">장점</h4>
+
+<ul>
+  <li>기존에 만들어 놓은 여러 모델 타입과 상호 작업하는 앱을 새로 제작시 수월함</li>
+</ul>
+
+<h4 id="범용-관계-정리">범용 관계 정리</h4>
+
+<ul>
+  <li>범용관게와 GenericForeignKey 이용은 피하자.</li>
+  <li>범용관계가 필요하다면, 모델 디자인을 바꾸거나 새로운 PostgreSQL 필드로 해결할 수 있는지 확인하자.</li>
+  <li>이용해야만 한다면 서드파티 앱을 고려하자.</li>
+  <li><a href="https://lukeplant.me.uk/blog/posts/avoid-django-genericforeignkey/">Avoid Django’s GenericForeignKey</a> 참고</li>
+</ul>
+
+<h3 id="647-make-choices-and-sub-choices-model-constants">6.4.7 Make Choices and Sub-Choices Model Constants</h3>
+
+<ul>
+  <li>선택 항목을 튜플로 정의된 구조로 모델에 속성을 추가</li>
+  <li><a href="https://docs.djangoproject.com/en/3.2/ref/models/fields/#django.db.models.Field.choices">django doc</a></li>
+</ul>
+
+<h3 id="648-using-enumeration-types-for-choices">6.4.8 Using Enumeration Types for Choices</h3>
+
+<ul>
+  <li>django 3.0 부터 기본 내장</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="k">class</span> <span class="nc">IceCreamOrder</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span> 
+    <span class="k">class</span> <span class="nc">Flavors</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">TextChoices</span><span class="p">):</span>
+           <span class="n">CHOCOLATE</span> <span class="o">=</span> <span class="s">'ch'</span><span class="p">,</span> <span class="s">'Chocolate'</span>
+           <span class="n">VANILLA</span> <span class="o">=</span> <span class="s">'vn'</span><span class="p">,</span> <span class="s">'Vanilla'</span>
+           <span class="n">STRAWBERRY</span> <span class="o">=</span> <span class="s">'st'</span><span class="p">,</span> <span class="s">'Strawberry'</span>
+           <span class="n">CHUNKY_MUNKY</span> <span class="o">=</span> <span class="s">'cm'</span><span class="p">,</span> <span class="s">'Chunky Munky'</span>
+
+   <span class="n">flavor</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span>
+       <span class="n">max_length</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+       <span class="n">choices</span><span class="o">=</span><span class="n">Flavors</span><span class="p">.</span><span class="n">choices</span>
+   <span class="p">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>단점
+    <ul>
+      <li>Named group은 열겨형으루 사용 불가</li>
+      <li>str, int 이외의 유형은 직접 정의 필요</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="649-postgresql-specific-fields-when-to-use-null-and-blank">6.4.9 PostgreSQL-Specific Fields: When to Use Null and Blank</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>필드 타입</th>
+      <th>null=True</th>
+      <th>blank=True</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ArrayField</td>
+      <td>Okay</td>
+      <td>Okay</td>
+    </tr>
+    <tr>
+      <td>HStoreField</td>
+      <td>Okay</td>
+      <td>Okay</td>
+    </tr>
+    <tr>
+      <td>IntegerRangeField,<br />BigIntegerRangeField,<br />FloatRangeField</td>
+      <td>DB에 해당 값들을 NULL로 설정할 수 있다면 Okay</td>
+      <td>위젯에서 해당 값이 빈값을 허용하기 원한다면 <code class="language-plaintext highlighter-rouge">null=True</code>와 함께 사용</td>
+    </tr>
+    <tr>
+      <td>DatetimeRangeField,<br />DateRangeField</td>
+      <td>DB에 해당 값들을 NULL로 설정할 수 있다면 Okay</td>
+      <td>위젯에서 해당 값에 빈값을 허용하길 원하거나 <code class="language-plaintext highlighter-rouge">auto_now</code>나 <code class="language-plaintext highlighter-rouge">auto_now_add</code>를 이용한다면 <code class="language-plaintext highlighter-rouge">null=True</code>와 함께 사용</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="65-the-model-_meta-api">6.5 The Model <code class="language-plaintext highlighter-rouge">_meta</code> API</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">_meta</code>의 본 목적: 모델에 대한 부가적인 정보를 장고 내부적으로 이용
+    <ul>
+      <li>모델 필드의 리스트를 가져올 때</li>
+      <li>모델의 특정 필드의 클래스를 가져올 때(또는 상속 관계나 상속 등을 통해 생성된 정보를 가져올 때)</li>
+      <li>추후 장고 버전들에서 이러한 정보를 어떻게 가져오게 되었는지 확실하게 상수로 남기기 원할 때</li>
+      <li>장고 모델의 자체 검사 도구</li>
+      <li>라이브러리를 이용해서 특별하게 커스터마이징된 자신만의 장고를 만들 때</li>
+      <li>장고의 모델 데이터를 조정하거나 변경할 수 있는 일종의 관리 도구를 제작할 때</li>
+      <li>시각화 또는 분석 라이브러리를 제작할 때</li>
+      <li><a href="https://docs.djangoproject.com/en/3.2/ref/models/meta/">django doc</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="66-model-managers">6.6 Model Managers</h2>
+
+<ul>
+  <li><a href="https://docs.djangoproject.com/en/3.2/topics/db/managers/">django doc</a></li>
+</ul>
+
+<p>모델에 질의를 하면 장고 ORM은 <strong>모델 매니저</strong>(데이터베이스와 연동되는 인터페이스)를 호출합니다. 모델 매니저는 모든 클래스(테이블 안의 모든 데이터)의 모든 인스턴스 세트로 작동합니다.</p>
+
+<h4 id="사용-예">사용 예</h4>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">django.utils</span> <span class="kn">import</span> <span class="n">timezone</span>
+
+<span class="k">class</span> <span class="nc">PublishedManager</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Manager</span><span class="p">):</span>
+
+	<span class="n">use_for_related_fields</span> <span class="o">=</span> <span class="bp">True</span>
+
+	<span class="k">def</span> <span class="nf">published</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">pub_date__lte</span><span class="o">=</span><span class="n">timezone</span><span class="p">.</span><span class="n">now</span><span class="p">(),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">FlavorReview</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+	<span class="n">review</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+	<span class="n">pub_date</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">DateTimeField</span><span class="p">()</span>
+
+	<span class="c1"># 커스텀 모델 매니저를 추가
+</span>	<span class="n">objects</span> <span class="o">=</span> <span class="n">PublishedManager</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">reviews.models</span> <span class="kn">import</span> <span class="n">FlavorReview</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">FlavorReview</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">count</span><span class="p">()</span>
+<span class="mi">35</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">FlavorReview</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">published</span><span class="p">().</span><span class="n">count</span><span class="p">()</span>
+<span class="mi">31</span>
+</code></pre></div></div>
+
+<h4 id="주의점">주의점</h4>
+
+<ul>
+  <li>모델을 상속받아 이용시 추상화 기초 클래스들의 자식들은 부모 모델의 모델 매니저를 받고, 접합 기반 클래스는 그렇지 않다.</li>
+  <li>모델 클래스에 적용되는 첫 번째 매니저는 장고가 기본값으로 취급하는 매니저이다. 이것은 파이썬의 일반적인 패턴을 무시하는 것으로 QuerySet의 결과를 예상할 수 없게 한다.</li>
+</ul>
+
+<h2 id="67-understanding-fat-models">6.7 Understanding Fat Models</h2>
+
+<ul>
+  <li>Fat Model: 데이터 관련 코드를 뷰나 템플릿이 아닌 모델 메서드, 클래스 메서드, 프로퍼티, 매니저 메서드 안에 넣어 캡슐화하는 것</li>
+  <li>단점
+    <ul>
+      <li>모델 코드의 크기가 <strong>신의 객체</strong>(god object) 수준으로 증가됨</li>
+      <li>어마어마한 코드의 크기와 복잡성으로 이해하기 어렵고, 테스트나 유지보수 난이도 대폭 상승</li>
+    </ul>
+  </li>
+  <li>객체 지향 언어의 아이디어를 염두해두고 로직들을 이전해야 합니다.
+    <ul>
+      <li>메서드들과 클래스 메서드, 프로퍼티는 유지하고, 그 안의 로직들을 모델 행동(model behavior)이나 헬퍼 함수(stateless helper function)으로 이전한다.</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="671-model-behaviors-aka-mixins">6.7.1 Model Behaviors a.k.a Mixins</h3>
+
+<ul>
+  <li>모델 행동은 믹스인을 통한 캡슐화와 구성화의 개념으로 이루어졌습니다.</li>
+  <li>모델을 추상화 모델로부터 로직들을 상속받습니다.</li>
+  <li><a href="https://blog.kevinastone.com/django-model-behaviors">Kevin Stone Blog</a></li>
+  <li><a href="">Section 10.2: Using Mixins With CBVs</a></li>
+</ul>
+
+<h3 id="672-stateless-helper-functions">6.7.2 Stateless Helper Functions</h3>
+
+<ul>
+  <li>유틸리티 함수로 모델의 로직을 분리</li>
+  <li>장점: 로직에 대한 테스트가 수월해짐</li>
+  <li>단점: 상태가 없기 때문에 함수에 더 많은 인자가 필요하다.</li>
+  <li><a href="">Chapter 31: What About Those Random Utilities?</a></li>
+</ul>
+
+<h3 id="673-model-behaviors-vs-helper-functions">6.7.3 Model Behaviors vs Helper Functions</h3>
+
+<p>위 두 방법은 완벽하진 않지만, 충분히 도움이 되는 방법들입니다.</p>
+
+<h2 id="68-additional-resources">6.8 Additional Resources</h2>
+
+<ul>
+  <li>모델은 장고 프로젝트의 기초로써, 신중히 디자인해야 합니다.</li>
+  <li>정규화 및 다른 방법을 고려하고, 최후 수단으로 비정규화를 도입해야 합니다.</li>
+  <li>raw Query로 느리고 복잡한 쿼리를 해결할 수도 있습니다.</li>
+  <li>적절한 장소에 캐시를 사용하여 성능 이슈를 해결할 수도 있습니다.</li>
+  <li>인덱스를 사용하세요.</li>
+  <li>모델 간의 상속은 ‘추상화 기초 클래스’를 사용하세요.</li>
+  <li><code class="language-plaintext highlighter-rouge">null=True</code>, <code class="language-plaintext highlighter-rouge">blank=True</code> 옵션 사용시 주의하세요.</li>
+  <li><code class="language-plaintext highlighter-rouge">django-model-utils</code>, <code class="language-plaintext highlighter-rouge">django-extensions</code>를 활용해도 좋습니다.</li>
+  <li>거대 모델의 단점을 주의하세요.</li>
+</ul>
+:ET

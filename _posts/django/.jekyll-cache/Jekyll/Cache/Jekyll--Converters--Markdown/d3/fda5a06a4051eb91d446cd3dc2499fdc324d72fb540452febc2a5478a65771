@@ -1,0 +1,72 @@
+I""<blockquote>
+  <p><a href="https://docs.djangoproject.com/en/2.2/ref/models/indexes/">Django Model index ref</a></p>
+</blockquote>
+
+<hr />
+
+<p>인덱스 클래스는 DB 인덱스를 쉽게 만들 수 있습니다. <code class="language-plaintext highlighter-rouge">Meta.indexes</code> 옵션을 사용하여 추가할 수 있습니다.</p>
+
+<blockquote>
+  <p>인덱스는 ‘django.db.models.indexes’에 정의되어 있지만 편의상 ‘django.db.models’으로 가져옵니다. 표준 규칙은 ‘from django.db import models’을 사용하고 인덱스를 ‘models.<IndexClass>'를 참조합니다.</IndexClass></p>
+</blockquote>
+
+<h2 id="index-options">Index options</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Index</span><span class="p">(</span><span class="n">fields</span><span class="o">=</span><span class="p">(),</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">db_tablespace</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">opclasses</span><span class="o">=</span><span class="p">(),</span> <span class="n">condition</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>DB에 index(B-Tree)을 작성합니다.</p>
+
+<h3 id="fields"><code class="language-plaintext highlighter-rouge">fields</code></h3>
+
+<p>index가 필요한 필드 이름의 리스트나 튜플.</p>
+
+<p>기본적으로 인덱스는 각 열에 대해 오름차순으로 생성됩니다. 내림차순으로 정의하려면 앞에 하이픈을 추가하세요.</p>
+
+<h3 id="name"><code class="language-plaintext highlighter-rouge">name</code></h3>
+
+<p>인덱스의 이름입니다. name이 제공되지 않으면 Django는 이름을 자동생성합니다.<br />
+다른 DB의 호환성을 위해 30자 미만으로 제한되며 숫자(0-9)나 언더스코어(<code class="language-plaintext highlighter-rouge">_</code>)로 시작하면 안됩니다.</p>
+
+<blockquote>
+  <p>abstract base classes의 부분 indexes
+인덱스의 이름은 언제나 고유한 이름으로 지정해야 합니다. Meta.indexes 옵션은 속성(name 포함)에 대한 값이 동일한 하위 클래스에 상속되므로, 추상 기본 클래스에 부분 인덱스를 지정할 수 없습니다. 대신 각 인덱스에 고유한 이름을 지정하여 하위 클래스에 직접 인덱스 옵션을 지정할 수 있습니다.</p>
+</blockquote>
+
+<h3 id="db_tablespace"><code class="language-plaintext highlighter-rouge">db_tablespace</code></h3>
+
+<p>인덱스에 사용할 DB 테이블 스페이스의 이름입니다. 단일 필드 인덱스의 경우 <code class="language-plaintext highlighter-rouge">db_tablespace</code>가 제공되지 않는다면 필드의 <code class="language-plaintext highlighter-rouge">db_tablespace</code>에 인덱스가 생성됩니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">Field.db_tablespace</code>가 지정되지 않은 경우(혹은 인덱스가 여러 필드를 사용하는 경우), 모델의 메타 클래스 안에 <code class="language-plaintext highlighter-rouge">db_tablespace</code> 옵션에 지정된 테이블스페이스에 인덱스가 생성됩니다.</p>
+
+<p>테이블 스페이스가 설정되지 않은 경우, 인덱스는 테이블과 동일한 테이블 스페이스에 생성됩니다.</p>
+
+<h3 id="opclasses"><code class="language-plaintext highlighter-rouge">opclasses</code></h3>
+
+<p>인덱스에 사용할 PostgreSQL 연산자 클래스의 이름입니다. 사용자 정의 연산자 클래스가 필요한 경우 인덱스의 각 필드마다 하나씩 제공해야 합니다.</p>
+
+<p>예를 들어 <code class="language-plaintext highlighter-rouge">GinIndex(name='json_index', fields=['jsonfield'], opclasses=['jsonb_path_ops'])</code>는 <code class="language-plaintext highlighter-rouge">jsonb_path_ops</code>를 사용하여 jsonfield에 gin 인덱스를 만듭니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">opclasses</code>는 PostgreSQL에서만 사용됩니다.<br />
+<code class="language-plaintext highlighter-rouge">opclasses</code>를 사용할 때는 ‘Index.name’이 필요합니다.</p>
+
+<h3 id="condition"><code class="language-plaintext highlighter-rouge">condition</code></h3>
+
+<p>테이블이 매우 크고, 쿼리가 주로 행의 하위 집합을 대상으로 하는 경우, 인덱스를 해당 하위 집합으로 제한하는 것이 유용합니다. 조건을 <code class="language-plaintext highlighter-rouge">Q</code>로 지정하세요.</p>
+
+<p>예를 들어, <code class="language-plaintext highlighter-rouge">condition=Q(pages__gt=400)</code>는 400 페이지가 넘는 레코드를 인덱스화합니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">condition</code>은 ‘Index.name’이 필요합니다.</p>
+
+<blockquote>
+  <p>PostgreSQL에 대한 제한<br />
+PostgreSQL는 condition 안에서 참조된 함수를 IMMUTABLE로 표시하도록 요구합니다. Django는 이걸 검증하지 않지만, PostgreSQL는 오류를 발생시킵니다.<br />
+이건 Date functions과 Concat과 같은 기능은 받아들여지지 않는다는 것을 의미합니다.<br />
+DateTimeField에 날짜를 지정하는 경우, datetime 객체와의 비교는 tzinfo 인수를 제공해야 합니다.</p>
+</blockquote>
+
+<blockquote>
+  <p>MySQL과 MariaDB
+condition 인덱스를 지원하지 않기 때문에 MySQL과 MariaDB에서는 무시됩니다.</p>
+</blockquote>
+:ET

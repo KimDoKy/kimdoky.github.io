@@ -1,0 +1,93 @@
+I"õ<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<h2 id="231-examples-of-third-party-packages">23.1 Examples of Third-Party Packages</h2>
+
+<h2 id="232-know-about-the-python-package-index">23.2 Know About the Python Package Index</h2>
+
+<h2 id="233-know-about-djangopackagesorg">23.3 Know About DjangoPackages.org</h2>
+
+<h2 id="234-know-your-resources">23.4 Know Your Resources</h2>
+
+<h2 id="235-tools-for-installing-and-managing-packages">23.5 Tools for Installing and Managing Packages</h2>
+
+<h2 id="236-package-requirements">23.6 Package Requirements</h2>
+
+<h2 id="237-wiring-up-django-packages-the-basics">23.7 Wiring Up Django Packages: The Basics</h2>
+
+<h3 id="2371-step1-read-to-documentation-for-the-package">23.7.1 Step1: Read to Documentation for the Package</h3>
+
+<h3 id="2372-step2-add-package-and-version-number-to-your-requirements">23.7.2 Step2: Add Package and Version Number to Your Requirements</h3>
+
+<h3 id="2373-step3-install-the-requirements-into-your-virtualenv">23.7.3 Step3: Install the Requirements Into Your Virtualenv</h3>
+
+<h3 id="2374-step4-follow-the-packages-installation-instructions-exactly">23.7.4 Step4: Follow the Packageâ€™s Installation Instructions Exactly</h3>
+
+<h2 id="238-troubleshooting-third-party-packages">23.8 Troubleshooting Third-Party Packages</h2>
+
+<h2 id="239-releasing-your-own-django-packages">23.9 Releasing Your Own Django Packages</h2>
+
+<hr />
+
+<h2 id="2310-what-makes-a-good-django-package">23.10 What Makes a Good Django Package?</h2>
+
+<h3 id="23101-purpose">23.10.1 Purpose</h3>
+
+<h3 id="23102-scope">23.10.2 Scope</h3>
+
+<h3 id="23103-documentation">23.10.3 Documentation</h3>
+
+<h3 id="23104-tests">23.10.4 Tests</h3>
+
+<h3 id="23105-templates">23.10.5 Templates</h3>
+
+<h3 id="23106-activity">23.10.6 Activity</h3>
+
+<h3 id="23107-community">23.10.7 Community</h3>
+
+<h3 id="23108-modularity">23.10.8 Modularity</h3>
+
+<h3 id="23109-availability-on-pypi">23.10.9 Availability on PyPI</h3>
+
+<h3 id="231010-uses-the-broadest-requirements-specifiers-possible">23.10.10 Uses the Broadest Requirements Specifiers Possible</h3>
+
+<h3 id="231011-proper-version-numbers">23.10.11 Proper Version Numbers</h3>
+
+<h3 id="231012-name">23.10.12 Name</h3>
+
+<h3 id="231013-license">23.10.13 License</h3>
+
+<h3 id="231014-clarity-of-code">23.10.14 Clarity of Code</h3>
+
+<h3 id="231015-use-url-namespaces">23.10.15 Use URL Namespaces</h3>
+
+<h2 id="2311-creating-your-own-packages-the-easy-way">23.11 Creating Your Own Packages the Easy Way</h2>
+
+<h2 id="2312-maintaining-your-open-source-package">23.12 Maintaining Your Open Source Package</h2>
+
+<h3 id="23121-give-credit-for-pull-requests">23.12.1 Give Credit for Pull Requests</h3>
+
+<h3 id="23122-handling-bad-pull-requests">23.12.2 Handling Bad Pull Requests</h3>
+
+<h3 id="23123-do-formal-pypi-releases">23.12.3 Do Formal PyPI Releases</h3>
+
+<h3 id="23124-create-and-deploy-wheels-to-pypi">23.12.4 Create and Deploy Wheels to PyPI</h3>
+
+<h3 id="23125-add-git-tags-to-the-repo">23.12.5 Add Git Tags to the Repo</h3>
+
+<h3 id="23126-upgrade-the-package-to-new-versions-of-django">23.12.6 Upgrade the Package to New Versions of Django</h3>
+
+<h3 id="23127-follow-good-security-practices">23.12.7 Follow Good Security Practices</h3>
+
+<h3 id="23128-provide-sample-base-templates">23.12.8 Provide Sample Base Templates</h3>
+
+<h3 id="23129-give-the-package-away">23.12.9 Give the Package Away</h3>
+
+<h2 id="2313-additional-reading">23.13 Additional Reading</h2>
+
+<h2 id="2314-summary">23.14 Summary</h2>
+
+:ET

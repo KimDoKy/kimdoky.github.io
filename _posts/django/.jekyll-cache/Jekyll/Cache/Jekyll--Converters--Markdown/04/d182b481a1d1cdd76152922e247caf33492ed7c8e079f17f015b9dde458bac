@@ -1,0 +1,101 @@
+I"&<h1 id="django-rest-framework---content-negotiation">Django REST Framework - Content negotiation</h1>
+
+<hr />
+
+<p><em>“HTTP has provisions for several mechanisms for “content negotiation” - the proce반s of selecting the best representation for a given response when there are multiple representations available.”</em></p>
+
+<p><em>“HTTP는 “내용 협상 (content negotiation)”에 대한 몇 가지 메커니즘에 대한 규정을 제공합니다. 이는 여러 표현을 사용할 수 있는 경우 주어진 응답에 대한 최상의 표현을 선택하는 프로세스입니다.”</em></p>
+
+<p><em>— RFC 2616, Fielding et al.</em></p>
+
+<hr />
+
+<h2 id="content-negotiation">Content negotiation</h2>
+<p>content negotiation은 클라이언트 또는 서버 환경 설정에 따라 클라이언트로 리턴할 수 있는 여러 표현 중 하나를 선택하는 프로세스입니다.</p>
+
+<h3 id="determining-the-accepted-renderer">Determining the accepted renderer</h3>
+<p>REST 프레임워크는 간단한 스타일의 content negotiation을 사용하여 사용 가능한 renderer. 각 렌더러의 우선 순위 및 클라이언트의 <code class="language-plaintext highlighter-rouge">Accept:</code> 헤더를 기반으로 클라이언트에 반환해야하는 미디어 유형을 결정합니다. 사용되는 스타일은 부분적으로 클라이언트 / 서버 중심적입니다.</p>
+
+<ol>
+  <li>더 구체적인 미디어 유형은 덜 구체적인 미디어 유형보다 우선합니다.</li>
+  <li>복수의 미디어 타입이 같은 특이성을 가지는 경우, 지정된 뷰에 대해서 설정된 렌더러의 순서에 따라 우선권이 주어집니다.</li>
+</ol>
+
+<p>예를 들어, 다음 <code class="language-plaintext highlighter-rouge">Accept</code> 헤더가 제공됩니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>application/json; indent=4, application/json, application/yaml, text/html, */*
+</code></pre></div></div>
+
+<p>각 미디어 유형의 우선 순위는 다음과 같습니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">application/json; indent=4</code></li>
+  <li><code class="language-plaintext highlighter-rouge">application/json</code>, <code class="language-plaintext highlighter-rouge">application/yaml</code> and <code class="language-plaintext highlighter-rouge">text/html</code></li>
+  <li><code class="language-plaintext highlighter-rouge">*/*</code></li>
+</ul>
+
+<p>요청 된 뷰가 <code class="language-plaintext highlighter-rouge">YAML</code>과 <code class="language-plaintext highlighter-rouge">HTML</code>용 렌더러로만 구성된 경우 REST 프레임워크는 <code class="language-plaintext highlighter-rouge">renderer_classes</code> list 또는 `	DEFAULT_RENDERER_CLASSES` 설정에서 먼저 나열된 렌더러를 선택합니다.</p>
+
+<p>HTTP Accept 헤더에 대한 자세한 내용은 <a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html"><code class="language-plaintext highlighter-rouge">RFC 2616</code></a>을 참조하십시오.</p>
+
+<hr />
+
+<p><strong>Note</strong> : 환경 설정에서 REST 프레임워크가 <code class="language-plaintext highlighter-rouge">"q"</code>값을 고려하지 않습니다. <code class="language-plaintext highlighter-rouge">"q"</code>값의 사용은 캐싱에 부정적인 영향을 주며 저자의 의견으로는 content negotiation에 불필요하고 복잡해지는 접근방식입니다.</p>
+
+<p>이는 HTTP 사양이 의도적으로 서버가 클라이언트 기반 환경설정에 대해 서버 기잔 환경설정에 가중치를 부여하는 방법을 명시하지 않기 때문에 유효한 접근 방식입니다.</p>
+
+<hr />
+
+<h2 id="custom-content-negotiation">Custom content negotiation</h2>
+<p>REST 프레임워크에 대해 custom content negotiation scheme를 제공하는 것은 거의 불가능하지만 필요한 경우 그렇게 할 수 있습니다. custom content negotiation scheme를 구현하려면 <code class="language-plaintext highlighter-rouge">BaseContentNegotiation</code>을 오버라이드합니다.</p>
+
+<p>REST 프레임워크의 content negotiation 클래스는 요청에 대한 적절한 파서 및 응답에 적합한 렌더러 모두를 처리하므로 <code class="language-plaintext highlighter-rouge">.select_parser(request, parser)</code> 및 <code class="language-plaintext highlighter-rouge">.select_renderer(request, renderers, format_suffix)</code> 메서드를 모두 구현해야합니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">select_parser()</code>메서드는 파서 인스턴스 중 하나를 사용 가능한 파서 목록에서 반환하거나 파서가 들어오는 요청을 처리 할 수 없는 경우 <code class="language-plaintext highlighter-rouge">None</code>을 반환해야합니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">select_renderer()</code>메서드는 (renderer instance, media type)의 두 tuple을 반환하거나 <code class="language-plaintext highlighter-rouge">NotAcceptable</code> 예외를 발생시킵니다.</p>
+
+<h3 id="example">Example</h3>
+<p>다음은 적절한 파서 또는 렌더러를 선택할 때 클라이언트 요청을 무시하는 custom content negotiation 클래스입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework.negotiation</span> <span class="kn">import</span> <span class="n">BaseContentNegotiation</span>
+
+<span class="k">class</span> <span class="nc">IgnoreClientContentNegotiation</span><span class="p">(</span><span class="n">BaseContentNegotiation</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">select_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">parsers</span><span class="p">):</span>
+        <span class="s">"""
+        Select the first parser in the `.parser_classes` list.
+        """</span>
+        <span class="k">return</span> <span class="n">parsers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">select_renderer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">renderers</span><span class="p">,</span> <span class="n">format_suffix</span><span class="p">):</span>
+        <span class="s">"""
+        Select the first renderer in the `.renderer_classes` list.
+        """</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">renderers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">renderers</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">media_type</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="setting-the-content-negotiation">Setting the content negotiation</h3>
+<p>기본 content negotiation 클래스는 <code class="language-plaintext highlighter-rouge">DEFAULT_CONTENT_NEGOTIATION_CLASS</code>설정을 사용하여 전역으로 설정 할 수 있습니다. 예를 들어, 다음 설정은 예제 <code class="language-plaintext highlighter-rouge">IgnoreClientContentNegotitaion</code>클래스를 사용합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'DEFAULT_CONTENT_NEGOTIATION_CLASS'</span><span class="p">:</span> <span class="s">'myapp.negotiation.IgnoreClientContentNegotiation'</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">APIView</code> CBV를 사용하여 개별 view 또는 viewset에 사용 된 content negotiation을 설정할 수도 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">myapp.negotiation</span> <span class="kn">import</span> <span class="n">IgnoreClientContentNegotiation</span>
+<span class="kn">from</span> <span class="nn">rest_framework.response</span> <span class="kn">import</span> <span class="n">Response</span>
+<span class="kn">from</span> <span class="nn">rest_framework.views</span> <span class="kn">import</span> <span class="n">APIView</span>
+
+<span class="k">class</span> <span class="nc">NoNegotiationView</span><span class="p">(</span><span class="n">APIView</span><span class="p">):</span>
+    <span class="s">"""
+    An example view that does not perform content negotiation.
+    """</span>
+    <span class="n">content_negotiation_class</span> <span class="o">=</span> <span class="n">IgnoreClientContentNegotiation</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">({</span>
+            <span class="s">'accepted media type'</span><span class="p">:</span> <span class="n">request</span><span class="p">.</span><span class="n">accepted_renderer</span><span class="p">.</span><span class="n">media_type</span>
+        <span class="p">})</span>
+</code></pre></div></div>
+:ET

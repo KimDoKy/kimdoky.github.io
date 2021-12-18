@@ -1,0 +1,31 @@
+I"�
+<p>model object의 필드값을 커스텀하여 api 응답으로 보내주어야 하는 경우들이 있습니다.</p>
+
+<p>구현한 코드를 기록합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">contents</span> <span class="o">=</span> <span class="n">Contents</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">first</span><span class="p">()</span>
+<span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="p">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">contents</span><span class="p">.</span><span class="n">_meta</span><span class="p">.</span><span class="n">fields</span><span class="p">]</span>
+<span class="n">exclude_fields</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s">'description'</span><span class="p">,</span>
+    <span class="s">'etc'</span><span class="p">,...</span>
+    <span class="p">]</span>
+
+<span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">exclude_fields</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">contents</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>구현하고 보니 DRF의 serializer와 비슷합니다.</p>
+
+<p>그래서 DRF의 serializer로 다시 구현합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">ContentSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Contents</span>
+        <span class="n">exclude</span> <span class="o">=</span> <span class="p">[</span><span class="s">'description'</span><span class="p">,</span> <span class="p">...]</span>
+</code></pre></div></div>
+
+<p>serializer의 소스 코드도 비슷합니다.</p>
+
+<p>쳇…</p>
+:ET

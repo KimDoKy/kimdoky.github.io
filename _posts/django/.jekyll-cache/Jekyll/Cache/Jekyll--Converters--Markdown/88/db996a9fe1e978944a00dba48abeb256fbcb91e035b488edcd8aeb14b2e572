@@ -1,0 +1,266 @@
+I"@z<h1 id="django-rest-framework---validators">Django REST Framework - Validators</h1>
+
+<hr />
+
+<p><em>“Validators can be useful for re-using validation logic between different types of fields.”</em></p>
+
+<p><em>“유효성 검사기는 다른 유형의 필드간에 유효성 검사논리를 다시 사용하는데 유용할 수 있습니다.”</em></p>
+
+<p><em>— Django documentation</em></p>
+
+<hr />
+
+<h2 id="validators유효성-검사기">Validators(유효성 검사기)</h2>
+<p>대부분 REST 프레임워크에서 유효성 검사를 처리하는 경우 기본 필드 유효성 검사에 의존하거나 serializer 또는 필드 클래스에 대한 명시적인 <code class="language-plaintext highlighter-rouge">Validator</code> 메소드를 작성하기만 하면 됩니다.<br />
+그러나 때때로 유효성 검사 논리를 재사용 가능한 구성 요소에 배치하여 코드 베이스 전체에서 쉽게 재사용 할 수 있습니다. 이 작업은 Validator 함수와 Validators 클래스를 사용하여 수행할 수 있습니다.</p>
+
+<h3 id="validation-in-rest-framework">Validation in REST framework</h3>
+<p>Django의 REST 프레임워크 serializer의 validation는 Django의 <code class="language-plaintext highlighter-rouge">ModelForm</code>클래스에서  validation이 작동하는 방식과 조금 다르게 처리됩니다.<br />
+<code class="language-plaintext highlighter-rouge">ModelForm</code>을 사용하면 validation이 부분적으로 form에서 수행되고, 부분적으로 모델 인스턴스에서 수행됩니다. REST 프레임워크를 사용하면 validation은 전체적으로 serializer클래스에서 수행됩니다. 이는 다음과 같은 이유로 유리합니다.</p>
+
+<ul>
+  <li>적절한 구분을 제공하여 코드 동작을 보다 명확하게 만듭니다.</li>
+  <li>shortcut <code class="language-plaintext highlighter-rouge">ModelSerializer</code>클래스를 사용하거나 명시적 serializer클래스를 사용하는 것은 쉽게 전환할 수 있습니다. <code class="language-plaintext highlighter-rouge">ModelSerializer</code>에 사용되는 모든 validation 동작은 복제가 간단합니다.</li>
+  <li>serializer 인스턴스의 <code class="language-plaintext highlighter-rouge">repr</code>을 출력(print)하면 validation 규칙이 정확하게 표시됩니다. 모델 인스턴스에서 추가 숨겨진 validation 동작이 호출되지 않습니다.
+<code class="language-plaintext highlighter-rouge">ModelSerializer</code>를 사용하면 모든 것이 자동으로 처리됩니다. 대신 Serializer클래스를 사용하여 드롭다운하려면 validation 규칙을 명시적으로 정의해야 합니다.</li>
+</ul>
+
+<h4 id="example">Example</h4>
+<p>REST 프레임워크가 명시적 validation을 사용하는 방법의 예로, 고유성 제약 조건이 있는 필드가 있는 간단한 모델 클래스를 사용합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">CustomerReportRecord</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">time_raised</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">timezone</span><span class="p">.</span><span class="n">now</span><span class="p">,</span> <span class="n">editable</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">reference</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">()</span>
+</code></pre></div></div>
+<p>다음은 <code class="language-plaintext highlighter-rouge">CustomReportRecord</code>인스턴스를 생성하거나 업데이트할 때 사용할 수 있는 기본 <code class="language-plaintext highlighter-rouge">ModelSerializer</code>입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">CustomerReportSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">CustomerReportRecord</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">manage.py</code> shell을 사용하여 Django shell을 열면 이제 할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">project.example.serializers</span> <span class="kn">import</span> <span class="n">CustomerReportSerializer</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">serializer</span> <span class="o">=</span> <span class="n">CustomerReportSerializer</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">serializer</span><span class="p">))</span>
+<span class="n">CustomerReportSerializer</span><span class="p">():</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s">'ID'</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">time_raised</span> <span class="o">=</span> <span class="n">DateTimeField</span><span class="p">(</span><span class="n">read_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">reference</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">validators</span><span class="o">=</span><span class="p">[</span><span class="o">&lt;</span><span class="n">UniqueValidator</span><span class="p">(</span><span class="n">queryset</span><span class="o">=</span><span class="n">CustomerReportRecord</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">())</span><span class="o">&gt;</span><span class="p">])</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="p">{</span><span class="s">'type'</span><span class="p">:</span> <span class="s">'textarea'</span><span class="p">})</span>
+</code></pre></div></div>
+<p>여기서 흥미로운 부분은 참조필드입니다. 고유성 제약이 serializer 필드의 validator에 의해 명시적으로 적용되고 있음을 알 수 있습니다.<br />
+더 명시적인 스타일 때문에 REST 프레임워크는 Django의 핵심에서 사용할 수 없는 몇가지 validator 클래스를 포함합니다. 이 클래스들은 아래에 자세히 설명되어 있습니다.</p>
+
+<hr />
+
+<h3 id="uniquevalidator">UniqueValidator</h3>
+<p>validator를 사용하여 모델 필드에 <code class="language-plaintext highlighter-rouge">unique=True</code>제약 조건을 적용 할 수 있습니다. 하나의 필수 인수와 선택적 <code class="language-plaintext highlighter-rouge">massages</code> 인수를 취합니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">queryset</code> (필수) : 유일성을 강요해야하는  queryset입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">massege</code> : 검증이 실패했을 경우 사용하는 에러 메세지</li>
+  <li><code class="language-plaintext highlighter-rouge">lookup</code> : 검증되고 있는 값을 가지고 기존의 인스턴스를 찾는데 사용합니다. 기본값은 <code class="language-plaintext highlighter-rouge">exact</code>입니다.</li>
+</ul>
+
+<p>이 validator는 다음과 같이 serializer 필드에 적용되어야 합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework.validators</span> <span class="kn">import</span> <span class="n">UniqueValidator</span>
+
+<span class="n">slug</span> <span class="o">=</span> <span class="n">SlugField</span><span class="p">(</span>
+    <span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">validators</span><span class="o">=</span><span class="p">[</span><span class="n">UniqueValidator</span><span class="p">(</span><span class="n">queryset</span><span class="o">=</span><span class="n">BlogPost</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">())]</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="uniquetogethervalidator">UniqueTogetherValidator</h3>
+<p>이 validator를 사용하여 모델 인스턴스에 <code class="language-plaintext highlighter-rouge">unique_together</code>제약 조건을 적용할 수 있습니다. 여기에는 두 개의 필수 인수와 단일 선택적 <code class="language-plaintext highlighter-rouge">messages</code>인수가 있습니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">queryset</code>(필수) : 유일성을 강요해야하는 queryset입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">fields</code>(필수) : 고유한 set을 만들어야 하는 필드이름의 list 또는 tuple. 이들은 serializer 클래스의 필드로 존재해야 합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">message</code> : 검증에 실패했을 경우 사용하는 에러 메세지</li>
+</ul>
+
+<p>validator는 다음과 같이 serializer 클래스에 적용되어야 합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework.validators</span> <span class="kn">import</span> <span class="n">UniqueTogetherValidator</span>
+
+<span class="k">class</span> <span class="nc">ExampleSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">Serializer</span><span class="p">):</span>
+    <span class="c1"># ...
+</span>    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="c1"># ToDo items belong to a parent list, and have an ordering defined
+</span>        <span class="c1"># by the 'position' field. No two items in a given list may share
+</span>        <span class="c1"># the same position.
+</span>        <span class="n">validators</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">UniqueTogetherValidator</span><span class="p">(</span>
+                <span class="n">queryset</span><span class="o">=</span><span class="n">ToDoItem</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">(),</span>
+                <span class="n">fields</span><span class="o">=</span><span class="p">(</span><span class="s">'list'</span><span class="p">,</span> <span class="s">'position'</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+</code></pre></div></div>
+
+<hr />
+<p><strong>Note</strong>: <code class="language-plaintext highlighter-rouge">UniqueTogetherValidation</code>클래스는 항상 적용되는 모든 필드가 항상 필요한 것으로 처리된다는 암시적 제약조건을 부과합니다. <code class="language-plaintext highlighter-rouge">default</code>가 있는 필드는 사용자 입력에서 생략 된 경우에도 항상 값을 제공하므로 예외입니다.</p>
+
+<hr />
+
+<h3 id="uniquefordatevalidator">UniqueForDateValidator</h3>
+<h3 id="uniqueformonthvalidator">UniqueForMonthValidator</h3>
+<h3 id="uniqueforyearvalidator">UniqueForYearValidator</h3>
+<p>이 validator는 모델 인스턴스에 대해 <code class="language-plaintext highlighter-rouge">unique_for_date</code>, <code class="language-plaintext highlighter-rouge">unique_for_month</code>, <code class="language-plaintext highlighter-rouge">unique_for_year</code> 제약조건을 적용하는데 사용할 수 있습니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">queryset</code>(필수) : 유일성을 강요해야하는 queryset입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">field</code>(필수) : 지정된 날짜 범위의 고유성에 대한 필드 이름입니다. 이것은 serializer 클래스의 필드로 존재해야합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">date_field</code>(필수) : 고유성 제한 조건의 날짜 범위를 결정하는데 사용할 필드 이름입니다. 이것은 serializer클래스의 필드로 존재해야 합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">massege</code> : 검증이 실패했을 경우에 사용하는 에러 메세지</li>
+</ul>
+
+<p>validator는 다음과 같이 serializer클래스에 적용되어야 합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework.validators</span> <span class="kn">import</span> <span class="n">UniqueForYearValidator</span>
+
+<span class="k">class</span> <span class="nc">ExampleSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">Serializer</span><span class="p">):</span>
+    <span class="c1"># ...
+</span>    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="c1"># Blog posts should have a slug that is unique for the current year.
+</span>        <span class="n">validators</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">UniqueForYearValidator</span><span class="p">(</span>
+                <span class="n">queryset</span><span class="o">=</span><span class="n">BlogPostItem</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">(),</span>
+                <span class="n">field</span><span class="o">=</span><span class="s">'slug'</span><span class="p">,</span>
+                <span class="n">date_field</span><span class="o">=</span><span class="s">'published'</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+</code></pre></div></div>
+<p>validation에 사용되는 날짜 필드는 항상 serializer클래스에 있어야 합니다. validation이 실행될 때까지 기본값에 사용되는 값이 생성되지 않기 때문에 모델 클래스 <code class="language-plaintext highlighter-rouge">default=...</code>에 의존할 수 없습니다.<br />
+API를 어떻게 동작시키는지에 따라 이 스타일을 사용할 수 있는 스타일이 몇가지 있습니다. <code class="language-plaintext highlighter-rouge">ModelSerializer</code>를 사용하는 경우 REST 프레임워크에서 생성하는 기본값을 사용하는 것이 좋지만 serializer를 사용하거나 보다 명시적인 제어를 원한다면 아래에 설명된 스타일을 사용하세요.</p>
+
+<h4 id="using-with-a-writable-date-field-쓰기-가능한-날짜-필드와-함께-사용하기">Using with a writable date field. (쓰기 가능한 날짜 필드와 함께 사용하기)</h4>
+<p>날짜 필드를 쓰기 가능하게하려면, 기본 인수를 설정하거나 <code class="language-plaintext highlighter-rouge">required=True</code>를 설정하여 입력 데이터에서 항상 사용할 수 있도록 해야합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>published = serializers.DateTimeField(required=True)
+</code></pre></div></div>
+
+<h4 id="using-with-a-read-only-date-field-읽기-전용-날짜-필드와-함께-사용하기">Using with a read-only date field. (읽기 전용 날짜 필드와 함께 사용하기)</h4>
+<p>사용자가 날짜 필드를 볼 수는 있지만 편집할 수도 없도록 하려면 <code class="language-plaintext highlighter-rouge">read_only=True</code>로 설정하고 추가로 <code class="language-plaintext highlighter-rouge">default=...</code>인수를 설정하십시오.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>published = serializers.DateTimeField(read_only=True, default=timezone.now)
+</code></pre></div></div>
+<p>필드는 사용자에게 쓸 수 없지만 기본값은 여전히 <code class="language-plaintext highlighter-rouge">validated_data</code>로 전달됩니다.</p>
+
+<h4 id="using-with-a-hidden-date-field-숨겨진-날짜-필드와-함께-사용하기">Using with a hidden date field. (숨겨진 날짜 필드와 함께 사용하기)</h4>
+<p>사용자가 날짜 필드를 완전히 숨기려면 <code class="language-plaintext highlighter-rouge">HiddenField</code>를 사용하세요. 이 필드 타입은 사용자 입력을 허용하지 않고 대신 항상 기본값을 serializer의 <code class="language-plaintext highlighter-rouge">validated_data</code>로 반환합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>published = serializers.HiddenField(default=timezone.now)
+</code></pre></div></div>
+
+<hr />
+<p><strong>Note</strong>: <code class="language-plaintext highlighter-rouge">UniqueFor&lt;Range&gt;Validation</code>클래스는 적용되는 필드가 항상 필요한 것으로 처리된다는 암시적 제약조건을 적용합니다. <code class="language-plaintext highlighter-rouge">default</code>가 있는 필드는 사용자 입력에서 생략된 경우에도 항상 값을 제공하므로 예외입니다.</p>
+
+<hr />
+
+<h2 id="advanced-field-defaults">Advanced field defaults</h2>
+<p>serializer의 여러 필드에 적용되는 valistor는 API 클라이언트가 제공해서는 안되지만 validator의 입력으로 사용할 수 있는 필드 입력이 필요할 수 있습니다.<br />
+이러한 유형의 validation에 사용할 수 있는 두가지 패턴은 다음과 같습니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">HiddenField</code>를 사용하는 것입니다. 이 필드는 <code class="language-plaintext highlighter-rouge">validated_data</code>에 있지만 serializer 출력 표현에서는 사용되지 않습니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">read_only=True</code>와 함께 표준 필드는 사용하지만 <code class="language-plaintext highlighter-rouge">default=...</code>인수도 포함합니다. 이 필드는 serializer 출력 표현에 사용되지만 사용자가 직접 설정할 수는 없습니다.</li>
+</ul>
+
+<p>REST 프레임워크는 이 컨텍스트에서 유용 할 수 있는 몇 가지 기본값을 포함합니다.</p>
+
+<h3 id="currentuserdefault">CurrentUserDefault</h3>
+<p>현재 사용자를 나타내는데 사용할 수 있는 기본 클래스입니다. 이것을 사용하기 위해서는, serializer를 인스턴스화 할때 <code class="language-plaintext highlighter-rouge">request</code>가 컨텍스트 dict의 일부로 제공되어야 합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">owner</span> <span class="o">=</span> <span class="n">serializers</span><span class="p">.</span><span class="n">HiddenField</span><span class="p">(</span>
+    <span class="n">default</span><span class="o">=</span><span class="n">serializers</span><span class="p">.</span><span class="n">CurrentUserDefault</span><span class="p">()</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="createonlydefault">CreateOnlyDefault</h3>
+<p>작성 조작 중 default의 인수만을 설정하는데 사용할 수 있는 기본 클래스. 업데이트 중 필드는 생략됩니다.<br />
+이것은 작성 작업중에 사용되는 기본값이거나 호출 가능한 단일 인수를 취합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">created_at</span> <span class="o">=</span> <span class="n">serializers</span><span class="p">.</span><span class="n">DateTimeField</span><span class="p">(</span>
+    <span class="n">read_only</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="n">serializers</span><span class="p">.</span><span class="n">CreateOnlyDefault</span><span class="p">(</span><span class="n">timezone</span><span class="p">.</span><span class="n">now</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<hr />
+<h2 id="limitations-of-validators">Limitations of validators</h2>
+<p><code class="language-plaintext highlighter-rouge">ModelSerializer</code>이 생성하는 기본 serializer 클래스를 사용하는 대신 validation을 명시적으로 처리해야하는 모호한 경우가 있습니다.<br />
+이러한 경우 serializerz <code class="language-plaintext highlighter-rouge">Meta.valisators</code>속성에 대한 빈 목록을 지정하여 자동 생성 된 validator를 사용하지 않도록 설정할 수 있습니다.</p>
+
+<h3 id="optional-fields">Optional fields</h3>
+<p>기본적으로 “unique together”validation는 모든 필드가 <code class="language-plaintext highlighter-rouge">required=True</code>인지 확인합니다. 경우에 따라 필드 중 하나에 명시적으로 <code class="language-plaintext highlighter-rouge">required=False</code>를 적용하면 원하는 validation 동작이 모호할 수 있습니다.<br />
+이 경우 일반적으로 serializer 클래스에서 validator를 제외하고, <code class="language-plaintext highlighter-rouge">.validate()</code>메서드나 뷰에서 validation 논리를 명시적으로 작성해야합니다.</p>
+
+<p>예를 들어:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">BillingRecordSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c1"># Apply custom validation either here, or in the view.
+</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'client'</span><span class="p">,</span> <span class="s">'date'</span><span class="p">,</span> <span class="s">'amount'</span><span class="p">)</span>
+        <span class="n">extra_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s">'client'</span><span class="p">:</span> <span class="p">{</span><span class="s">'required'</span><span class="p">:</span> <span class="s">'False'</span><span class="p">}}</span>
+        <span class="n">validators</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Remove a default "unique together" constraint.
+</span></code></pre></div></div>
+
+<h3 id="updating-nested-serializers">Updating nested serializers</h3>
+<p>기존 인스턴스에 업데이트를 적용할 때 고유성 validator는 현재 인스턴스를 고유성 검사에서 제외합니다. 현재 인스턴스는 고유성 검사의 컨텍스트에서 사용 할 수 있습니다. 이 속성은 serializer의 속성으로 존재하기 때문에 처음에는 serializer를 인스턴스화 할때 <code class="language-plaintext highlighter-rouge">instance=...</code>를 사용하여 전달되었습니다.<br />
+중첩 된 serializer에 대한 업데이트 작업의 경우 인스턴스를 사용할 수 없으므로 이 배제를 적용할 방법이 없습니다.<br />
+다시 말하면, serializer클래스에서 validator를 명시적으로 제거하고 validation 제약 조건에 대한 코드를 명시적으로 <code class="language-plaintext highlighter-rouge">.validate()</code>메서드나 뷰에 작성하려고 합니다.</p>
+
+<h3 id="debugging-complex-cases">Debugging complex cases</h3>
+<p><code class="language-plaintext highlighter-rouge">ModelSerializer</code> 클래스가 어떤 동작을 하는지 확실히 모를 경우 <code class="language-plaintext highlighter-rouge">manage.py</code> 셸을 실행하고 serializer의 인스턴스를 인쇄하면 자동으로 생성되는 필드와 validator를 검사 할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">serializer</span> <span class="o">=</span> <span class="n">MyComplexModelSerializer</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">serializer</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MyComplexModelSerializer</span><span class="p">:</span>
+    <span class="n">my_fields</span> <span class="o">=</span> <span class="p">...</span>
+</code></pre></div></div>
+<p>또한 복잡한 경우에는 기본 <code class="language-plaintext highlighter-rouge">ModelSerializer</code> 동작을 사용하는 대신 serializer 클래스를 명시적으로 정의하는 것이 더 나을 수 있습니다.</p>
+
+<hr />
+
+<h2 id="writing-custom-validators">Writing custom validators</h2>
+<p>Django의 기존 validator를 사용하거나 custom validator를 작성할 수 있습니다.</p>
+
+<h3 id="function-based">Function based</h3>
+<p>validator는 아마도 실패하면 <code class="language-plaintext highlighter-rouge">serializer.ValidationError</code>를 발생시켜 호출합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">even_number</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">serializers</span><span class="p">.</span><span class="n">ValidationError</span><span class="p">(</span><span class="s">'This field must be an even number.'</span><span class="p">)</span>
+</code></pre></div></div>
+<h4 id="field-level-validation">Field-level validation</h4>
+<p>Serializer 서브 클래스에 <code class="language-plaintext highlighter-rouge">.validate_&lt;field_name&gt;</code> 메소드를 추가하여 custom 필드 레벨 vallidation을 지정 할 수 있습니다.</p>
+
+<h3 id="class-based">Class-based</h3>
+<p>클래스 기반 validator를 작성하려면 <code class="language-plaintext highlighter-rouge">__call__</code>메서드를 사용하세요. 클래스 기반 validator는 동작을 매개 변수화하고 다시 사용할 수 있으므로 유용합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MultipleOf</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">base</span> <span class="o">=</span> <span class="n">base</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">%</span> <span class="bp">self</span><span class="p">.</span><span class="n">base</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s">'This field must be a multiple of %d.'</span> <span class="o">%</span> <span class="bp">self</span><span class="p">.</span><span class="n">base</span>
+            <span class="k">raise</span> <span class="n">serializers</span><span class="p">.</span><span class="n">ValidationError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h4 id="using-set_context">Using <code class="language-plaintext highlighter-rouge">set_context()</code></h4>
+
+<p>일부 고급 예제에서는 validator를 추가 컴텍스트로 사용되는  serializer 필드로 전달해야 할 수 있습니다. 클래스 기반의 validator에서 <code class="language-plaintext highlighter-rouge">set_context</code>메서드를 선언하여 그렇게 할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">set_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serializer_field</span><span class="p">):</span>
+    <span class="c1"># Determine if this is an update or a create operation.
+</span>    <span class="c1"># In `__call__` we can then use that information to modify the validation behavior.
+</span>    <span class="bp">self</span><span class="p">.</span><span class="n">is_update</span> <span class="o">=</span> <span class="n">serializer_field</span><span class="p">.</span><span class="n">parent</span><span class="p">.</span><span class="n">instance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+</code></pre></div></div>
+:ET

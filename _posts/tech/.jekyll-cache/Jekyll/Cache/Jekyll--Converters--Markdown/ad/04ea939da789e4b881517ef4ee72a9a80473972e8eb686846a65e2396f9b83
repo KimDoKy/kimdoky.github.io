@@ -1,0 +1,412 @@
+I"�:<p>특정한 패턴에 일치하는 복잡한 문자열을 처리할 때 사용하는 기법.</p>
+
+<p>파이썬에서는 표준 모듈 <code class="language-plaintext highlighter-rouge">re</code> 를 사용해서 사용할 수 있다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">imoort</span> <span class="n">re</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">re</span><span class="p">.</span><span class="n">match</span><span class="p">(</span><span class="s">'Ex'</span><span class="p">,</span> <span class="s">'Expressions'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">match</code>의 첫번째 인자에는 패턴이 들어가고, 두번째 인자에는 문자열 소스가 들어간다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">match()</code>는 소스와 패턴의 일치 여부를 확인하고, 일치할 경우 <code class="language-plaintext highlighter-rouge">Match object</code>를 반환한다.</p>
+
+<h2 id="cheatsheet">Cheatsheet</h2>
+
+<h3 id="character-classes">Character classes</h3>
+<blockquote>
+  <p>특정 셋의 문자와 일치</p>
+</blockquote>
+
+<table>
+  <thead>
+    <tr>
+      <th>class</th>
+      <th>expr</th>
+      <th>description</th>
+      <th>ex</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>dot</td>
+      <td>.</td>
+      <td>줄 바꿈을 제외한 모든 문자와 일치</td>
+      <td><img src="/img/post/reg/1_1.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>match any</td>
+      <td>/s /S</td>
+      <td>줄 바꿈을 포함하여 모든 문자를 일치</td>
+      <td><img src="/img/post/reg/1_2.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>word</td>
+      <td>\w</td>
+      <td>모든 단어 문자 (영숫자 및 밑줄)와 일치<br /> [A-Za-z0-9_] 와 동일</td>
+      <td><img src="/img/post/reg/1_3.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>not word</td>
+      <td>\W</td>
+      <td>단어 문자가 아닌 문자 (영숫자 및 밑줄)와 일치 <br /> [^ A-Za-z0-9_] 와 동일</td>
+      <td><img src="/img/post/reg/1_4.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>digit</td>
+      <td>\d</td>
+      <td>임의의 숫자 (0-9)와 일치 <br /> [0-9]와 동일</td>
+      <td><img src="/img/post/reg/1_5.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>not digit</td>
+      <td>\D</td>
+      <td>숫자가 아닌 문자와 일치<br /> [^0-9]와 동일</td>
+      <td><img src="/img/post/reg/1_6.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>whitespace</td>
+      <td>\s</td>
+      <td>공백 문자(공백, 탭, 줄바꿈)와 일치</td>
+      <td><img src="/img/post/reg/1_7.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>not whitespace</td>
+      <td>\S</td>
+      <td>공백 문자(공백, 탭, 줄바꿈)가 아닌 문자와 일치</td>
+      <td><img src="/img/post/reg/1_8.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>character set</td>
+      <td>[ABC]</td>
+      <td>셋의 모든 문자와 일치</td>
+      <td><img src="/img/post/reg/1_9.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>negated set</td>
+      <td>[^ABC]</td>
+      <td>셋에 없는 모든 문자와 일치</td>
+      <td><img src="/img/post/reg/1_10.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="anchors">Anchors</h3>
+<blockquote>
+  <p>문자가 아닌 문자열 내의 위치</p>
+</blockquote>
+
+<table>
+  <thead>
+    <tr>
+      <th>class</th>
+      <th>expr</th>
+      <th>description</th>
+      <th>ex</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>beginning</td>
+      <td>^</td>
+      <td>multiline flag(m)가 활성화 된 경우 문자열의 시작 또는 행의 시작과 일치<br /> 문자가 아닌 위치와 일치</td>
+      <td><img src="/img/post/reg/2_1.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>end</td>
+      <td><code class="language-plaintext highlighter-rouge">$</code></td>
+      <td>multiline flag(m)가 활성화 된 경우 문자열의 끝 또는 행의 끝과 일치<br />문자가 아닌 위치와 일치</td>
+      <td><img src="/img/post/reg/2_2.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>word boundary</td>
+      <td>\b</td>
+      <td>공백, 구두점 또는 문자열의 시작/끝과 같은 단어 경계 위치를 찾음<br />문자가 아닌 위치와 일치</td>
+      <td><img src="/img/post/reg/2_3.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>not word boundary</td>
+      <td>\B</td>
+      <td>단어 경계다 아닌 위치와 일치<br />문자가 아닌 위치와 일치</td>
+      <td><img src="/img/post/reg/2_4.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="escaped-characters">Escaped characters</h3>
+<blockquote>
+  <p>일부 문자는 정규 표현식에서 특별한 의미를 지니며 이스케이프해야 합니다.</p>
+</blockquote>
+
+<table>
+  <thead>
+    <tr>
+      <th>class</th>
+      <th>expr</th>
+      <th>description</th>
+      <th>ex</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>octal escape</td>
+      <td>\000</td>
+      <td>8진수는 \000 형식의 문자를 이스케이프 처리<br />255(\377)보다 작아야함</td>
+      <td><img src="/img/post/reg/3_1.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>hexadecimal escape</td>
+      <td>\xFF</td>
+      <td>\xFF 형식의 16진수 이스케이프 문자</td>
+      <td><img src="/img/post/reg/3_2.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>unicode escape</td>
+      <td>\uFFFF</td>
+      <td>유니코드 \uFFFF 형식의 문자를 이스케이프 처리</td>
+      <td><img src="/img/post/reg/3_3.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>control character escape</td>
+      <td>\cI</td>
+      <td>\cZ 형식의 제어 문자를 이스케이프 처리<br />\cA(NULL, char code 0)에서 \cZ(EM, char code 25)까지 다양</td>
+      <td><img src="/img/post/reg/3_4.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>tab</td>
+      <td>\t</td>
+      <td>TAB 문자(char code 9)와 일치</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>line feed</td>
+      <td>\n</td>
+      <td>LINE FEED 문자(char code 10)와 일치</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>vertical tab</td>
+      <td>\v</td>
+      <td>VERTICAL TAB 문자(char code 11)와 일치</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>form feed</td>
+      <td>\f</td>
+      <td>FORM FEED 문자(char code 12)와 일치</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>carrige return</td>
+      <td>\r</td>
+      <td>CARRIAGE RETURN 문자(char code 13)와 일치</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>null</td>
+      <td>\0</td>
+      <td>NULL 문자(char code 0)와 일치</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="groups--lookaround">Groups &amp; Lookaround</h3>
+<blockquote>
+  <p>그룹을 사용하면 일련의 토큰을 결합하여 함께 작동할 수 있음<br />
+캡쳐 그룹은 역 참조로 참조되고 결과에서 별도로 엑서스 할 수 있음<br />
+둘러보기를 사용하면 그룹을 결과에 포함하지 않고 일치시킬 수 있음</p>
+</blockquote>
+
+<table>
+  <thead>
+    <tr>
+      <th>class</th>
+      <th>expr</th>
+      <th>description</th>
+      <th> </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>capturing group</td>
+      <td>(ABC)</td>
+      <td>여러 토큰을 그룹화하고 하위 문자열을 추출하거나 역참조를 사용하는 캡처드룹을 만듬</td>
+      <td><img src="/img/post/reg/4_1.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>backreference</td>
+      <td>\1</td>
+      <td>이전 캡쳐 그룹의 결과와 일치<br />예를 들어 \1 은 첫번째, \3은 세번째 캡쳐 그룹과 일치</td>
+      <td><img src="/img/post/reg/4_2.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>non-capturing group</td>
+      <td>(?:ABC)</td>
+      <td>캡쳐 그룹을 만들지 않고 여러 토큰을 그룹화 함</td>
+      <td><img src="/img/post/reg/4_3.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>positive lookahead</td>
+      <td>(?=ABC)</td>
+      <td>그룹을 주 표현식 다음에 일치시키지 않고 결과에 포함</td>
+      <td><img src="/img/post/reg/4_4.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>negative looahead</td>
+      <td>(?!ABC)</td>
+      <td>주 표현식 뒤에 일치 할 수 없는 그룹을 지정<br />(일치하는 경우 결과가 무시)</td>
+      <td><img src="/img/post/reg/4_5.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>positive lookahead*</td>
+      <td>(?&lt;=ABC)</td>
+      <td>결과에 포함시키지 않고 주 표현식 앞에 그룹을 일치<br />JavaScript는 지원 안됨</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>negative lookahead*</td>
+      <td>(?&lt;!ABC)</td>
+      <td>주 표현식 앞에 일치시킬 수 없는 그룹을 지정<br />(일치하는 경우 결과가 무시)<br />JavaScript는 지원 안됨</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="quantifiers--alternation">Quantifiers &amp; Alternation</h3>
+<blockquote>
+  <p>Quantifiers는 선행하는 토큰이 일정 횟수 일치해야 함<br />
+기본적으로 최대한 많은 문자와 일치<br />
+Alternation는 하나의 순서 또는 다른 것과 부합하는 boolean OR과 같은 역할을 함</p>
+</blockquote>
+
+<table>
+  <thead>
+    <tr>
+      <th>class</th>
+      <th>expr</th>
+      <th>description</th>
+      <th>ex</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>plus</td>
+      <td>+</td>
+      <td>앞의 토큰 중 하나 이상과 일치</td>
+      <td><img src="/img/post/reg/5_1.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>star</td>
+      <td>*</td>
+      <td>앞의 토큰 중 0개 이상을 찾음</td>
+      <td><img src="/img/post/reg/5_2.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>quantifier</td>
+      <td>{1,3}</td>
+      <td>이전 토큰의 지정된 수량과 일치<br />{3}은 정확히 3개 일치해야함<br />{3,}은 3개 이상과 일치</td>
+      <td><img src="/img/post/reg/5_3.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>optional</td>
+      <td>?</td>
+      <td>앞의 토큰 중 0 또는 1과 일치하므로 효과적으로 선택적으로 만듬</td>
+      <td><img src="/img/post/reg/5_4.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>lazy</td>
+      <td>?</td>
+      <td>앞에 있는 한정 기호를 게으르게 만들어서 가능한한 적은 수의 문자와 일치시킴<br />기본적으로 한정기호는 최대한 많은 문자와 일치</td>
+      <td><img src="/img/post/reg/5_5.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+    <tr>
+      <td>alternation</td>
+      <td><code class="language-plaintext highlighter-rouge">|</code></td>
+      <td>boolean OR과 같은 역할을 함<br /><code class="language-plaintext highlighter-rouge">|</code>앞 뒤에 있는 표현식을 일치<br />그룹내에서 또는 전체 표현식에서 작동할 수 있음<br />패턴은 순서대로 테스트됨</td>
+      <td><img src="/img/post/reg/5_6.png" alt="" width="50%" height="50%" /></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="substitution">Substitution</h3>
+<blockquote>
+  <p>이 토큰은 대체 문자열에서 일치 항목의 다른 부분을 삽입하는데 사용</p>
+</blockquote>
+
+<table>
+  <thead>
+    <tr>
+      <th>class</th>
+      <th>expr</th>
+      <th>description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>match</td>
+      <td>$&amp;</td>
+      <td>일치하는 텍스트를 삽입</td>
+    </tr>
+    <tr>
+      <td>capture group</td>
+      <td>$1</td>
+      <td>지정된 캡처 그룹의 결과를 삽입<br />(ex. $3은 세번째 캡처 그룹을 삽입)</td>
+    </tr>
+    <tr>
+      <td>before match</td>
+      <td>$`</td>
+      <td>일치하는 원본 문자열의 일부를 삽입</td>
+    </tr>
+    <tr>
+      <td>after match</td>
+      <td>$’</td>
+      <td>일치하는 문자열 다음에 오는 부분을 삽입</td>
+    </tr>
+    <tr>
+      <td>escaped $</td>
+      <td>$$</td>
+      <td>달러 문자($)를 삽입</td>
+    </tr>
+    <tr>
+      <td>escaped characters</td>
+      <td>\n</td>
+      <td>대체 문자열에는 \n, \t, \x09, \u0009 와 같은 JS 문자열 형식과 호환되는 이스케이프 된 문자가 지원됨</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="flags">Flags</h3>
+<blockquote>
+  <p>표현식 플래그는 표현식 해석 방법을 변경함<br />
+JS에는 세 개의 플래그가 있음.</p>
+</blockquote>
+
+<p>class|expr|description
+—|—|—
+ignore case|i|전체 표현식을 대소 문자를 구별하지 않게 함<br />\aBc\i는 AbC와 일치함
+global search|g|마지막 일치 항목의 색인을 유지하면 이후 검색이 이전 일치 항목의 끝에서부터 시작될 수 있음<br />전역 플래그가 없으면 후속 검색에서 동일한 일치 항목을 반환
+multiline|m|multiline 플래그가 활성화괴면 시작 및 끝 앵커(^ 및 $)는 전체 문자열의 시작 및 끝 대신 줄의 시작 및 끝과 일치<br />
+/^[\s\S]+$/m과 같은 패턴은 앵커가 모든 라인의 시작/끝과 일치하기 때문에 여러 줄에 걸쳐있는 일치를 반환 할 수 있습니다.</p>
+
+<h3 id="examples">Examples</h3>
+
+<h4 id="integer--decimal-numbers">integer &amp; decimal numbers</h4>
+<p><img src="/img/post/reg/ex_1.png" alt="" width="50%" height="50%" /></p>
+<h4 id="test-testing">test testing</h4>
+<p><img src="/img/post/reg/ex_2.png" alt="" width="50%" height="50%" /></p>
+<h4 id="phone-numbers">phone numbers</h4>
+<p><img src="/img/post/reg/ex_3.png" alt="" width="50%" height="50%" /></p>
+<h4 id="word">word</h4>
+<p><img src="/img/post/reg/ex_4.png" alt="" width="50%" height="50%" /></p>
+<h4 id="24-or-32-bit-colors">24 or 32 bit colors</h4>
+<p><img src="/img/post/reg/ex_5.png" alt="" width="50%" height="50%" /></p>
+<h4 id="4-letter-words">4 letter words</h4>
+<p><img src="/img/post/reg/ex_6.png" alt="" width="50%" height="50%" /></p>
+<h4 id="2-5-letter-palindromes">2-5 letter palindromes</h4>
+<p><img src="/img/post/reg/ex_7.png" alt="" width="50%" height="50%" /></p>
+
+<h2 id="정규식-공부하기-좋은-사이트">정규식 공부하기 좋은 사이트</h2>
+<p><a href="http://regexr.com/">http://regexr.com/</a></p>
+
+<p><a href="https://wikidocs.net/4309">https://wikidocs.net/4309</a></p>
+:ET

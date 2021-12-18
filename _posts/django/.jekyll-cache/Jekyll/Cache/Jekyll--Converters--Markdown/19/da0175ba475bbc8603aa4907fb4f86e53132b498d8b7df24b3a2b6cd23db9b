@@ -1,0 +1,25 @@
+I"�	<h1 id="creating-model-managers">Creating model managers</h1>
+
+<p><code class="language-plaintext highlighter-rouge">objects</code>는 모든 모델의 기본 manager이다.<br />
+하지만 custom manager 역시 만들어서 사용할 수 있다.<br />
+모델에 manager를 추가하는 방법은 두 가지가 있다.</p>
+
+<ol>
+  <li><code class="language-plaintext highlighter-rouge">Post.objects.my_manager()</code></li>
+  <li><code class="language-plaintext highlighter-rouge">Post.my_manager.all()</code></li>
+</ol>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">PublishedManager</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Manager</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">PublishedManager</span><span class="p">,</span>         <span class="bp">self</span><span class="p">).</span><span class="n">get_queryset</span><span class="p">().</span><span class="nb">filter</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s">'published'</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">Manager</span><span class="p">()</span>  <span class="c1"># default manager
+</span>    <span class="n">published</span> <span class="o">=</span> <span class="n">PublishedManager</span><span class="p">()</span> <span class="c1"># custom manager
+</span></code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">get_queryset()</code>은 QuerySet을 리턴하는 메소드이다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Post</span><span class="p">.</span><span class="n">published</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">title__startswith</span><span class="o">=</span><span class="s">'New'</span><span class="p">)</span>
+</code></pre></div></div>
+:ET

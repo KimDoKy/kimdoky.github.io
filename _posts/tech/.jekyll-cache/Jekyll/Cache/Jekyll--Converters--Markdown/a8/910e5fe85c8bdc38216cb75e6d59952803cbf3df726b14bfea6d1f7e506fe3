@@ -1,0 +1,93 @@
+I"�<p><a href="http://jekyllrb-ko.github.io/">http://jekyllrb-ko.github.io/</a></p>
+
+<h3 id="jekyll-설치">jekyll 설치</h3>
+
+<p><code class="language-plaintext highlighter-rouge">gem install jekyll</code></p>
+
+<h3 id="jeykell-블성그-생성">jeykell 블성그 생성</h3>
+
+<p><code class="language-plaintext highlighter-rouge">jekyll new myblog</code></p>
+
+<blockquote>
+  <p><code class="language-plaintext highlighter-rouge">jekyll 3.3.0 | Error:  bundler</code> 이런 error가 발생한다면 <code class="language-plaintext highlighter-rouge">gem install bundler</code> 으로 bundler을 설치해준다. (당연히 발생한다. 설치 안했으니까!) 
+Jekyll 한글 페이지는 업데이트 안되어있음. 영문에서는 jekyll과 bundler를 함께 설치하라고 나와있다.</p>
+</blockquote>
+
+<h3 id="jekyll-블로그-실행">jekyll 블로그 실행</h3>
+
+<p><code class="language-plaintext highlighter-rouge">cd myblog</code></p>
+
+<p><code class="language-plaintext highlighter-rouge">jekyll serve --watch</code></p>
+
+<blockquote>
+  <p><code class="language-plaintext highlighter-rouge">--watch</code>는 사이트에 변경사항이 생기면 브라우저에서 바로 확인할 수 있다.</p>
+</blockquote>
+
+<p>localhost:4000 으로 접속하면 생성된 지킬 사이트를 볼 수 있다.</p>
+
+<p><img src="/img/post//jekyll1.png" alt="" /></p>
+
+<h3 id="디렉조리-구조">디렉조리 구조</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>├── Gemfile
+├── Gemfile.lock
+├── _config.yml : 전역 환경설정 파일
+├── _posts
+│   └── 2017-05-01-welcome-to-jekyll.markdown
+├── _site : 제네레이트된 블로그가 위치하는 곳
+│   ├── about
+│   │   └── index.html
+│   ├── assets
+│   │   └── main.css
+│   ├── feed.xml
+│   ├── index.html
+│   └── jekyll
+│       └── update
+│           └── 2017
+│               └── 05
+│                   └── 01
+│                       └── welcome-to-jekyll.html
+├── about.md
+└── index.md
+</code></pre></div></div>
+<p>공식 사이트에 나온 트리 구조와 직접 생성했을때 나오는 구조는 차이가 있었다. 일단 시작이니까 더 진행해본다.</p>
+<blockquote>
+  <p>터미널에서 tree를 보고싶다면?<br />
+<code class="language-plaintext highlighter-rouge">brew install tree</code></p>
+</blockquote>
+
+<h3 id="github-연결하기">github 연결하기</h3>
+
+<p>생성한 블로그 이름과 동일한 이름([사용자이름].github.com)으로 온라인 저장소 생성하고 remote 한다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">git init</code><br />
+<code class="language-plaintext highlighter-rouge">git remote add origin [저장소URL]</code><br />
+<code class="language-plaintext highlighter-rouge">git add .</code><br />
+<code class="language-plaintext highlighter-rouge">git commit -m "Initialize Blog</code><br />
+<code class="language-plaintext highlighter-rouge">git push origin master</code></p>
+
+<p>생성된 블로그는 http://[사용자이름].github.io 으로 접속하면 확인할 수 있다. 경우에 따라 몇 분이 걸릴 수 있다.(반드시 사용자 이름과 일치해야한다.)</p>
+
+<p><a href="https://kimdoky.github.io/">https://kimdoky.github.io/</a></p>
+
+<h3 id="필수-엔진-설치">필수 엔진 설치</h3>
+<p>마크다운 프로세싱 엔진<br />
+<code class="language-plaintext highlighter-rouge">gem install kramdown</code></p>
+
+<p>Pygments. 코드를 이쁘게 보여준다<br />
+<code class="language-plaintext highlighter-rouge">easy_install Pygments</code></p>
+
+<h3 id="포스팅하기">포스팅하기</h3>
+
+<p><code class="language-plaintext highlighter-rouge">_post</code> 파일안에 <code class="language-plaintext highlighter-rouge">YYYY-MM-DD-[글 제목].md</code> 형식으로 커밋, 푸쉬하면 됨.</p>
+
+<h4 id="테마-적용하기">테마 적용하기</h4>
+<p><a href="http://jekyllthemes.org/">http://jekyllthemes.org/</a></p>
+
+<h4 id="참고-사이트">참고 사이트</h4>
+
+<p><a href="http://jekyllrb-ko.github.io/">http://jekyllrb-ko.github.io/</a></p>
+
+<p><a href="https://nolboo.kim/blog/2013/10/15/free-blog-with-github-jekyll/">https://nolboo.kim/blog/2013/10/15/free-blog-with-github-jekyll/</a><br />
+<a href="https://brunch.co.kr/@hee072794/39">https://brunch.co.kr/@hee072794/39</a></p>
+:ET

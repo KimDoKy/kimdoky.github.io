@@ -1,0 +1,336 @@
+I"�B<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<h2 id="141-keep-templates-mostly-in-templates">14.1 Keep Templates Mostly in <code class="language-plaintext highlighter-rouge">templates</code></h2>
+
+<p>프로젝트 템플릿을 메인의 <code class="language-plaintext highlighter-rouge">templates</code> 에 모아두자</p>
+
+<h2 id="142-template-architecture-patters">14.2 Template Architecture Patters</h2>
+
+<p>일반적으로 2중 / 3중 구조 템플릿 형태가 가장 이상적</p>
+
+<h3 id="1421-2-tier-template-architecture-example">14.2.1 2-Tier Template Architecture Example</h3>
+
+<p>모든 템플릿은 하나의 base.html 파일을 상속받는다.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>templates/
+   ├── base.html
+   ├── dashboard.html <span class="c"># extends base.html</span>
+   ├── profiles/
+   │   ├── profile_detail.html <span class="c"># extends base.html</span>
+   │   ├── profile_form.html <span class="c"># extends base</span>
+</code></pre></div></div>
+
+<h3 id="1422-3-tier-template-architecture-example">14.2.2 3-Tier Template Architecture Example</h3>
+
+<ul>
+  <li>각 앱은 <code class="language-plaintext highlighter-rouge">base_&lt;app_name&gt;.html</code>을 가지고 있다. 각 파일들은 프로젝트의 <code class="language-plaintext highlighter-rouge">base.html</code>을 공유한다.</li>
+  <li><code class="language-plaintext highlighter-rouge">base.html</code>과 같은 레벨에 있는 템플릿들은 <code class="language-plaintext highlighter-rouge">base.html</code>을 상속해서 이용한다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>templates/
+       base.html
+       dashboard.html <span class="c"># extends base.html</span>
+       profiles/
+           base_profiles.html <span class="c"># extends base.html</span>
+           profile_detail.html <span class="c"># extends base_profiles.html</span>
+           profile_form.html <span class="c"># extends base_profiles.html</span>
+</code></pre></div></div>
+
+<p>섹션별로 레이아웃이 다른 경우에 최적화된 구성</p>
+
+<h3 id="1423-flat-is-better-than-nested">14.2.3 Flat Is Better Than Nested</h3>
+
+<p>계층 체계가 복잡해지면 디버그, 수정, 확장 등이 매우 어려워짐</p>
+
+<p>“수평 구조가 중첩된 구조보다 좋다” - The Zen of Python</p>
+
+<h2 id="143-limit-processing-in-templates">14.3 Limit Processing in Templates</h2>
+
+<p>템플릿에서 처리하는 프로세싱은 적을수록 좋다</p>
+
+<p>템플릿 레이어에서의 쿼리 수행과 이터레이션은 문제가 있다.</p>
+
+<ol>
+  <li>쿼리셋이 얼마나 큰가? 템플릿상에서 거대 쿼리셋에 대한 이터레이션은 권장하지 않음</li>
+  <li>얼마나 큰 객체가 반환되는가? 모든 필드가 꼭 필요한가?</li>
+  <li>각 이터레이션 루프 때마다 얼마나 많은 프로세싱이 벌어지는가?</li>
+</ol>
+
+<blockquote>
+  <p><strong>캐시를 이용은? 캐시를 이용하는 것도 괜찮지만, 원인을 먼저 파악하고 리팩터링이나 런타임 분석을 하는 것이 작업량을 줄일 수 있다.</strong></p>
+
+</blockquote>
+
+<h3 id="1431-gotcha-1-aggregation-in-templates">14.3.1 Gotcha 1: Aggregation in Templates</h3>
+
+<p>템플릿상의 자바스크립트로 비즈니스 로직을 처리하지 말자.</p>
+
+<h3 id="1432-gotcha-2-filtering-with-conditionals-in-templates">14.3.2 Gotcha 2: Filtering With Conditionals in Templates</h3>
+
+<p>템플릿상에서 거대한 루프문과 if문을 돌려서 필터링하지 말자.</p>
+
+<p>PostgreSQL, MySQL은 데이터를 필터링하는데 최적화된 기능을 가지고 있으며, Django의 ORM으로 사용할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># vouchers/views.py
+</span><span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">TemplateView</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Voucher</span>
+
+<span class="k">class</span> <span class="nc">GreenfeldRoyView</span><span class="p">(</span><span class="n">TemplateView</span><span class="p">):</span>
+    <span class="n">template_name</span> <span class="o">=</span> <span class="s">'vouchers/views_conditional.html'</span>
+
+    <span class="k">def</span> <span class="nf">get_context_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="nb">super</span><span class="p">().</span><span class="n">get_context_data</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">context</span><span class="p">[</span><span class="s">'greenfelds'</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">Voucher</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">name__icontains</span><span class="o">=</span><span class="s">'greenfeld'</span><span class="p">)</span>
+        <span class="n">context</span><span class="p">[</span><span class="s">'roys'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Voucher</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">name__icontains</span><span class="o">=</span><span class="s">'roy'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">context</span>
+</code></pre></div></div>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;h2&gt;</span>Greenfelds Who Want Ice Cream<span class="nt">&lt;/h2&gt;</span> <span class="nt">&lt;ul&gt;</span>
+{% for voucher in greenfelds %}
+<span class="nt">&lt;li&gt;</span>{{ voucher.name }}<span class="nt">&lt;/li&gt;</span> {% endfor %}
+<span class="nt">&lt;/ul&gt;</span>
+<span class="nt">&lt;h2&gt;</span>Roys Who Want Ice Cream<span class="nt">&lt;/h2&gt;</span> <span class="nt">&lt;ul&gt;</span>
+{% for voucher in roys %}
+<span class="nt">&lt;li&gt;</span>{{ voucher.name }}<span class="nt">&lt;/li&gt;</span> {% endfor %}
+<span class="nt">&lt;/ul&gt;</span>
+</code></pre></div></div>
+
+<h3 id="1433-gotcha-3-complex-implied-queries-in-templates">14.3.3 Gotcha 3: Complex Implied Queries in Templates</h3>
+
+<p>템플릿으로부터 호출된 모델 메서드에 너무 많은 쿼리 로직을 넣는 것은 자제해야 합니다.</p>
+
+<h3 id="1434-gotcha-4-hidden-cpu-load-in-templates">14.3.4 Gotcha 4: Hidden CPU Load in Templates</h3>
+
+<p>단순한 템플릿 코드라도 상당한 프로세싱을 필요로 하는 객체가 호출될 가능성이 있습니다.</p>
+
+<p>많은 양의 이미지나 데이터를 처리하는 프로젝트에서는 이미지 프로세싱 작업을 템플릿에서 분리해 뷰, 모델, 헬퍼 메서드, 셀러리 등을 이용한 비동기 메시지 큐 시스템으로 처리해야 합니다.</p>
+
+<h3 id="1435-gotcha-5-hidden-rest-api-calls-in-templates">14.3.5 Gotcha 5: Hidden REST API Calls in Templates</h3>
+
+<p>뷰로 전달될 객체가 포함된 메서드를 템플릿에서 호출하는 것을 피해야 합니다.</p>
+
+<ul>
+  <li>템플릿에서 REST API를 호출하기 위한 방법
+    <ul>
+      <li>자바스크립트 코드: 페이지 내용이 다 제공된 다음 클라이언트 브라우저에서 자바스크립트로 처리. 이런 경우 로딩 중에 사용자의 이목을 다른 곳으로 끄는 기능을 제공할 수 있음</li>
+      <li>느린 프로세스를 메시지 큐, 스레드, 멀티프로세스 등의 방법으로 처리하는 뷰의 파이썬 코드</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="144-dont-bother-making-your-generated-html-pretty">14.4 Don’t Bother Making Your Generated HTML Pretty</h2>
+
+<p>들여쓰기와 한 줄에 하나의 코드만 넣어서 읽기 쉽고 관리하기 쉽게 작성하자.</p>
+
+<p>빈 칸이 많아도 상관 X. 최적화를 위해 난해하게 작성된 코드보다 가독성 높은 코드가 선호됨.</p>
+
+<h2 id="145-exploring-template-inheritance">14.5 Exploring Template Inheritance</h2>
+
+<ul>
+  <li>base.html에서 사용하는 템플릿 태그</li>
+</ul>
+
+<table>
+  <tbody>
+    <tr>
+      <td>템플릿 태그</td>
+      <td>목적</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">{% load %}</code></td>
+      <td>정적 파일의 내장 템플릿 태그 라이브러리를 로드</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">{% block %}</code></td>
+      <td>base.html이 부모가 되는 템플릿이기 때문에 해당 블록을 자식 템플릿에서 이용할 수 있게 한다.</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">{% static %}</code></td>
+      <td>정적 미디어 서버에 이용될 정적 미디어 인자</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">base.html</code> 의 주소 작성 내용
+    <ul>
+      <li>커스텀 타이틀</li>
+      <li>기본 스타일시트와 추가 스타일시트</li>
+      <li>기본 헤더, 서브 헤더, 본문</li>
+      <li>자식 블록의 이용</li>
+      <li><code class="language-plaintext highlighter-rouge">{{ block.super }}</code> 템플릿 변수의 이용</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{% extends "base.html" %}
+{% load staticfiles %}
+{% block title %}About Audrey and Daniel{% endblock title %}
+{% block stylesheets %}
+  {{ block.super }}
+    <span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">"stylesheet"</span> <span class="na">type=</span><span class="s">"text/css"</span>
+<span class="na">href=</span><span class="s">"{% static 'css/about.css' %}"</span><span class="nt">&gt;</span>
+{% endblock stylesheets %}
+{% block content %}
+  {{ block.super }}
+    <span class="nt">&lt;h2&gt;</span>About Audrey and Daniel<span class="nt">&lt;/h2&gt;</span>
+    <span class="nt">&lt;p&gt;</span>They enjoy eating ice cream<span class="nt">&lt;/p&gt;</span>
+{% endblock content %}
+</code></pre></div></div>
+
+<ul>
+  <li>상속 받는 템플릿에서 사용하는 템플릿 태그</li>
+</ul>
+
+<table>
+  <tbody>
+    <tr>
+      <td>템플릿 객체</td>
+      <td>목적</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">{% extends %}</code></td>
+      <td>Django에게 base.html을 상속, 확장할 것임을 알려준다.</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">{% block %}</code></td>
+      <td>base.html의 block을 오버라이드</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">{{ block.super }}</code></td>
+      <td>자식 템플릿 블록에 위치하여 부모의 내용이 블록 안에 그대로 존재하게 해 줌</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="146-blocksuper-gives-the-power-of-control">14.6 block.super Gives the Power of Control</h2>
+
+<p>모든 템플릿이 base.html을 확장하여 이용한다면 <code class="language-plaintext highlighter-rouge">{{ block.super }}</code>를 이용하여 템플릿들을 관리할 수 있습니다.</p>
+
+<blockquote>
+  <p>block.super와 super()는 비슷하지만 같진 않다. 둘 다 부모로의 접근을 제공하지만, block.super는 인자를 넘겨받지 못한다.</p>
+
+</blockquote>
+
+<h2 id="147-useful-things-to-consider">14.7 Useful Things to Consider</h2>
+
+<h3 id="1471-avoid-coupling-styles-too-tightly-to-python-code">14.7.1 Avoid Coupling Styles Too Tightly to Python Code</h3>
+
+<p>템플릿 렌더링 스타일은 CSS, JS로 구현하자. 가능한 CSS를 이용하자.</p>
+
+<ul>
+  <li>파이썬 코드 안에 디자인 레이아웃에 관련된 특별한 상수가 들어 있다면 이를 CSS 파일로 빼내자</li>
+  <li>JS도 마찬가지</li>
+</ul>
+
+<h3 id="1472-common-conventions">14.7.2 Common Conventions</h3>
+
+<ul>
+  <li>파이썬 객체 이름으로 밑줄(<code class="language-plaintext highlighter-rouge">_</code>)은 허용되지만 대시(<code class="language-plaintext highlighter-rouge">-</code>)는 허용되지 않기 때문에, 여러 이름들은 밑줄을 사용한다.</li>
+  <li>객관적이고 명확한 블록 이름을 사용한다. (ex. <code class="language-plaintext highlighter-rouge">{% block javascript %}</code>)</li>
+  <li>블록의 맺음으로 블록의 이름을 포함하도록 한다. (ex. <code class="language-plaintext highlighter-rouge">{% endblock %}</code>이 아니라 <code class="language-plaintext highlighter-rouge">{% endblock javascript %}</code>를 이용하자)</li>
+  <li>다른 템플릿으로부터 호출되는 템플릿의 이름은 밑줄을 접두어로 가진다. <code class="language-plaintext highlighter-rouge">{% extends %}</code>나 <code class="language-plaintext highlighter-rouge">{% block %}</code> 같은 상속 관계는 예외</li>
+</ul>
+
+<h3 id="1473-use-implicit-and-named-explicit-context-objects-properly">14.7.3 Use Implicit and Named Explicit Context Objects Properly</h3>
+
+<h3 id="1474-use-url-names-instead-of-hardcoded-paths">14.7.4 Use URL Names Instead of Hardcoded Paths</h3>
+
+<h3 id="1475-debugging-complex-templates">14.7.5 Debugging Complex Templates</h3>
+
+<p>템플릿들이 복잡해져서 어떤 변수들이 문제인지 찾기 어려울땐</p>
+
+<ul>
+  <li>TEMPLATES 세팅의 OPTIONS에 <code class="language-plaintext highlighter-rouge">string_if_invalid</code> 옵션을 설정하여 더 자세한 에러 메시지를 받게 할 수 있습니다.</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">`</span><span class="c1"># settings/local.py
+</span><span class="n">TEMPLATES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s">'BACKEND'</span><span class="p">:</span><span class="s">'django.template.backends.django.DjangoTemplates'</span><span class="p">,</span>
+        <span class="s">'APP_DIRS'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+        <span class="s">'OPTIONS'</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">'string_if_invalid'</span><span class="p">:</span><span class="s">'INVALID EXPRESSION: %s'</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+<span class="p">]</span><span class="err">`</span>
+</code></pre></div></div>
+
+<h2 id="148-error-page-templates">14.8 Error Page Templates</h2>
+
+<ul>
+  <li>400.html, 500.html 템플릿을 구현해 놓자.</li>
+  <li>정적 파일 서버(nginx나 아파치)에서 독자적으로 작동할 수 있는 HTML 파일 형태의 에러 페이지를 제공하자.
+    <ul>
+      <li>Django가 죽어도 에러 페이지는 무사하다.</li>
+    </ul>
+  </li>
+  <li>모범 예 <a href="[https://github.com/500](https://github.com/500)">GitHub 500</a>
+    <ul>
+      <li>HTML 페이지와 스타일시트를 분리하지 않고 인라인으로 작성</li>
+      <li>모든 이미지는 HTML 페이지 안에 데이터로 첨부
+        <ul>
+          <li>img 링크나 외부 url을 이용하지 않음</li>
+        </ul>
+      </li>
+      <li>필요한 JS파일은 전부 HTML 안에 포함</li>
+      <li><a href="[https://styleguide.github.com/](https://styleguide.github.com/)">GitHub Style Guide</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="149-follow-a-minimalist-approach">14.9 Follow a Minimalist Approach</h2>
+
+<p>템플릿 코드에 미니멀리스트 접근법을 이용하자.</p>
+
+<p>이는 Django 코드에 비즈니스 로직을 구현하게 하여,</p>
+
+<p>Django 앱이 더 쉽게 포맷을 변경하는데 도움이 되고, 비즈니스 로직을 재사용할 수 있게한다.</p>
+
+<h2 id="1410-summary">14.10 Summary</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">{{ block.super }}</code> 등의 템플릿의 상속</li>
+  <li>관리가 편하고 가독성이 뛰어난 템플릿</li>
+  <li>템플릿 성능 최적화를 위한 방법</li>
+  <li>템플릿 프로세싱의 한계에 따른 이슈들</li>
+  <li>에러 페이지 템플릿</li>
+  <li>템플릿에 대한 여러 팁</li>
+</ul>
+
+:ET

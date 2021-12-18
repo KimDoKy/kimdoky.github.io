@@ -1,0 +1,288 @@
+I"<Z<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<h2 id="81-when-to-use-fbv-or-cbvs">8.1 When to Use FBV or CBVs</h2>
+
+<p><img src="{{ site.url }}/img/post/django/two_scoops/8.1.png" alt="" /></p>
+
+<ul>
+  <li>FBV나 CBV 어떤 걸 사용해도 사실 상관은 없지만, CBV를 추천</li>
+  <li>하지만 CBV로 구현했을때 FBV 보다 복잡해진다면 FBV를 사용해야 합니다.</li>
+</ul>
+
+<h2 id="82-keep-view-logic-out-of-url-confs">8.2 Keep View Logic Out of URL Confs</h2>
+
+<ul>
+  <li><a href="https://docs.djangoproject.com/en/3.2/misc/design-philosophies/#url-design">Django의 디자인 철학</a>에 의하면 ‘뷰와 URL의 결합은 최대한의 유연성을 제공하기 위해 느슨하게 구성되어야한다’</li>
+  <li>뷰 로직은 뷰 모듈에, URL 로직은 URL 모듈에 포함해야 합니다.</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Don't do this!
+</span><span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">path</span><span class="p">(</span><span class="s">'&lt;int:pk&gt;'</span><span class="p">,</span>
+        <span class="n">DetailView</span><span class="p">.</span><span class="n">as_view</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">Tasting</span><span class="p">,</span>
+            <span class="n">template_name</span><span class="o">=</span><span class="s">'tastings/detail.html'</span><span class="p">),</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">'detail'</span><span class="p">),</span>
+    <span class="n">path</span><span class="p">(</span><span class="s">'&lt;int:pk&gt;/results/'</span><span class="p">,</span>
+        <span class="n">DetailView</span><span class="p">.</span><span class="n">as_view</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">Tasting</span><span class="p">,</span>
+            <span class="n">template_name</span><span class="o">=</span><span class="s">'tastings/results.html'</span><span class="p">),</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">'results'</span><span class="p">),</span>
+    <span class="p">]</span>        
+</code></pre></div></div>
+
+<p>다음과 같은 부문이 Django의 디자인 철학에 어긋납니다.</p>
+
+<ul>
+  <li>Views, urls, models 사이에는 <strong>Loose coupling</strong>(느슨한 결합) 대신 tight coupling(종속적인 결합)이 되어 있다.</li>
+  <li><strong>Don’t Repeat Yourself</strong>. CBV에서 비슷한 인자들이 반복되어 입력되어 있다.</li>
+  <li>확장성 파괴. CBV의 최대 장점인 클래스의 상속이 안티 패턴으로 인해 사용 불가 상태</li>
+</ul>
+
+<h2 id="83-stick-to-loose-coupling-in-url-confs">8.3 Stick to Loose Coupling in URL Confs</h2>
+
+<p>위 안좋은 예의 코드를 views.py와 urls.py로 나눕니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># views.py
+</span><span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">reverse</span>
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">ListView</span><span class="p">,</span> <span class="n">DetailView</span><span class="p">,</span> <span class="n">UpdateView</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Tasting</span>
+
+<span class="k">class</span> <span class="nc">TasteListView</span><span class="p">(</span><span class="n">ListView</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Tasting</span>
+    
+<span class="k">class</span> <span class="nc">TasteDetailView</span><span class="p">(</span><span class="n">DetailView</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Tasting</span>
+    
+<span class="k">class</span> <span class="nc">TasteResultsView</span><span class="p">(</span><span class="n">TasteDetailView</span><span class="p">):</span>
+    <span class="n">template_name</span> <span class="o">=</span> <span class="s">'tastings/results.html'</span>
+    
+<span class="k">class</span> <span class="nc">TasteUpdateView</span><span class="p">(</span><span class="n">UpdateView</span><span class="p">):</span>
+     <span class="n">model</span> <span class="o">=</span> <span class="n">Tasting</span>
+    
+    <span class="k">def</span> <span class="nf">get_success_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">reverse</span><span class="p">(</span><span class="s">'tastings:detail'</span><span class="p">,</span>
+               <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">'pk'</span><span class="p">:</span> <span class="bp">self</span><span class="p">.</span><span class="nb">object</span><span class="p">.</span><span class="n">pk</span><span class="p">})</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># tastings/urls.py
+</span><span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">path</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">views</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">path</span><span class="p">(</span>
+        <span class="n">route</span><span class="o">=</span><span class="s">''</span><span class="p">,</span>
+        <span class="n">view</span><span class="o">=</span><span class="n">views</span><span class="p">.</span><span class="n">TasteListView</span><span class="p">.</span><span class="n">as_view</span><span class="p">(),</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">'list'</span>
+        <span class="p">),</span> 
+    <span class="n">path</span><span class="p">(</span>
+        <span class="n">route</span><span class="o">=</span><span class="s">'&lt;int:pk&gt;/'</span><span class="p">,</span>
+        <span class="n">view</span><span class="o">=</span><span class="n">views</span><span class="p">.</span><span class="n">TasteDetailView</span><span class="p">.</span><span class="n">as_view</span><span class="p">(),</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">'detail'</span>
+        <span class="p">),</span> 
+    <span class="n">path</span><span class="p">(</span>
+        <span class="n">route</span><span class="o">=</span><span class="s">'&lt;int:pk&gt;/results/'</span><span class="p">,</span>
+        <span class="n">view</span><span class="o">=</span><span class="n">views</span><span class="p">.</span><span class="n">TasteResultsView</span><span class="p">.</span><span class="n">as_view</span><span class="p">(),</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">'results'</span>
+        <span class="p">),</span> 
+    <span class="n">path</span><span class="p">(</span>
+        <span class="n">route</span><span class="o">=</span><span class="s">'&lt;int:pk&gt;/update/'</span><span class="p">,</span>
+        <span class="n">view</span><span class="o">=</span><span class="n">views</span><span class="p">.</span><span class="n">TasteUpdateView</span><span class="p">.</span><span class="n">as_view</span><span class="p">(),</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">'update'</span>
+    <span class="p">)</span>
+<span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li><strong>Don’t Repeat Yourself</strong>: 뷰들 사이에서 인자나 속성이 중복 사용되지 않는다.</li>
+  <li><strong>Loose coupling</strong>: URLConf에서 모델과 템플릿이름을 모두 제거하여 views와 urls를 분리하였다. 이로 하나 이상의 URLConf에서 view의 호출이 가능해졌다.</li>
+  <li><strong>URLConf는 한 번에 하나의 업무를 처리해야 한다</strong>: URLConf는 URL 라우팅이라는 한 가직 작업만 처리하는 것을 목표로 한다.</li>
+  <li><strong>CBV의 장점 살리기</strong>: 뷰 모듈에서 표준화된 정의를 가지게 되어, 다른 클래스에서 뷰를 얼마든지 상속이 가능해졌다. 인증, 권한설정 등의 추가적인 비즈니스 로직의 처리가 수월해졌다.</li>
+  <li><strong>Infinite Flexibility</strong>: 뷰 모델에서 표준화된 정의를 함에 따라 뷰는 커스텀 로직 구현이 가능해졌다.</li>
+</ul>
+
+<h3 id="831-what-if-we-arent-using-cbvs">8.3.1 What if We Aren’t Using CBVs?</h3>
+
+<p><code class="language-plaintext highlighter-rouge">__file__</code> 속성을 이용해 directory working과 정규 표현식을 사용하여 URLConf 확장을 하고, 그로 인해 끔찍한 디버깅 악몽을 만날 것입니다.. (굳이…?)</p>
+
+<h2 id="84-use-url-namespaces">8.4 Use URL Namespaces</h2>
+
+<p>URL namespace는 앱 레벨 / 인스턴스 레벨 에서 구분자(<code class="language-plaintext highlighter-rouge">:</code>)를 제공합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># urls.py
+</span><span class="n">urlpatterns</span> <span class="o">+=</span> <span class="p">[</span>
+       <span class="n">path</span><span class="p">(</span><span class="s">'tastings/'</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="s">'tastings.urls'</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="s">'tastings'</span><span class="p">)),</span> <span class="p">]</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># views.py
+</span><span class="k">class</span> <span class="nc">TasteUpdateView</span><span class="p">(</span><span class="n">UpdateView</span><span class="p">):</span> 
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Tasting</span>
+
+    <span class="k">def</span> <span class="nf">get_success_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">reverse</span><span class="p">(</span><span class="s">'tastings:detail'</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">'pk'</span><span class="p">:</span> <span class="bp">self</span><span class="p">.</span><span class="nb">object</span><span class="p">.</span><span class="n">pk</span><span class="p">})</span>
+</code></pre></div></div>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{% extends 'base.html' %}
+
+{% block title %}Tastings{% endblock title %}
+
+{% block content %}
+<span class="nt">&lt;ul&gt;</span>
+  {% for taste in tastings %}
+    <span class="nt">&lt;li&gt;</span>
+      <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"{% url 'tastings:detail' taste.pk %}"</span><span class="nt">&gt;</span>{{ taste.title }}<span class="nt">&lt;/a&gt;</span>
+      <span class="nt">&lt;small&gt;</span>
+        (<span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"{% url 'tastings:update' taste.pk %}"</span><span class="nt">&gt;</span>update<span class="nt">&lt;/a&gt;</span>)
+      <span class="nt">&lt;/small&gt;</span>
+    <span class="nt">&lt;/li&gt;</span>
+{% endfor %}
+<span class="nt">&lt;/ul&gt;</span>
+{% endblock content %}
+</code></pre></div></div>
+
+<h3 id="841-makes-for-shorter-more-intuitive-and-dont-repeat-yourself-url-names">8.4.1 Makes for Shorter, More Intuitive, and Don’t Repeat Yourself URL Names</h3>
+
+<p>URL namespace를 이용하여 URL 이름을 더 짧고, 명확하고, 반복되는 작업을 피할 수 있습니다.</p>
+
+<h3 id="842-increases-interoperability-with-third-party-libraries">8.4.2 Increases Interoperability with Third-Party Libraries</h3>
+
+<p><code class="language-plaintext highlighter-rouge">&lt;myapp&gt;_detail</code> 과 같은 방법은 URL 이름을 작성하면 <code class="language-plaintext highlighter-rouge">&lt;myapp&gt;</code>이 충돌하는 문제가 발생할 수 있습니다.</p>
+
+<p>URL namespace를 사용하여 쉽게 해결 할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># urls.py
+</span><span class="n">urlpatterns</span> <span class="o">+=</span> <span class="p">[</span>
+    <span class="n">path</span><span class="p">(</span><span class="s">'contact/'</span><span class="p">,</span>
+        <span class="n">include</span><span class="p">(</span><span class="s">'contactmonger.urls'</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="s">'contactmonger'</span><span class="p">)),</span>
+    <span class="n">path</span><span class="p">(</span><span class="s">'report-problem/'</span><span class="p">,</span>
+        <span class="n">include</span><span class="p">(</span><span class="s">'contactapp.urls'</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="s">'contactapp'</span><span class="p">)),</span>
+<span class="p">]</span>
+</code></pre></div></div>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{% extends "base.html" %}
+{% block title %}Contact{% endblock title %}
+{% block content %}
+<span class="nt">&lt;p&gt;</span>
+  <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"{% url 'contactmonger:create' %}"</span><span class="nt">&gt;</span>Contact Us<span class="nt">&lt;/a&gt;</span>
+<span class="nt">&lt;/p&gt;</span>
+<span class="nt">&lt;p&gt;</span>
+  <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"{% url 'contactapp:report' %}"</span><span class="nt">&gt;</span>Report a Problem<span class="nt">&lt;/a&gt;</span>
+<span class="nt">&lt;/p&gt;</span>
+{% endblock content %}
+</code></pre></div></div>
+
+<h3 id="843-easier-searches-upgrades-and-refactors">8.4.3 Easier Searches, Upgrades, and Refactors</h3>
+
+<p>PEP8 가이드에 따라 <code class="language-plaintext highlighter-rouge">tastings_detail</code> 와 같은 네이밍을 사용하는데,</p>
+
+<p><code class="language-plaintext highlighter-rouge">tastings_detail</code>가 뷰 이름인지, URL 이름인지, 혹은 다른 것인지 알 수 없습니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">tastings:detail</code> 으로 작성함으로 어떤 것인지 명확히 구분 할 수 있습니다.</p>
+
+<p>추가로, 새로운 서드 파티 라이브러리와 상호 연동시 좀 더 쉽게 업그레이드 및 리팩터링 할 수 있습니다.</p>
+
+<h3 id="844-allows-for-more-app-and-template-reverse-tricks">8.4.4 Allows for More App and Template Reverse Tricks</h3>
+
+<p>Trick(꼼수)은 일반적으로 프로젝트의 복잡성만 높이기 때문에 지양해야 하지만, 몇몇은 trick은 고려해볼 만 합니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">django-debug-toolbar</code> 와 같은 디버그 레벨에서 내부적인 검사를 실행하는 개발 도구</li>
+  <li>최종 사용자들에게 ‘모듈’을 추가하게 하여 사용자 계정의 기능을 변경하는 프로젝트</li>
+</ul>
+
+<p>개발자들은 URL namespace를 이용하여 Trick을 구현할 수 있지만, 가장 단순 명료한 해결방안을 먼저 고민해야 합니다.</p>
+
+<h2 id="85-try-to-keep-business-logic-out-of-views">8.5 Try to Keep Business Logic Out of Views</h2>
+
+<p>예전에는 복잡한 비즈니스 로직을 뷰에 구현했습니다.</p>
+
+<p>하지만, 뷰에 새로운 기능(ex,PDF 생성, 지원 포맷, REST API 등)들을 추가해야 할 경우 어려움을 격게 됩니다.</p>
+
+<p>이 때문에 모델 메서드, 매니저 메서드, 일반적인 유틸리티 헬퍼 함수들을 이용하는 전략을 선호하게 되었습니다.</p>
+
+<p>이렇게 비즈니스 로직을 분리하면 쉽게 재사용이 가능한 컴포넌트가 되고, 이로 인해 확장이 매우 용이해짐</p>
+
+<h2 id="86-django-views-are-functions">8.6 Django Views Are Functions</h2>
+
+<p>기본적으로 Django의 뷰는 HTTP를 요청하는 객체를 받아서 HTTP를 응답하는 개체로 변경하는 함수입니다. 이는 수학의 함수와 비슷한 개념입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 수학에서의 함수식
+</span><span class="n">y</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="c1"># Django의 FBV
+</span><span class="n">HttpResponse</span> <span class="o">=</span> <span class="n">view</span><span class="p">(</span><span class="n">HttpRequest</span><span class="p">)</span>
+
+<span class="c1"># CBV로 변형한 예
+</span><span class="n">HttpResponse</span> <span class="o">=</span> <span class="n">View</span><span class="p">.</span><span class="n">as_view</span><span class="p">()(</span><span class="n">HttpRequest</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="861-the-simplest-views">8.6.1 The Simplest Views</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponse</span>
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">View</span>
+
+<span class="c1"># FBV의 기본형태
+</span><span class="k">def</span> <span class="nf">simplest_view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="c1"># Business logic goes here
+</span>    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">'FBV'</span><span class="p">)</span>
+
+<span class="c1"># CBV의 기본형태
+</span><span class="k">class</span> <span class="nc">SimplestView</span><span class="p">(</span><span class="n">View</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># Business logic goes here
+</span>        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">'CBV'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>기본 형태가 중요한 이유</p>
+
+<ul>
+  <li>종종 우린 한 기능만 따로 떼어 놓은 관점이 필요할 때가 있다.</li>
+  <li>가장 단순한 형태로 된 Django View를 이해했다는 것은 Django View의 역할을 명확히 이해했다는 것</li>
+  <li>Django의 FBV는 HTTP 메서드에 중립적이지만, CBV는 HTTP 메서드의 선언이 필요</li>
+</ul>
+
+<h2 id="87-dont-use-locals-as-views-context">8.7 Don’t Use <code class="language-plaintext highlighter-rouge">locals()</code> as Views Context</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">locals()</code> 를 호출형으로 반환하는 것은 안티 패턴
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">locals()</code> 는 긴 목록을 입력하는 것을 피하기 위한 트릭</li>
+      <li>but, ‘명시적인 것이 암시적인 것보다 낫다.’</li>
+    </ul>
+  </li>
+  <li>안티 패턴 형식이 되어 버려서, 유지보수하기에 복잡한 형태가 됨</li>
+  <li>뷰가 어떤걸 반환하려하는지 알 수 없음</li>
+  <li>코드가 수정되어도 차이점을 찾기 어려움</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Don't do this!
+</span><span class="k">def</span> <span class="nf">ice_cream_store_display</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">store_id</span><span class="p">):</span>
+    <span class="n">store</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Store</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">store_id</span><span class="p">)</span>
+    <span class="n">date</span> <span class="o">=</span> <span class="n">timezone</span><span class="p">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">'melted_ice_cream_report.html'</span><span class="p">,</span> <span class="nb">locals</span><span class="p">())</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">ice_cream_store_display</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">store_id</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+        <span class="n">request</span><span class="p">,</span>
+        <span class="s">'melted_ice_cream_report.html'</span><span class="p">,</span>
+        <span class="p">{</span>
+            <span class="s">'store'</span><span class="p">:</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Store</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">store_id</span><span class="p">),</span>
+            <span class="s">'now'</span><span class="p">:</span> <span class="n">timezone</span><span class="p">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="p">}</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="88-summary">8.8 Summary</h2>
+
+<ul>
+  <li>CBV, FBV를 다루어야 하는 경우</li>
+  <li>URLConf에서 뷰 로직을 분리하는 방법</li>
+  <li>CBV를 이용할 때 객체 상속을 이용하여 코드의 재사용성을 높이기</li>
+</ul>
+
+:ET

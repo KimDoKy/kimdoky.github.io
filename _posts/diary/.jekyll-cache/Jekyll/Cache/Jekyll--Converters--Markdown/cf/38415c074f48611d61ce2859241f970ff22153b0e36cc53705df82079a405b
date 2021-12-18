@@ -1,0 +1,171 @@
+I"�2<p>파이썬 크롤링 스터디를 마치고, 다음 스터디로 넘어가기전에 가볍고(?) 빠르게 결과를 볼 수 있는 것을 진행하려고 합니다.</p>
+
+<p><a href="https://beomi.github.io/2017/04/20/HowToMakeWebCrawler-Notice-with-Telegram/" target="`_`blank">준범님의 블로그</a>를 둘러보는중 텔레그램 봇을 활용하는 내용을 발견하였고, 링크를 따라가보니 빠른 시간에 결과를 볼 수 있을꺼 같고, 현재 재직하고 있는 회사에서는 텔레그램을 메신져로 이용하고 있기 때문에 회사에서 사용할 수 있는 무언가를 만들때 활용할 수 있을꺼라 생각되어 시작하게 되었습니다.</p>
+
+<p>모든 내용은 <a href="https://blog.psangwoo.com/coding/2016/12/08/python-telegram-bot-1.html" target="`_`blank">python으로 telegram bot 활용하기</a>의 내용을 따라 진행하는 것이기 때문에 위 링크에서 기본 사용법을 익혀보는 것을 추천합니다.</p>
+<blockquote>
+  <p>자잘한 에러들에 대해서는 언급이 안되어 있어서 저와 같은 에러를 겪게 된다면 제 글을 읽어보시면 됩니다.</p>
+</blockquote>
+
+<p>telegram bot을 만들기에 앞서 알아두어야 할 용어들입니다.</p>
+
+<h4 id="용어-설명">용어 설명</h4>
+<ul>
+  <li>계정 :  하나의 주체입니다. 사용자 혹은 bot 등이 해당됩니다.</li>
+  <li>채널 : 채팅방, 그룹채팅방 등입니다. 채널을 공개하여 여러 사람이 들어올 수 있으며(ex:지진희알림), 관리자를 지정하고 이들만 채팅이 가능하도록 하는 등 알림용도로 사용이 가능합니다.</li>
+  <li>BotFather : bot을 생성, 관리할 수 있는 계정입니다.(bot 형태입니다.)<br />
+BotFather과 대화로 bot을 생성하고 여러 기능을 설정할 수 있습니다.</li>
+</ul>
+
+<h4 id="준비물">준비물</h4>
+<p>telegram 어플을 설치한 휴대폰이 필요합니다. (telegram PC 버젼으로 하는걸 추천합니다. 토큰 복붙 하기가 편리하니까요.)</p>
+
+<h2 id="시작하기">시작하기</h2>
+
+<p>대화 상대에서 BotFather을 검색하여 추가합니다.</p>
+
+<p>그리고 <code class="language-plaintext highlighter-rouge">/start</code> 라는 메세지를 보내면, 여러 설명 및 할 수 있는 일들을 알려줍니다.</p>
+
+<p><img src="/img/post/diary/telegram/botfather.png" alt="" /></p>
+
+<p>봇을 만듭니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/newbot
+</code></pre></div></div>
+
+<p>그러면 <code class="language-plaintext highlighter-rouge">Alright, a new bot. How are we going to call it? Please choose a name for your bot.</code>라면서 이름을 지어달라고 합니다. 원하는 이름은 메시지로 보내면 됩니다.</p>
+
+<p>저는 나중에 회사에서 쓰임새 있는 것으로 바꿀 예정이라 현재 진행하는 프로젝트 명으로 하였습니다. 원하는 이름을 메시지로 보내면 <code class="language-plaintext highlighter-rouge">Good. Now let's choose a username for your bot. It must end in 'bot'. Like this, for example: TetrisBot or tetris_bot.</code>라면 bot으로 끝나는 username을 정해달라고 합니다.
+username은 봇을 검색할 때 사용하게 됩니다.(username 지정시 처음은 영문으로 시작해야 합니다.)</p>
+
+<p><img src="/img/post/diary/telegram/botfather_2.png" alt="" /></p>
+
+<p>4season이 봇의 이름, <code class="language-plaintext highlighter-rouge">@</code>로 시작하는 부분이 username입니다.</p>
+
+<p>전체 과정입니다. (봇의 처음 설명이 너무 길어서 <code class="language-plaintext highlighter-rouge">/start</code>는 캡쳐에서 제외하였습니다.)</p>
+
+<p><img src="/img/post/diary/telegram/botfather_3.png" alt="" /></p>
+
+<p>마지막에 token이 xxxx:yyyyyy 형태로 발행됩니다. 이 토큰이 있으면 해당 계정(봇)의 권한을 거의 모두 사용할 수 있습니다. 그렇기 때문에 관리를 잘 해야 합니다.</p>
+
+<p>Python 코딩에 앞서 자신의 텔레그램에서 방금 생성한 봇과 채팅을 시작합니다. 그래야 테스트를 눈으로 확인 할 수 있으니까요.</p>
+
+<h3 id="python-작업">Python 작업</h3>
+
+<h4 id="bot으로-온-메시지-확인하기">Bot으로 온 메시지 확인하기</h4>
+
+<p>python에서 telegram api를 사용하기 위해 python-telegram-bot이라는 모듈을 사용하면 됩니다. 설치는 pip로 하면 됩니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ pip install python-telegram-bot
+</code></pre></div></div>
+<p>설치가 완료되었다면 토큰을 이용하여 봇을 사용해봅시다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">telegram</span> <span class="c1"># 텔레그램 모듈을 임포트합니다.
+</span>
+<span class="n">my_token</span> <span class="o">=</span> <span class="s">'여기에 토큰을 입력하세요'</span> <span class="c1"># 토큰을 변수에 저장합니다.
+</span>
+<span class="n">bot</span> <span class="o">=</span> <span class="n">telegram</span><span class="p">.</span><span class="n">Bot</span><span class="p">(</span><span class="n">token</span> <span class="o">=</span> <span class="n">my_token</span><span class="p">)</span> <span class="c1"># bot을 선언합니다.
+</span>
+<span class="n">updates</span> <span class="o">=</span> <span class="n">bot</span><span class="p">.</span><span class="n">getUpdates</span><span class="p">()</span> <span class="c1"># 업데이트 내역을 받아옵니다.
+</span>
+<span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">updates</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">u</span><span class="p">.</span><span class="n">message</span><span class="p">)</span> <span class="c1"># 업데이트 내역 중 메시지를 출력합니다.
+</span></code></pre></div></div>
+<blockquote>
+  <p>임포트 하는 과정에서 계속 에러가 발생했습니다.
+구글 신에서 검색을 해본 결과 <a href="https://github.com/python-telegram-bot/python-telegram-bot">python-telegram-bot</a>에서 해답을 찾았습니다.<br />
+telegram-bot을 설치하기전에 urllib3 하위 모듈을 초기화해야 에러가 해결됩니다.</p>
+</blockquote>
+
+<blockquote>
+  <p><code class="language-plaintext highlighter-rouge">AttributeError: module 'token' has no attribute '__all__'</code>에러가 난다면?<br />
+git clone 으로 telegram-bot을 설치하고 설치한 디렉터리에서 파일을 실행합니다.</p>
+</blockquote>
+
+<p>응답입니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{'message_id': 5, 'text': '엇 되네? ㅋㅋㅋ', 'delete_chat_photo': False, 'date': 1503732264, 'from': {'last_name': '-', 'id': -, 'language_code': 'ko-KR', 'first_name': '-'}, 'group_chat_created': False, 'new_chat_member': None, 'new_chat_photo': [], 'photo': [], 'supergroup_chat_created': False, 'chat': {'id': -, 'last_name': '-', 'type': 'private', 'first_name': '-'}, 'channel_chat_created': False, 'entities': [], 'new_chat_members': []}
+</code></pre></div></div>
+<blockquote>
+  <p>저는 이러 저러한 에러를 겪어서.. 메시지가 저따구네요…ㅋㅋㅋ</p>
+</blockquote>
+
+<p><code class="language-plaintext highlighter-rouge">u.message</code>에서 text(내용), 누구에게서 왔는지, 발신자의 id(username과 동일하게 사용됩니다.) 등을 확인할 수 있습니다. 만약 수신된 내용만 보려면 <code class="language-plaintext highlighter-rouge">u.message.text</code>를 사용하면 됩니다.</p>
+
+<h4 id="bot으로-메시지-보내기">Bot으로 메시지 보내기</h4>
+
+<p>메시지를 보내기 위해서는 보낼 상대의 username-api에서 말하는 <code class="language-plaintext highlighter-rouge">chat_id</code>를 알아야 합니다.<br />
+bot을 테스트 할 때 메시지를 보내두었고 위의 예제가 잘 실행되었다면 <code class="language-plaintext highlighter-rouge">u.message.chat.id</code>로 메시지를 보낸 사람의 <code class="language-plaintext highlighter-rouge">chat_id</code>를 확인할 수 있습니다.</p>
+
+<p>chat 그룹 안의 id부분이 <code class="language-plaintext highlighter-rouge">chat_id</code>입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">chat_id</span> <span class="o">=</span> <span class="n">bot</span><span class="p">.</span><span class="n">getUpdates</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">message</span><span class="p">.</span><span class="n">chat</span><span class="p">.</span><span class="nb">id</span>
+<span class="n">bot</span><span class="p">.</span><span class="n">sendMessage</span><span class="p">(</span><span class="n">chat_id</span> <span class="o">=</span> <span class="n">chat_id</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s">"저는 봇입니다."</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>그러면 bot이 메시지를 보낸 것을 확인 할 수 있습니다.</p>
+
+<p><img src="/img/post/diary/telegram/botfather_4.png" alt="" /></p>
+
+<h4 id="채널로-메시지-보내기">채널로 메시지 보내기</h4>
+
+<p>채널은 공개된 채팅방으로 이해하면 됩니다.</p>
+
+<p>채널을 생성하고 설정해 줍니다.</p>
+
+<p><img src="/img/post/diary/telegram/bot_1.png" alt="" /></p>
+
+<p>채널 이름을 설정합니다.</p>
+
+<p><img src="/img/post/diary/telegram/bot_2.png" alt="" /></p>
+
+<p>테스트용이기 때문에 공개, 비공개의 큰 의미는 없으니 기본 설정인 비공개로 하겠습니다.</p>
+
+<p><img src="/img/post/diary/telegram/bot_3.png" alt="" /></p>
+
+<p>마크를 클릭하여 설정으로 들어갑니다.</p>
+
+<p><img src="/img/post/diary/telegram/bot_4.png" alt="" /></p>
+
+<p>admins으로 들어갑니다.</p>
+
+<p><img src="/img/post/diary/telegram/bot_5.png" alt="" /></p>
+
+<p>관리자를 추가합니다.</p>
+
+<p><img src="/img/post/diary/telegram/bot_6.png" alt="" /></p>
+
+<p><img src="/img/post/diary/telegram/bot_7.png" alt="" /></p>
+
+<p>권한을 하나하나 설정할 수 있네요. 테스트니까 기본값으로 진행합니다.</p>
+
+<p><img src="/img/post/diary/telegram/bot_8.png" alt="" /></p>
+
+<p>봇이 메시지를 보낼 수 있게 상단의 Edit - Channel Type으로 들어 갑니다.</p>
+
+<p><img src="/img/post/diary/telegram/bot_9.png" alt="" /></p>
+
+<p>하단의 링크를 수정합니다. t.me/ 뒤에 들어갈 주소가 <code class="language-plaintext highlighter-rouge">chat_id</code>가 됩니다.<br />
+채널을 공개로 해야 수정이 가능합니다.(비공개로 하면 <code class="language-plaintext highlighter-rouge">chat_id</code>가 먹히지 않는 것 같네요.)</p>
+
+<p><img src="/img/post/diary/telegram/bot_10.png" alt="" /></p>
+
+<p>이제 메시지를 보내는 코드를 작성합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">telegram</span>
+<span class="kn">import</span> <span class="nn">telegram_token</span>
+
+<span class="n">my_token</span> <span class="o">=</span> <span class="n">telegram_token</span><span class="p">.</span><span class="n">telegram_token</span>
+<span class="n">bot</span> <span class="o">=</span> <span class="n">telegram</span><span class="p">.</span><span class="n">Bot</span><span class="p">(</span><span class="n">token</span> <span class="o">=</span> <span class="n">my_token</span><span class="p">)</span>
+<span class="n">bot</span><span class="p">.</span><span class="n">sendMessage</span><span class="p">(</span><span class="n">chat_id</span> <span class="o">=</span> <span class="s">'@fourss'</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s">"저는 봇입니다."</span><span class="p">)</span>
+</code></pre></div></div>
+<p>실행하면 아래와 같이 메시지라 발송됩니다.</p>
+
+<p><img src="/img/post/diary/telegram/bot_11.png" alt="" /></p>
+
+<blockquote>
+  <p>테스트 이후에 비공개로 전환해도 정상적으로 작동하며, <code class="language-plaintext highlighter-rouge">chat_id</code>는 그대로 사용합니다.</p>
+</blockquote>
+
+<p>psangwoo 님의 가이드가 친절히 잘 나와있어서 쉽게 완성되었습니다. 하지만 포스팅하신지 10개월 정도가 지난 시점이라 자잘한 여러부분들이 업데이트 되어 오류들이 있었지만 큰 문제점들이 아니라 금방 해결되었네요.</p>
+:ET

@@ -1,0 +1,62 @@
+I"8
+<p>맥북이라면 여러 발생하는 오류들 대부분이 xcode로 인해 일어난다.</p>
+
+<p>그냥 설치하는게 속편함.</p>
+
+<h3 id="brew-설치">brew 설치</h3>
+<p><a href="https://brew.sh/">https://brew.sh/</a></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+</code></pre></div></div>
+
+<h3 id="pyenv-설치">pyenv 설치</h3>
+<p><code class="language-plaintext highlighter-rouge">brew install pyenv</code><br />
+<code class="language-plaintext highlighter-rouge">brew install pyenv-virtualenv</code></p>
+
+<h3 id="기본-셸-변경">기본 셸 변경</h3>
+
+<h4 id="zsh">zsh</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>brew install zsh zsh-completions
+curl -L http://install.ohmyz.sh | sh
+chsh -s `which zsh`
+</code></pre></div></div>
+<blockquote>
+
+  <p><strong>chsh: /usr/local/bin/zsh: non-standard shell</strong> 오류 발생할 경우</p>
+
+  <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo vim /etc/shells
+맨 아래에 `which zsh`했을때의 결과를 추가 후 저장
+</code></pre></div>  </div>
+
+  <p><strong>현재 shell 확인법</strong><br />
+echo $SHELL</p>
+</blockquote>
+
+<h3 id="pyenv-설정">pyenv 설정</h3>
+
+<p><code class="language-plaintext highlighter-rouge">vi ~/.zshrc</code></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>export PYENV_ROOT=/usr/local/var/pyenv
+if which pyenv &gt; /dev/null; then eval "$(pyenv init -)"; fi
+if which pyenv-virtualenv-init &gt; /dev/null; then eval "$(pyenv virtualenv-init -)"; fi
+</code></pre></div></div>
+<p>python 셸 관련 설정</p>
+<blockquote>
+  <p>셸에서 방향키 관련 이슈 해결을 위한 유틸</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>brew install readline xz
+</code></pre></div></div>
+
+<h3 id="pyenv를-사용해서-파이썬-352버전-설치">pyenv를 사용해서 파이썬 3.5.2버전 설치</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pyenv install 3.5.2
+</code></pre></div></div>
+<blockquote>
+  <p>설치할 때 오류가 나면 대부분 xcode 때문…</p>
+
+  <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>xcode-select --install
+</code></pre></div>  </div>
+</blockquote>
+:ET

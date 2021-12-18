@@ -1,0 +1,324 @@
+I"}h<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<h2 id="71-use-get_object_or_404-for-single-objects">7.1 Use <code class="language-plaintext highlighter-rouge">get_object_or_404()</code> for Single Objects</h2>
+
+<p>단일 객체를 가져와서 작업할 경우 <code class="language-plaintext highlighter-rouge">get()</code> 보다는 <code class="language-plaintext highlighter-rouge">get_object_or_404()</code>를 이용해야 합니다.</p>
+
+<p>단 아래의 제약 사항을 따라야 합니다.</p>
+
+<ul>
+  <li>뷰에서만 사용한다.</li>
+  <li>헬퍼 함수, 폼, 모델 메서드, 뷰를 제외한 곳, 뷰와 직접적으로 관련된 곳이 아닌 곳에서는 사용 금지</li>
+</ul>
+
+<h2 id="72-be-careful-with-queries-that-might-throw-exceptions">7.2 Be Careful With Queries That Might Throw Exceptions</h2>
+
+<p><code class="language-plaintext highlighter-rouge">get_object_or_404()</code>는 자체적으로 예외처리를 해주지만, 그 외에는 반드시 예외처리를 해야 합니다.</p>
+
+<h3 id="721-objectdoesnotexist-vs-doesnotexist">7.2.1 ObjectDoesNotExist vs. DoesNotExist</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">ObjectDoesNotExist</code>는 모든 모델 객체에서 사용 가능</li>
+  <li><code class="language-plaintext highlighter-rouge">DoesNotExist</code>는 특정 모델에서만 사용 가능</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.core.exceptions</span> <span class="kn">import</span> <span class="n">ObjectDoesNotExist</span>
+
+<span class="kn">from</span> <span class="nn">flavors.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+<span class="kn">from</span> <span class="nn">store.exceptions</span> <span class="kn">import</span> <span class="n">OutOfStock</span>
+
+<span class="k">def</span> <span class="nf">list_flavor_line_item</span><span class="p">(</span><span class="n">sku</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Flavor</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">sku</span><span class="o">=</span><span class="n">sku</span><span class="p">,</span> <span class="n">quantity__gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">Flavor</span><span class="p">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">'We are out of {0}'</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">sku</span><span class="p">)</span> <span class="k">raise</span> <span class="n">OutOfStock</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        
+<span class="k">def</span> <span class="nf">list_any_line_item</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">sku</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">model</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">sku</span><span class="o">=</span><span class="n">sku</span><span class="p">,</span> <span class="n">quantity__gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ObjectDoesNotExist</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">'We are out of {0}'</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">sku</span><span class="p">)</span> <span class="k">raise</span> <span class="n">OutOfStock</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="722-when-you-just-want-one-object-but-get-three-back">7.2.2 When You Just Want One Object but Get Three Back</h3>
+
+<p>객체가 2개 이상 반환되었을 때는 <code class="language-plaintext highlighter-rouge">MultipleObjectsReturned</code> 예외처리를 하면 됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">flavors.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+<span class="kn">from</span> <span class="nn">store.exceptions</span> <span class="kn">import</span> <span class="n">OutOfStock</span><span class="p">,</span> <span class="n">CorruptedDatabase</span>
+
+<span class="k">def</span> <span class="nf">list_flavor_line_item</span><span class="p">(</span><span class="n">sku</span><span class="p">):</span> 
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Flavor</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">sku</span><span class="o">=</span><span class="n">sku</span><span class="p">,</span> <span class="n">quantity__gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> 
+    <span class="k">except</span> <span class="n">Flavor</span><span class="p">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">'We are out of {}'</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">sku</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">OutOfStock</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">Flavor</span><span class="p">.</span><span class="n">MultipleObjectsReturned</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">'Multiple items have SKU {}. Please fix!'</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">sku</span><span class="p">)</span> 
+        <span class="k">raise</span> <span class="n">CorruptedDatabase</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="73-use-lazy-evaluation지연연산-to-make-queries-legible">7.3 Use Lazy Evaluation(지연연산) to Make Queries Legible</h2>
+
+<p>복잡한 쿼리의 경우 몇 줄 안되는 코드에 무리하게 줄이면 안됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 나쁜 예
+</span><span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="n">Q</span>
+<span class="kn">from</span> <span class="nn">promos.models</span> <span class="kn">import</span> <span class="n">Promo</span>
+
+<span class="k">def</span> <span class="nf">fun_function</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Promo</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">active</span><span class="p">().</span><span class="nb">filter</span><span class="p">(</span>
+        <span class="n">Q</span><span class="p">(</span><span class="n">name__startswith</span><span class="o">=</span><span class="n">name</span><span class="p">)</span> <span class="o">|</span> 
+        <span class="n">Q</span><span class="p">(</span><span class="n">description__icontains</span><span class="o">=</span><span class="n">name</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>django는 결과를 실행하기 전까지 DB를 호출하지 않기 때문에, 복잡한 ORM을 여러 줄로 나누어서 사용함으로써 가독성을 향상시키고, 유지보수를 보다 쉽게 해줍니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="n">Q</span>
+<span class="kn">from</span> <span class="nn">promos.models</span> <span class="kn">import</span> <span class="n">Promo</span>
+
+<span class="k">def</span> <span class="nf">fun_function</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">Promo</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">active</span><span class="p">()</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">results</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span>
+                   <span class="n">Q</span><span class="p">(</span><span class="n">name__startswith</span><span class="o">=</span><span class="n">name</span><span class="p">)</span> <span class="o">|</span>
+                   <span class="n">Q</span><span class="p">(</span><span class="n">description__icontains</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+               <span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">results</span><span class="p">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s">'melted'</span><span class="p">)</span> 
+    <span class="n">results</span> <span class="o">=</span> <span class="n">results</span><span class="p">.</span><span class="n">select_related</span><span class="p">(</span><span class="s">'flavors'</span><span class="p">)</span> 
+    <span class="k">return</span> <span class="n">results</span>
+</code></pre></div></div>
+
+<h3 id="731-chaning-queries-for-legibility">7.3.1 Chaning Queries for Legibility</h3>
+
+<p>Pandas와 JS 커뮤니티에서는 지연평가 대신 아래와 같은 연결 방법을 차용합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="n">Q</span>
+<span class="kn">from</span> <span class="nn">promos.models</span> <span class="kn">import</span> <span class="n">Promo</span>
+
+<span class="k">def</span> <span class="nf">fun_function</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">qs</span> <span class="o">=</span> <span class="p">(</span><span class="n">Promo</span>
+         <span class="p">.</span><span class="n">objects</span>
+         <span class="p">.</span><span class="n">active</span><span class="p">()</span>
+         <span class="p">.</span><span class="nb">filter</span><span class="p">(</span>
+             <span class="n">Q</span><span class="p">(</span><span class="n">name__startswith</span><span class="o">=</span><span class="n">name</span><span class="p">)</span> <span class="o">|</span>
+             <span class="n">Q</span><span class="p">(</span><span class="n">description__icontains</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+         <span class="p">)</span>
+         <span class="p">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s">'melted'</span><span class="p">)</span>
+         <span class="p">.</span><span class="n">select_related</span><span class="p">(</span><span class="s">'flavors'</span><span class="p">)</span>
+     <span class="p">)</span>
+    <span class="k">return</span> <span class="n">qs</span>
+</code></pre></div></div>
+
+<p>하지만 디버깅을 하려면 일부분을 주석처리 하는 등의 추가 처리가 필요합니다.
+(개인적으로 비추천)</p>
+
+<h2 id="74-lean-on-advanced-query-tools">7.4 Lean on Advanced Query Tools</h2>
+
+<h3 id="741-query-expressions">7.4.1 Query Expressions</h3>
+
+<p>DB에서 읽기 작업을 수행될 때 쿼리 표현식으로 해당 읽기가 실행되는 동안 값을 산출하거나 연산을 수행하는데 이용할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 나쁜 예
+</span><span class="kn">from</span> <span class="nn">models.customers</span> <span class="kn">import</span> <span class="n">Customer</span>
+
+<span class="n">customers</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">customer</span> <span class="ow">in</span> <span class="n">Customer</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">iterator</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">customer</span><span class="p">.</span><span class="n">scoops_ordered</span> <span class="o">&gt;</span> <span class="n">customer</span><span class="p">.</span><span class="n">store_visits</span><span class="p">:</span>
+        <span class="n">customers</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">customer</span><span class="p">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>DB의 모든 Customer 레코드를 하나하나 루프 돌기 때문에 매우 느리고, 메모리도 많이 사용합니다.</li>
+  <li>위 코드는 ‘READ’만 하기 때문에 문제가 없겠지만, ‘UPDATE’와 같은 값이 변경되는 처리라면 데이터가 분실 될 위험이 있습니다.(경합 상황)</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 개선된 예
+</span><span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="n">F</span>
+<span class="kn">from</span> <span class="nn">models.customers</span> <span class="kn">import</span> <span class="n">Customer</span>
+
+<span class="n">customers</span> <span class="o">=</span> <span class="n">Customer</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">scoops_ordered__gt</span><span class="o">=</span><span class="n">F</span><span class="p">(</span><span class="s">'store_visits'</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>위 코드는 아래의 SQL을 실행하게 됩니다.</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">SELECT</span> <span class="o">*</span> <span class="k">from</span> <span class="n">customers_customer</span> <span class="k">where</span> <span class="n">scoops_ordered</span> <span class="o">&gt;</span> <span class="n">store_visits</span>
+</code></pre></div></div>
+
+<h3 id="742-database-functions">7.4.2 Database Functions</h3>
+
+<p>Django에서는 <code class="language-plaintext highlighter-rouge">UPPER()</code>, <code class="language-plaintext highlighter-rouge">LOWER()</code>, <code class="language-plaintext highlighter-rouge">COALESCE()</code>, <code class="language-plaintext highlighter-rouge">LENGTH()</code>, <code class="language-plaintext highlighter-rouge">SUBSTR()</code> 등의 데이터베이스 함수를 이용 할 수 있습니다. 다음과 같은 장점들이 있습니다.</p>
+
+<ul>
+  <li>쉽게 간결합니다.</li>
+  <li>파이썬으로 작성된 로직을 DB로 이전할 수 있습니다. 파이썬은 DB 안에서 데이터를 처리하는 것보다 빠르기 때문에 성능이 많이 향상됩니다.</li>
+  <li>ORM은 다양한 DB를 지원합니다.</li>
+  <li>DB 함수들은 쿼리 표현식입니다.</li>
+</ul>
+
+<p><a href="docs.djangoproject.com/en/3.2/ref/models/expressions/">Django Query Expressions</a></p>
+
+<h2 id="75-dont-drop-down-to-raw-sql-until-its-necessary">7.5 Don’t Drop Down to Raw SQL Until It’s Necessary</h2>
+
+<p>ORM은 다양한 환경에서 단순한 쿼리 작성, 모델에 대한 접근, 업데이트의 유효성 검사, 보안을 제공합니다.</p>
+
+<p>Raw SQL을 사용한다면 다음과 같은 문제가 발생할 수 있습니다.</p>
+
+<ul>
+  <li>장고 서드 파티 패키지로 릴리스 될때 이식성이 떨어질 수 있음</li>
+  <li>마이그레이션 하는 경우, 특정 DB에 종속된 기능을 SQL 로 작성했다면,  마이그레이션 과정에서 복잡한 문제가 발생할 가능성이 높음</li>
+  <li>ORM의 장점을 모두 포기해야 함</li>
+</ul>
+
+<p>Raw SQL을 사용해야 할 경우</p>
+
+<ul>
+  <li>Raw SQL을 직접 작성함으로서 ORM이나 파이썬 코드보다 월등히 단출되는 경우</li>
+  <li>ex) 큰 데이터 세트에 다수의 쿼리셋이 연동되는 경우</li>
+</ul>
+
+<h2 id="76-add-indexes-as-needed">7.6 Add Indexes as Needed</h2>
+
+<p>모델에 <code class="language-plaintext highlighter-rouge">db_index = True</code>만 추가하면 사용할 수 있습니다.</p>
+
+<p>인덱스를 사용해야 하는 경우</p>
+
+<ul>
+  <li>인덱스가 빈번히 이용될 때(모든 쿼리의 10~25% 사이)</li>
+  <li>실제 데이터 혹은 실제와 비슷한 데이터가 존재하여 인덱싱 결과에 대한 분석이 가능할 때</li>
+  <li>인덱싱을 통해 성능이 향상되는지 테스트가 가능할 때</li>
+</ul>
+
+<p>‘Chap26. Finding and Reducting Bottlenecks’에서 추가적으로 다룰 예정</p>
+
+<h2 id="77-transactions">7.7 Transactions</h2>
+
+<p>트랜잭션: 둘 또는 그 이상의 데이터베이스 업데이트를 <strong>단일화된 작업</strong>으로 처리하는 기법</p>
+
+<h3 id="771-wrapping-each-http-request-in-a-transaction">7.7.1 Wrapping Each HTTP Request in a Transaction</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># settings/base.py
+</span>
+<span class="n">DATABASES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'default'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="c1"># ...
+</span>        <span class="s">'ATOMIC_REQUESTS'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Django의 <code class="language-plaintext highlighter-rouge">ATOMIC_REQUESTS</code> 설정은 읽기 데이터를 포함한 모든 요청을 트랜잭션 처리하되 됩니다. 장점은 모든 DB 쿼리가 보호되는 안정성을 얻을 수 있다는 것입니다. 히자만 성능이 저하될 수 있다는 단점이 있습니다.</p>
+
+<p>그리고  <strong>에러가 발생</strong>해야만 롤백이 됩니다.<br />
+ex) 작업 처리 중 확인 메일을 보낸 후에 롤백이 된다면…</p>
+
+<p>DB가 아닌 아이템에 대한 데이터 생성, 변경, 삭제하는 뷰를 만들 때는 <code class="language-plaintext highlighter-rouge">transaction.non_atomic_request()</code> 데코레이팅하는 방법을 고려해 볼 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">transaction</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponse</span>
+<span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">get_object_or_404</span>
+<span class="kn">from</span> <span class="nn">django.utils</span> <span class="kn">import</span> <span class="n">timezone</span>
+
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+
+<span class="o">@</span><span class="n">transaction</span><span class="p">.</span><span class="n">non_atomic_requests</span>
+<span class="k">def</span> <span class="nf">posting_flavor_status</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">pk</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
+    <span class="n">flavor</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Flavor</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="n">pk</span><span class="p">)</span>
+    
+    <span class="c1"># 오토커밋 모드가 실행
+</span>    <span class="n">flavor</span><span class="p">.</span><span class="n">latest_status_change_attempt</span> <span class="o">=</span> <span class="n">timezone</span><span class="p">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="n">flavor</span><span class="p">.</span><span class="n">save</span><span class="p">()</span>
+    
+    <span class="k">with</span> <span class="n">transaction</span><span class="p">.</span><span class="n">atomic</span><span class="p">():</span>
+        <span class="c1"># 트랜잭션 안에서 실행
+</span>        <span class="n">flavor</span><span class="p">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="n">flavor</span><span class="p">.</span><span class="n">latest_status_change_success</span> <span class="o">=</span> <span class="n">timezone</span><span class="p">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">flavor</span><span class="p">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">'Hooray'</span><span class="p">)</span>
+        
+    <span class="c1"># 트랜잭션이 실패하면 400 반환
+</span>    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s">'Sadness'</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="772-explicit-transaction-declaration">7.7.2 Explicit Transaction Declaration</h3>
+
+<ul>
+  <li>DB에 변경이 생기지 않는 작업은 트랜잭션 처리하지 않습니다.</li>
+  <li>DB에 변경이 생기는 작업은 반드시 트랜잭션 처리합니다.</li>
+  <li>DB 읽기 작업을 수반하는 DB 변경 작업이나 DB 성능에 관련된 특별한 경우는 위 두 가지 모두 고려해야 합니다.</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Purpose</th>
+      <th>ORM method</th>
+      <th>Use Transaction?</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>데이터 생성</td>
+      <td><code class="language-plaintext highlighter-rouge">.creaet()</code>, <code class="language-plaintext highlighter-rouge">bulk_create()</code>, <code class="language-plaintext highlighter-rouge">.get_or_create()</code></td>
+      <td>O</td>
+    </tr>
+    <tr>
+      <td>데이터 가져오기</td>
+      <td><code class="language-plaintext highlighter-rouge">.get()</code>, <code class="language-plaintext highlighter-rouge">filter()</code>, <code class="language-plaintext highlighter-rouge">.count()</code>, <code class="language-plaintext highlighter-rouge">.iterate()</code>, <code class="language-plaintext highlighter-rouge">exists()</code>, <code class="language-plaintext highlighter-rouge">.exclude()</code>, etc</td>
+      <td>X</td>
+    </tr>
+    <tr>
+      <td>데이터 수정하기</td>
+      <td><code class="language-plaintext highlighter-rouge">.update()</code></td>
+      <td>O</td>
+    </tr>
+    <tr>
+      <td>데이터 지우기</td>
+      <td><code class="language-plaintext highlighter-rouge">.delete()</code></td>
+      <td>O</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="773-djangohttpstreaminghttpresponse-and-transactions">7.7.3 django.http.StreamingHttpResponse and Transactions</h3>
+
+<ul>
+  <li>StreamingHttpResponse 사용 예: <a href="https://hong-dev.github.io/vibe/streaming/">hong_devlog</a></li>
+</ul>
+
+<p>뷰가 StreamingHttpResponse를 반환한다면 응답이 시작된 이상 트랜잭션 처리를 할 수 없습니다.</p>
+
+<ul>
+  <li>ATOMIC_REQUESTS 의 기본값을 False로 설정하고, ‘(7.7.2)명시적인 트랜잭션’을 선언하여 처리해야 합니다.</li>
+  <li>뷰를 <code class="language-plaintext highlighter-rouge">django.db.tracsaction.non_atomic_requests</code> 데코레이션으로 감쌉니다.</li>
+</ul>
+
+<p>스트리밍 응답에 트랜잭션을 적용할 수 있지만, 스트림 응답이 추가적인 SQL 쿼릴르 생성했다면 해당 부분은 트랜잭션을 적용할 수 없습니다.</p>
+
+<h3 id="774-transactions-in-mysql">7.7.4 Transactions in MySQL</h3>
+
+<blockquote>
+  <p>업무에 바로 쓰는 SQL 튜닝 Chap2. DB 엔진 용어 발췌.</p>
+</blockquote>
+
+<ul>
+  <li>Storage Engine: 사용자가 요청한 SQL 문을 토대로 DB에 저장된 디스크나 메모리에서 필요한 데이터를 가져오는 역할</li>
+  <li>일반적으로 트랜잭션 발생은 데이터를 처리하는 OLTP(online transaction processing) 환경이 대다수인 만큼 주로 InnoDB 엔진을 사용.</li>
+  <li>대량의 쓰기 트랜잭션이 발생하면 MyISAM 엔진을 사용.</li>
+  <li>메모리 데이터를 로드하여 빠르게 읽는 효과를 내려면 Memory 엔진</li>
+</ul>
+
+<p>MySQL 설정이 트랜잭션을 지원하지 않으면 Django는 항상 자동 커밋 모드입니다.<br />
+MYSQL 설정이 트랜잭션을 지원한다면 앞서 언급한 대로 트랜잭션을 처리합니다.</p>
+
+<p><a href="https://dev.mysql.com/doc/refman/8.0/en/sql-transactional-statements.html">MySQL Transaction</a></p>
+
+<h3 id="775-django-orm-transaction-resources">7.7.5 Django ORM Transaction Resources</h3>
+
+<p><a href="https://docs.djangoproject.com/en/3.2/topics/db/transactions/">Django Transaction Doc</a></p>
+
+<p><a href="https://realpython.com/transaction-management-with-django-1-6/">Real Python Transaction Tutorial</a></p>
+:ET

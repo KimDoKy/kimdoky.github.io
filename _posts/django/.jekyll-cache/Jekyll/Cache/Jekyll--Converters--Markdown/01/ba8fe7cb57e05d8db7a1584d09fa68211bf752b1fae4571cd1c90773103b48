@@ -1,0 +1,170 @@
+I"eL<h1 id="django-rest-framework---throttling">Django REST Framework - Throttling</h1>
+
+<hr />
+
+<p><em>“HTTP/1.1 420 Enhance Your Calm”</em></p>
+
+<p><em>Twitter API rate limiting response</em></p>
+
+<hr />
+
+<h2 id="throttling-제한">Throttling (제한)</h2>
+<p>Throttling은 request가 승인되어야하는지 여부를 결정한다는 점에서 permissions와 유사합니다. Throttling은 임시상태를 나타내며 클라이언트가 API에 대해 수행 할 수 있는 request 빈도수를 제어하는데 사용됩니다.<br />
+permissions과 마찬가지로, 여러 Throttle을 사용할 수 있습니다. API에는 인증되지 않은 요청에 대해 제한적으로 Throttle과 인증 된 요청에 대한 제한적인 Throttle이 있을 수 있습니다.<br />
+특정 서비스가 특히 리소스를 잡아먹기 때문에 API의 다양한 부분에 다른 제약을 부과해야하는 경우, 여러 throttle을 사용하는 다른 시나리오가 있습니다.<br />
+버스트 빈도수 제한와  지속적인 빈도수 제한을 동시에 적용하려는 경우, 여러 throttle을 사용할 수 있습니다. 예를 들어, 분당 최대 60개의 요청과 하루에 1000개의 요청으로 사용자를 제한 할 수 있습니다.<br />
+throttle은 반드시 rate 제한 요청을 참조하는 것은 아닙니다. 예를 들어, 스토리지 서비스는 대역폭에 대해 조정해야 할 수고 있으며, 유료 데이터 서비스는 액서스되는 특정 레코드 수에 대해 조정할 수 있습니다.</p>
+
+<h3 id="how-throttling-is-determined">How throttling is determined</h3>
+<p>사용 권한 및 인증과 마찬가지로 REST 프레임워크의 Throttling은 항상 클래스 목록으로 정의됩니다.<br />
+뷰의 본문을 실행하기 전에 list의 각 throttle이 점검됩니다. throttle 확인이 실패하면 <code class="language-plaintext highlighter-rouge">exceptions.Throttled</code>예외가 발생하고, 뷰 본문은 실행되지 않습니다.</p>
+
+<h3 id="setting-the-throttling-policy">Setting the throttling policy</h3>
+<p>기본 throttling 정책은 <code class="language-plaintext highlighter-rouge">DEFAULT_THROTTLE_CLASSES</code>와 <code class="language-plaintext highlighter-rouge">DEFAULT_THROTTLE_RATES</code> 설정을 사용하여 전역으로 설정할 수 있습니다. 예를 들면.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'DEFAULT_THROTTLE_CLASSES'</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s">'rest_framework.throttling.AnonRateThrottle'</span><span class="p">,</span>
+        <span class="s">'rest_framework.throttling.UserRateThrottle'</span>
+    <span class="p">),</span>
+    <span class="s">'DEFAULT_THROTTLE_RATES'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">'anon'</span><span class="p">:</span> <span class="s">'100/day'</span><span class="p">,</span>
+        <span class="s">'user'</span><span class="p">:</span> <span class="s">'1000/day'</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">DEFAULT_THROTTLE_RATES</code>에 사용 된 rate에는 throttle 기간으로 <code class="language-plaintext highlighter-rouge">second</code>, <code class="language-plaintext highlighter-rouge">minute</code>, <code class="language-plaintext highlighter-rouge">hour</code>, <code class="language-plaintext highlighter-rouge">day</code>이 포함 될 수 있습니다.<br />
+또한 APIView CBV를 사용하여 뷰 단위 또는 뷰 단위별 조절 정책을 설정할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework.response</span> <span class="kn">import</span> <span class="n">Response</span>
+<span class="kn">from</span> <span class="nn">rest_framework.throttling</span> <span class="kn">import</span> <span class="n">UserRateThrottle</span>
+<span class="kn">from</span> <span class="nn">rest_framework.views</span> <span class="kn">import</span> <span class="n">APIView</span>
+
+<span class="k">class</span> <span class="nc">ExampleView</span><span class="p">(</span><span class="n">APIView</span><span class="p">):</span>
+    <span class="n">throttle_classes</span> <span class="o">=</span> <span class="p">(</span><span class="n">UserRateThrottle</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">'status'</span><span class="p">:</span> <span class="s">'request was permitted'</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+</code></pre></div></div>
+<p>또는 FBV와 함께 <code class="language-plaintext highlighter-rouge">@api_view</code>데코레이터를 사용하는 경우</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">api_view</span><span class="p">([</span><span class="s">'GET'</span><span class="p">])</span>
+<span class="o">@</span><span class="n">throttle_classes</span><span class="p">([</span><span class="n">UserRateThrottle</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">example_view</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">'status'</span><span class="p">:</span> <span class="s">'request was permitted'</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="how-clients-are-identified클라이언트-식별-방법">How clients are identified(클라이언트 식별 방법)</h3>
+<p><code class="language-plaintext highlighter-rouge">X-Forwarded_For</code>와 <code class="language-plaintext highlighter-rouge">Remote-Addr</code> HTTP 헤더는 throttling을 위해 클라이언트  IP주소를 고유하게 식별하는데 사용됩니다.<br />
+<code class="language-plaintext highlighter-rouge">X-Forwarded_For</code>헤더가 있으면 사용되고, 없으면 <code class="language-plaintext highlighter-rouge">Remote-Addr</code> 헤더 값이 사용됩니다.<br />
+고유한 클라이언트 IP주소를 엄격하게 식별해야하는 경우, 우선 <code class="language-plaintext highlighter-rouge">NUM-PROXIES</code>설정을 하여 API가 실행되는 응용 프로그램 프록시의 수를 구성해야 합니다. 이 설정은 0 이상의 정수이어야 합니다. 0 이 아닌 값으로 설정된 경우,  클라이언트 IP는 응용 프로그램 프록시 IP 주소가 먼저 제외되면 <code class="language-plaintext highlighter-rouge">X-Forwarded-For</code> 헤더의 마지막 IP 주소로 식별됩니다. 0 으로 설정하면 <code class="language-plaintext highlighter-rouge">Remote-Addr</code>헤더가 항상 식별 IP주소로 사용됩니다.<br />
+<code class="language-plaintext highlighter-rouge">NUM_PROXIES</code>설정을 구성하면 고유한 <code class="language-plaintext highlighter-rouge">NAT'd</code> 게이트웨이 뒤에 있는 모든 클라이언트가 단일 클라이언트로 처리 된다는 것을 이해하는 것이 중요합니다.<br />
+<code class="language-plaintext highlighter-rouge">X-Forwarded-For</code>헤더의 작동 방식 및 원격 클라이언트 IP 식별 방법에 대한 자세한 내용은 <a href="http://oxpedia.org/wiki/index.php?title=AppSuite:Grizzly#Multiple_Proxies_in_front_of_the_cluster">여기</a>를 참조하세요.</p>
+
+<h3 id="setting-up-the-cache">Setting up the cache</h3>
+<p>REST 프레임워크가 제공하는 throttle 클래스는 Django의 캐시 백엔드를 사용합니다. 적절한 <a href="https://docs.djangoproject.com/en/1.10/ref/settings/#caches">캐시 설정</a>을 지정했는지 확인해야합니다. <code class="language-plaintext highlighter-rouge">LocMemCache</code>백엔드의 기본값은 간단한 설정으로 괜찮습니다. 자세한 내용은 <a href="https://docs.djangoproject.com/en/1.10/topics/cache/#setting-up-the-cache">cache documentation</a>을 참조하세요.<br />
+<code class="language-plaintext highlighter-rouge">default</code>가 아닌 캐시를 사용해야하는 경우, custom throttle 클래스를 만들고 캐시 속성을 설정하면 됩니다. 예를 들어:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">CustomAnonRateThrottle</span><span class="p">(</span><span class="n">AnonRateThrottle</span><span class="p">):</span>
+    <span class="n">cache</span> <span class="o">=</span> <span class="n">get_cache</span><span class="p">(</span><span class="s">'alternate'</span><span class="p">)</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">DEFAULT_THROTTLE_CLASSES</code> 설정 키 또는 <code class="language-plaintext highlighter-rouge">throttle_classes</code> 뷰 속성을 사용하여 custom throttle 클래스를 기억해야만 합니다.</p>
+
+<h2 id="api-reference">API Reference</h2>
+
+<h3 id="anonratethrottle">AnonRateThrottle</h3>
+<p><code class="language-plaintext highlighter-rouge">AnonRateThrottle</code>은 인증되지 않은 사용자만 차단합니다. 들어오는 request의 IP 주소는 제한할 고유 키를 생성하는데 사용됩니다.<br />
+허용 된 request 등급은 다음 중 하나(선호도순)로 결정됩니다.</p>
+
+<ul>
+  <li>클래스의 <code class="language-plaintext highlighter-rouge">rate</code> property는 <code class="language-plaintext highlighter-rouge">AnonRateThrottle</code>을 오버라이드하고 property를 설정하여 제공 될 수 있다.</li>
+  <li><code class="language-plaintext highlighter-rouge">DEFAULT_THROTTLE_RATES ['anon']</code> 설정입니다.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">AnonRateThrottle</code>는 알 수 없는 출처에서의 request의 빈도수를 제한하려는 경우에 적합합니다.</p>
+
+<h3 id="userratethrottle">UserRateThrottle</h3>
+<p><code class="language-plaintext highlighter-rouge">UserRateThrottle</code>은 API를 통해 주어진 request rate로 사용자를 제한합니다. user ID는 제한할 고유 키를 생성하는데 사용됩니다. 인증되지 않은 request는 들어오는 request의  IP 주소에 고유한 제한 키를 다시 생성하여 걸러냅니다.<br />
+허용 된 request rate는 다음 중 하나(선호도 순)로 결정됩니다.</p>
+
+<ul>
+  <li>클래스의 <code class="language-plaintext highlighter-rouge">rate</code>속성은 <code class="language-plaintext highlighter-rouge">UserRateThrottle</code>을 오버라이드하고 property를 설정하여 제공 될 수 있습니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">DEFAULT_THROTTLE_RATES ['anon']</code> 설정입니다.</li>
+</ul>
+
+<p>API에는 동시에 여러 <code class="language-plaintext highlighter-rouge">UserRAteThrottles</code>이 있을 수 있습니다. 이렇게 하려면 <code class="language-plaintext highlighter-rouge">UserRateThrottle</code>을 무시하고 각 클래스에 대해 고유한 <code class="language-plaintext highlighter-rouge">scope</code>(범위)를 설정하세요.<br />
+예를 들어, 여러 사용자 throttle rate는 다음 클래스를 사용하여 구현할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">BurstRateThrottle</span><span class="p">(</span><span class="n">UserRateThrottle</span><span class="p">):</span>
+    <span class="n">scope</span> <span class="o">=</span> <span class="s">'burst'</span>
+
+<span class="k">class</span> <span class="nc">SustainedRateThrottle</span><span class="p">(</span><span class="n">UserRateThrottle</span><span class="p">):</span>
+    <span class="n">scope</span> <span class="o">=</span> <span class="s">'sustained'</span>
+</code></pre></div></div>
+<p>…그리고 다음 설정입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'DEFAULT_THROTTLE_CLASSES'</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s">'example.throttles.BurstRateThrottle'</span><span class="p">,</span>
+        <span class="s">'example.throttles.SustainedRateThrottle'</span>
+    <span class="p">),</span>
+    <span class="s">'DEFAULT_THROTTLE_RATES'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">'burst'</span><span class="p">:</span> <span class="s">'60/min'</span><span class="p">,</span>
+        <span class="s">'sustained'</span><span class="p">:</span> <span class="s">'1000/day'</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">UserRateThrottle</code>은 사용자별로 간단한 전역 rate를 원할 때 적합합니다.</p>
+
+<h3 id="scopedratethrottle">ScopedRateThrottle</h3>
+<p><code class="language-plaintext highlighter-rouge">ScopeRateThrottle</code>클래스를 사용하여 API의 특정 부분에 대한 액서스를 제한 할 수 있습니다. 이 throttle은 액서스되는 뷰에 <code class="language-plaintext highlighter-rouge">.throttle_scope</code>속성이 포함 된 경우에만 적용됩니다. 고유한 throttle 키는 request의 “scope”를 고유한 user ID 또는 IP 주소와 연결하여 형성합니다.<br />
+허용 된 request rate는 request “scope”의 키를 사용하여 <code class="language-plaintext highlighter-rouge">DEFAULT_THROTTLE_RATES</code>설정에 의해 결정됩니다.<br />
+예를 들어, 다음의 뷰가 주어진 경우…</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">ContactListView</span><span class="p">(</span><span class="n">APIView</span><span class="p">):</span>
+    <span class="n">throttle_scope</span> <span class="o">=</span> <span class="s">'contacts'</span>
+    <span class="p">...</span>
+
+<span class="k">class</span> <span class="nc">ContactDetailView</span><span class="p">(</span><span class="n">APIView</span><span class="p">):</span>
+    <span class="n">throttle_scope</span> <span class="o">=</span> <span class="s">'contacts'</span>
+    <span class="p">...</span>
+
+<span class="k">class</span> <span class="nc">UploadView</span><span class="p">(</span><span class="n">APIView</span><span class="p">):</span>
+    <span class="n">throttle_scope</span> <span class="o">=</span> <span class="s">'uploads'</span>
+    <span class="p">...</span>
+</code></pre></div></div>
+<p>…그리고 다음 설정입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'DEFAULT_THROTTLE_CLASSES'</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s">'rest_framework.throttling.ScopedRateThrottle'</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s">'DEFAULT_THROTTLE_RATES'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">'contacts'</span><span class="p">:</span> <span class="s">'1000/day'</span><span class="p">,</span>
+        <span class="s">'uploads'</span><span class="p">:</span> <span class="s">'20/day'</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">ContactListView</code> 또는 <code class="language-plaintext highlighter-rouge">ContactDetailView</code>에 대한 사용자 요청은 하루에 총 1000 개의 요청으로 제한됩니다. <code class="language-plaintext highlighter-rouge">UploadView</code>에 대한 사용자 요청은 하루에 20 건으로 제한됩니다.</p>
+
+<h2 id="custom-throttles">Custom throttles</h2>
+<p>custom throttle을 만들려면 <code class="language-plaintext highlighter-rouge">BaseThrottle</code>을 재정의하고 <code class="language-plaintext highlighter-rouge">.allow_request(self, request, view)</code>를 구현하십시오. 이 메소드는 요청을 허용해야하는 경우 <code class="language-plaintext highlighter-rouge">True</code>를 반환하고 그렇지 않으면 <code class="language-plaintext highlighter-rouge">False</code>를 반환해야합니다.<br />
+선택적으로 <code class="language-plaintext highlighter-rouge">.wait()</code> 메서드를 재정의 할 수도 있습니다. 구현 된 경우 <code class="language-plaintext highlighter-rouge">.wait()</code>는 다음 요청을 시도하기 전에 기다리는 권장 시간(초)을 반환하거나 <code class="language-plaintext highlighter-rouge">None</code>을 반환해야합니다. <code class="language-plaintext highlighter-rouge">.wait()</code> 메서드는 <code class="language-plaintext highlighter-rouge">.allow_request()</code>가 이전에 <code class="language-plaintext highlighter-rouge">False</code>를 반환 한 경우에만 호출됩니다.<br />
+<code class="language-plaintext highlighter-rouge">.wait()</code> 메서드가 구현되고 요청이 제한되면 <code class="language-plaintext highlighter-rouge">Retry-After</code> 헤더가 응답에 포함됩니다.</p>
+
+<h3 id="example">Example</h3>
+<p>다음은 10의 요청마다 1을 무작위로 조절하는 rate throttle의 예입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">random</span>
+
+<span class="k">class</span> <span class="nc">RandomRateThrottle</span><span class="p">(</span><span class="n">throttling</span><span class="p">.</span><span class="n">BaseThrottle</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">allow_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">view</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">random</span><span class="p">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span>
+</code></pre></div></div>
+:ET

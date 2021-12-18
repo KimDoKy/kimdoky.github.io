@@ -1,0 +1,67 @@
+I"<h1 id="pycon-2018-1일차">PyCon 2018 1일차</h1>
+<p><img src="/img/post/diary/pycon2018/main.jpg" alt="" /></p>
+
+<p>여러 듣고 싶은 세션들이 있었지만, 동시간대에 겹쳐서 선택한 세션에 대한 내용만 기록.
+<img src="/img/post/diary/pycon2018/timetable.jpg" alt="" /></p>
+
+<h2 id="나도-할-수-있다-오픈-소스--setuppy에서-pypi까지"><a href="https://www.pycon.kr/2018/program/38">나도 할 수 있다 오픈 소스! — setup.py에서 PyPI까지</a></h2>
+<p><img src="/img/post/diary/pycon2018/opensource.jpg" alt="" />
+<a href="https://www.pycon.kr/2018/program/38">발표자료</a></p>
+
+<p><a href="https://www.pycon.kr/2018/program/37">Sanic를 활용하여 Microservice 구축하기</a>를 많이들 보러 갔지만 아직 어려울 꺼같아서 초급용으로 시작.</p>
+
+<p>오픈 소스 등록 및 관리 등의 팁들을 알려줌.<br />
+발표자료들을 타이핑해서 기록하기엔 빨리 지나가 버려서 발표자료를 기다리는 중.<br />
+시간이 된다면 오픈 소스를 진행해도 괜찮을 것 같음.</p>
+
+<h2 id="40만명이-쓰는-django-channels-채팅서버-우리는-어떻게-만들었나"><a href="https://www.pycon.kr/2018/program/19">40만명이 쓰는 Django channels 채팅서버, 우리는 어떻게 만들었나?</a></h2>
+
+<p><a href="https://speakerdeck.com/ejsohn/40manmyeongi-sseuneun-django-channels-caetingseobeo-urineun-eoddeohge-mandeuleossna">발표자료</a></p>
+
+<p>chennels는 아직 자료가 많지 않아서 직접 고군분투한 내용.<br />
+채팅 서버에 관심이 많지만 파이썬에 대한 구글링 자료는 소켓에 대한 간단한 내용밖에 없어서 참고할 만한 내용이 많음.<br />
+발표자님의 수준이 매우 높았음. 언젠가 나도 할 수 있겠지..</p>
+
+<h2 id="pyqt로-만드는-웹기반-데스크탑-어플리케이션"><a href="https://www.pycon.kr/2018/program/48">PyQt로 만드는 웹기반 데스크탑 어플리케이션</a></h2>
+<p><img src="/img/post/diary/pycon2018/pyqt.jpg" alt="" />
+유괘한 발표.<br />
+문서도 잘 정리되어 있어서 시간 나는대로 진행해봐도 좋을 듯.<br />
+<a href="https://www.slideshare.net/ravenkyu/py-con2018-pyqt">발표자료</a></p>
+
+<p>자료 정상 공유되는대로 날잡아서 진행예정.<br />
+응용할 수 있는 분야가 넓음.</p>
+
+<h2 id="django-orm-조금-더-깊게-살펴보기"><a href="https://www.pycon.kr/2018/program/53">Django ORM 조금 더 깊게 살펴보기</a></h2>
+<p><a href="https://www.slideshare.net/iandmyhand/pycon-kr-2018-effective-tips-for-django-orm-in-practice-110522221">발표자료</a><br />
+피플펀드의 실제 개발 이슈들로 ORM 을 깊게 다룸.</p>
+
+<h1 id="pycon-2018-2일차">PyCon 2018 2일차</h1>
+
+<p>오전은 개인 사정으로 참여를 할 수 없었음.<br />
+<a href="https://www.pycon.kr/2018/program/51">준범님</a>꺼 듣고 싶었는데..</p>
+
+<h2 id="비개발자에게-파이썬-가르치기"><a href="https://www.pycon.kr/2018/program/44">비개발자에게 파이썬 가르치기</a></h2>
+<p><a href="https://onedrive.live.com/view.aspx?resid=E90665DC6F9DA002!52040&amp;ithint=file%2cpptx&amp;app=PowerPoint&amp;wdo=2&amp;authkey=!APgYIqXoWXbWpXo">발표자료</a>  <img src="/img/post/diary/pycon2018/begining.jpg" alt="" /></p>
+
+<p>실무에서 비개발자와의 커뮤니케이션을 위해 ‘비개발자에게 파이썬 가르치기’를 하였다고 함.
+이 교육을 통해 얻는 것은 개발자가 얼마나 고된 업무를 하는지, 업무는 요청할 때 좀 더 개발자가 알아 듣기 쉽게 정리해서 요청을 할 수 있도록(?) 하게 되었고함.</p>
+
+<h2 id="파이썬에서-함수형으로-프로그래밍하기"><a href="https://www.pycon.kr/2018/program/1">파이썬에서 함수형으로 프로그래밍하기</a></h2>
+
+<p><a href="https://www.slideshare.net/wonhoha/pycon2018-functional-programming">발표자료</a><br />
+<img src="/img/post/diary/pycon2018/fp.jpg" alt="" />
+파이썬 자체가 느릴 뿐더러 FP(함수형 프로그래밍)은 재귀적인 요소가 많고, 데코레이터들이 가득해 가독성이 안좋아서 파이써닉하지 못하다.</p>
+
+<h2 id="pythonic-code가-과연-효율적일까"><a href="https://www.pycon.kr/2018/program/46">Pythonic code가 과연 효율적일까?</a></h2>
+<p><a href="https://www.slideshare.net/ssuserd5b689/pythonic-110444563">발표자료</a></p>
+
+<p>sting 표현식부터 해서 어떠한 함수들이 더 효율적인지 동작 속도들을 체크하면서 진행
+F string이 format보다 약 2배 정도 빠름 (F string의 존재를 처음 알게 됨..;;)</p>
+
+<h2 id="오픈-토크백엔드-관련-주제">오픈 토크(백엔드 관련 주제)</h2>
+<p>백엔드 개발자를 만나려면 AWS나 AZUR 모임에 가야한다(?)</p>
+
+<p>정말 뼈가 되고 살이 되는 이야기를 많이 듣게 되었다. 실무에서 격게되는 상황들, 실제 대처했던 방안들.. 백엔드의 역사(?) 등 많은 정보를 얻게 되었고, 좋은 사람들을 알게 되었다.</p>
+
+<p>시간 가는 줄 모르고 이야기를 듣다보니 라이트닝 토크도 끝나버렸고 사진도 못찍었지만, 그보다 귀한 것을 얻었다.</p>
+:ET

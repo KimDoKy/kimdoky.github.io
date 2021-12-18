@@ -1,0 +1,67 @@
+I"<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<h2 id="21-use-the-same-database-engine-everywhere">2.1 Use the Same Database Engine Everywhere</h2>
+
+<p>로컬 개발 환경과 실제 운영 환경의 데이터베이스 엔진을 일치시키세요.</p>
+
+<h3 id="211-you-cant-examine-an-exact-copy-of-production-data-locally">2.1.1 You Can’t Examine an Exact Copy of Production Data Locally</h3>
+
+<p>개발 환경과 운영 환경이 다를 경우, 운영 데이터베이스에서 SQL 덤프하여 개발환겨에 임포트한다고 해도 두 개의 데이터베이스가 완전히 같은 데이터를 가지고 있다고는 할 수 없습니다.</p>
+
+<h3 id="212-different-databases-have-different-field-typesconstraints">2.1.2 Different Databases Have Different Field Types/Constraints</h3>
+
+<p>데이터베이스들 마다 각 필드 데이터 타입에 대해 다르게 작동하지만, ORM은 어느 정도 그 차이를 커버해줍니다만 완벽하지 않습니다.</p>
+
+<p>개발 환경에서는 보통 SQLite3를 많이 사용하는데, 이는 동적이고 느슨한 타이핑을 지원하기 때문에, 운영 환경의 엄격한 타이핑 동작 데이터베이스에서는 조건 에러(constraint error)등을 발생시킵니다. 그리고 이러한 에러는 재현 및 발견하기가 어렵습니다.</p>
+
+<p>추천 조합은 Django + PostgreSQL 입니다.<br />
+<a href="https://kimdoky.github.io/django/2020/02/03/django-queryset-api/">Django QuerySet API</a><br />
+<a href="https://kimdoky.github.io/django/2020/01/31/django-db-functions/">Django Database Functions</a> 참고</p>
+
+<h3 id="213-fixtures-are-not-a-magic-solution">2.1.3 Fixtures Are Not a Magic Solution</h3>
+
+<p>픽스터는 단순히 하드코딩된 간단한 데이터 셋을 생성하는 데는 좋은 도구입니다. 하지만 큰 크기의 데이터 셋을 이전할 때에는 신뢰성을 가지지 못합니다. 애초에 그런 목적의 도구가 아닙니다.</p>
+
+<h2 id="22-use-pip-and-virtualenv-or-venv">2.2 Use Pip and (Virtualenv or venv)</h2>
+
+<ul>
+  <li>pip: 파이썬 패키지 인덱스(Python Package Index)와 그 미러 사이트에서 파이썬 패키지를 가져오는 도구</li>
+  <li>virtualenv: 파이썬 패키지 의존성을 유지할 수 있게 독립된 파이썬 환경을 제공하는 도구</li>
+</ul>
+
+<blockquote>
+  <p>개인적으로는 Python의 기본 가상환경 구성인 <code class="language-plaintext highlighter-rouge">python3 -m env</code>도 좋다고 생각합니다.</p>
+</blockquote>
+
+<h3 id="221-virtualenvwrapper">2.2.1 virtualenvwrapper</h3>
+
+<p>virtualenv 활성화와 같은 명령어를 줄여줍니다. 필수는 아님</p>
+
+<h2 id="23-install-django-and-other-dependencies-via-pip">2.3 Install Django and Other Dependencies via Pip</h2>
+
+<p>requirments.txt 를 활용하세요.</p>
+
+<h2 id="24-use-git-for-version-control">2.4 Use Git For Version Control</h2>
+
+<p>Git 쓰세요. 두 번 쓰세요.</p>
+
+<h2 id="25-optional-identical-environments">2.5 Optional: Identical Environments</h2>
+
+<p>‘내 컴퓨터에서는 잘되는데요?’라는 문제들이 종종 발생합니다.</p>
+
+<ul>
+  <li>서로 다른 운영 체제</li>
+  <li>서로 다른 파이선 셋업</li>
+  <li>개발자와 개발자 간의 차이</li>
+</ul>
+
+<p>이러한 문제를 해결하기 위해 <strong>가능한 똑같은</strong> 환경을 구성할 필요가 있습니다.</p>
+
+<h3 id="251-docker">2.5.1 Docker</h3>
+
+<p>도커 쓰세요. 두 번 쓰세요.</p>
+:ET

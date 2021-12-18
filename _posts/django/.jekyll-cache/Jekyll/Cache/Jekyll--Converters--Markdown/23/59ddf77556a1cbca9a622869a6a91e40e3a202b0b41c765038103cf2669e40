@@ -1,0 +1,220 @@
+I"QH<ul>
+  <li>
+    <p><a href="https://wsvincent.com/django-rest-framework-tutorial/">William S. Vincent’s Django Rest Framework - Blog API </a>를 번역한 것입니다.</p>
+  </li>
+  <li>
+    <p>해당 소스는 <a href="https://github.com/KimDoKy/study/tree/master/daily/blog_project">Doky’s Github</a>에 업로드 해두었습니다.</p>
+  </li>
+</ul>
+
+<h1 id="django-rest-framework---blog-api">Django Rest Framework - Blog API</h1>
+
+<ul>
+  <li>이 튜토리얼은 DRF를 사용하여 CRUD 기능을 갖춘 블로그 앱용 API를 빌드하는 것</li>
+  <li>초보자용입니다.</li>
+</ul>
+
+<h2 id="spa">SPA</h2>
+<p>현대 웹 어플리케이션 프로그램은 고유한 프론트 엔드와 백엔드를 특징으로한 SPA(Single Page Applications)으로 만들어지고 있는 추세입니다. Django와 같은 프레임워크는 필요에 따라 여러 프론트 엔드에서 사용할 수 있는 백엔드 API가 필요합니다. 이런 방법은 회사가 동일한 프론트엔드 애플리케이션(mobile, iOS, Android)을 필요로 할때 잘 작동합니다.</p>
+
+<p>단점은 프로젝트를 위해 별도의 프로트엔트/백엔드를 작성하는데 더 많은 시간과 코드가 필요합니다.</p>
+
+<h2 id="restful-apis">RESTful APIs</h2>
+<p>API(Application Programming Interface)는 개발자가 응용 프로그램의 데이터베이스와 상호 작용 할 수 있는 인터페이스를 제공합니다. API에 누군가에게 데이터베이스에 대한 모든 엑세스 권한을 부여하는 대신 로그인, 로그아웃, 블로그 목록 읽기, 개별 블로그 세부 정보 등의 다양한 기능에 대한 규칙, 사용 권한 및 엔드 포인트를 설정합니다.</p>
+
+<p>웹 API를 구성하는 전통적인 방법은 웹 사이트가 서로 통신 할 수 있는 잘 정립된 아키텍처인 REST(Representational State Transfer)를 사용하는 것입니다. 컴퓨터는 웹을 통해 통신하므로 GET, PUT, POST, DELETE와 같은 메소드를 지원하는 HTTP 프로토콜을 사용합니다.</p>
+
+<p>또한 요청이 성공(200), 재지정(301), 누락(404), 최악(500)인지 여부를 나타내는 관련 액세스 코드가 있습니다.</p>
+
+<h2 id="json">JSON</h2>
+<p>API는 다른 컴퓨터와 통신중이므로 공유되는 정보가 표준 웹 페이지에 전송되는 정보가 <strong>아닙니다.</strong> 브라우저는 홈페이지를 요청하면 HTTP 요청을 보내고 HTML, CSS, JavaScript, 이미지 등의 HTTP 응답을 받습니다.</p>
+
+<p>API는 <strong>데이터베이스의 데이터에만</strong> 관심이 있습니다. 이 데이터는 JSON 형식으로 변환되어 효율적으로 전송됩니다. API에는 프론트엔드 클라이언트가 REST 아키텍처를 통해 프론트엔드 클라이언트와 상호 작용할 수 있는 일력의 잘 정의 된 규칙이 있습니다. 예를 들어, 새 사용자를 등록하려면 프론트엔드 프레임워크는 <code class="language-plaintext highlighter-rouge">/api/register</code> API 엔트 포인트에 엑세스해야 합니다. 이 API 엔드 포인트에는 특정 URL 경로와 자체 사용 권한이 모두 포함되어 있습니다.</p>
+
+<h2 id="setup">Setup</h2>
+
+<blockquote>
+  <p>작업경로, 가상환경 셋팅 등은 스킵합니다. django와 drf는 미리 설치한 것으로 가정합니다.</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># 프로젝트 생성
+$ django-admin startproject blog_project .
+# 앱 생성
+$ python manage.py startapp posts
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># blog_project/settings.py
+</span><span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s">'django.contrib.admin'</span><span class="p">,</span>
+    <span class="s">'django.contrib.auth'</span><span class="p">,</span>
+    <span class="s">'django.contrib.contenttypes'</span><span class="p">,</span>
+    <span class="s">'django.contrib.sessions'</span><span class="p">,</span>
+    <span class="s">'django.contrib.messages'</span><span class="p">,</span>
+    <span class="s">'django.contrib.staticfiles'</span><span class="p">,</span>
+    <span class="s">'posts'</span><span class="p">,</span>  <span class="c1"># 생성한 앱 추가
+</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">posts</code> 데이터베이스 모델에 필요한 기본적인 4개의 필드(title, content, created_at, updated_at)를 만듭니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># posts/models.py
+</span><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">()</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">title</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># 마이그레이션 파일을 만들고 데이터베이스를 업데이트
+$ python manage.py makemigrations
+$ python manage.py migrate
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># posts/admin.py
+# 어드민페이지에 Post 모델을 추가
+</span><span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">admin</span>
+<span class="k">from</span> <span class="p">.</span> <span class="n">models</span> <span class="kn">import</span> <span class="nn">Post</span>
+
+<span class="n">admin</span><span class="p">.</span><span class="n">site</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="n">Post</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># 관리자 계정을 생성
+$ python manage.py createsuperuser
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># 서버 시작
+$ python manage.py runserver
+</code></pre></div></div>
+
+<p><a href="http://localhost:8000/admin/">http://localhost:8000/admin/</a>으로 접속합니다.
+<img src="/img/post/django/blog_api/1.png" alt="" /></p>
+
+<p><code class="language-plaintext highlighter-rouge">+</code>버튼을 눌러 새로운 콘텐츠를 입력합니다.
+<img src="/img/post/django/blog_api/2.png" alt="" />
+3개의 게시물을 만듭니다.
+<img src="/img/post/django/blog_api/3.png" alt="" />
+장고에서 할 일은 끝났습니다. 템플릿과 뷰는 만들 필요가 없습니다. 대신 DRF를 추가하여 모델 데이터를 API로 변환할 것입니다.</p>
+
+<h2 id="django-rest-framework">Django Rest Framework</h2>
+
+<p>DRF는 데이터베이스 모델을 RESTful API로 변환하는 작업을 처리합니다. 이 프로세스틑 두 가지 기본 단계가 있습니다. 첫 단계는 <code class="language-plaintext highlighter-rouge">serializer</code>는 데이터를 JSON으로 변환하여 인터넷을 통해 전송할 수 있도록하는데 사용되며, 그러면 어떤 데이터가 전송되는지 정의하는데 사용됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># blog_project/settings.py
+</span><span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s">'django.contrib.admin'</span><span class="p">,</span>
+    <span class="s">'django.contrib.auth'</span><span class="p">,</span>
+    <span class="s">'django.contrib.contenttypes'</span><span class="p">,</span>
+    <span class="s">'django.contrib.sessions'</span><span class="p">,</span>
+    <span class="s">'django.contrib.messages'</span><span class="p">,</span>
+    <span class="s">'django.contrib.staticfiles'</span><span class="p">,</span>
+
+    <span class="s">'rest_framework'</span><span class="p">,</span>  <span class="c1"># drf 셋팅
+</span>
+    <span class="s">'posts'</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div></div>
+
+<p>serializer는 데이터를 JSON 형식으로 변환하는데 사용됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># posts/serializers.py
+</span><span class="kn">from</span> <span class="nn">rest_framework</span> <span class="kn">import</span> <span class="n">serializers</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="c1"># `serializer` 클래스를 만들고 그 안에 Meta 클래스를 만듭니다.
+</span><span class="k">class</span> <span class="nc">PostSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="c1"># fields는 데이터베이스 속성을 제어합니다.
+</span>        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'id'</span><span class="p">,</span> <span class="s">'title'</span><span class="p">,</span> <span class="s">'content'</span><span class="p">,</span> <span class="s">'created_at'</span><span class="p">,</span> <span class="s">'updated_at'</span><span class="p">,)</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">Post</span>
+</code></pre></div></div>
+
+<p>다음은 뷰를 생성해야합니다. Django가 CBV를 갖는 것처럼 DRF도 일반적인 뷰를 가지고 있습니다. 모든 게시물을 나열하는 뷰 및 특정 게시물의 상세보기를 추가합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># posts/views.py
+</span><span class="kn">from</span> <span class="nn">rest_framework</span> <span class="kn">import</span> <span class="n">generics</span>
+
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Post</span>
+<span class="kn">from</span> <span class="nn">.serializers</span> <span class="kn">import</span> <span class="n">PostSerializer</span>
+
+
+<span class="k">class</span> <span class="nc">PostList</span><span class="p">(</span><span class="n">generics</span><span class="p">.</span><span class="n">ListAPIView</span><span class="p">):</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">Post</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">PostSerializer</span>
+
+<span class="c1"># RetrieveAPIView는 단일 인스턴스용입니다.
+</span><span class="k">class</span> <span class="nc">PostDetail</span><span class="p">(</span><span class="n">generics</span><span class="p">.</span><span class="n">RetrieveAPIView</span><span class="p">):</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">Post</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">PostSerializer</span>
+</code></pre></div></div>
+
+<p>마지막으로 URL입니다. 데이터를 사용할 수 있는 URL 경로(API 엔드포인트)를 만들어야 합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># blog_project/urls.py
+</span><span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">admin</span>
+<span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">include</span><span class="p">,</span> <span class="n">path</span>
+
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">path</span><span class="p">(</span><span class="s">'admin/'</span><span class="p">,</span> <span class="n">admin</span><span class="p">.</span><span class="n">site</span><span class="p">.</span><span class="n">urls</span><span class="p">),</span>
+    <span class="n">path</span><span class="p">(</span><span class="s">'api/'</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="s">'posts.urls'</span><span class="p">)),</span>
+<span class="p">]</span>
+</code></pre></div></div>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># posts/urls.py
+</span><span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">path</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">views</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">path</span><span class="p">(</span><span class="s">''</span><span class="p">,</span> <span class="n">views</span><span class="p">.</span><span class="n">PostList</span><span class="p">.</span><span class="n">as_view</span><span class="p">()),</span>
+    <span class="n">path</span><span class="p">(</span><span class="s">'&lt;int:pk&gt;/'</span><span class="p">,</span> <span class="n">views</span><span class="p">.</span><span class="n">PostDetail</span><span class="p">.</span><span class="n">as_view</span><span class="p">()),</span>
+<span class="p">]</span>
+</code></pre></div></div>
+
+<h2 id="browsable-api">Browsable API</h2>
+
+<p>DRF 작동을 체크합니다. 서버를 재 시작합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ python manage.py runserver
+</code></pre></div></div>
+
+<p>브라우저에서 <a href="http://127.0.0.1:8000/api/">http://127.0.0.1:8000/api/</a>으로 갑니다.</p>
+
+<p><img src="/img/post/django/blog_api/4.png" alt="" />
+<code class="language-plaintext highlighter-rouge">api/endpoint</code>는 블로그 게시물 3개를 JSON 형식으로 표시합니다. 헤더에는 GET, HEAD, OPTIONS 만 허용됩니다. POST는 전송하지 않습니다.</p>
+
+<p><a href="http://127.0.0.1:8000/api/1/">http://127.0.0.1:8000/api/1/</a>으로 이동하면 첫 번째 게시의 데이터만 표시합니다.</p>
+
+<p><img src="/img/post/django/blog_api/5.png" alt="" /></p>
+
+<h2 id="crud-구현하기">CRUD 구현하기</h2>
+<p>DRF를 사용하여 API에 CRUD를 지원하는 API로 변환하는 것은 매우 쉽습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># posts/views.py
+</span><span class="p">...</span>
+<span class="c1"># 'class PostDetail'의 'generics.RetrieveAPIView'를
+# 'generics.RetrieveUpdateDestroyAPIView'으로 변경합니다.
+</span><span class="k">class</span> <span class="nc">PostDetail</span><span class="p">(</span><span class="n">generics</span><span class="p">.</span><span class="n">RetrieveUpdateDestroyAPIView</span><span class="p">):</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">Post</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">serializers</span><span class="p">.</span><span class="n">PostSerializer</span>
+</code></pre></div></div>
+
+<p><a href="http://127.0.0.1:8000/api/1/">http://127.0.0.1:8000/api/1/</a> 페이지를 새로고침하면 업데이트된 UI를 확인 할 수 있습니다.</p>
+
+<p><img src="/img/post/django/blog_api/6.png" alt="" /></p>
+
+<p>‘DELETE’ 버튼으로 콘텐츠를 삭제하고, ‘PUT’으로 콘텐츠를 업데이트하고, ‘GET’으로 다시 검색할 수 있습니다.(‘GET’을 누르지 않더도, 업데이트하면 업데이트된 내용을 자동으로 가져옵니다.)</p>
+
+<p>예를 들어 3번째 게시물을 수정합니다. <a href="http://127.0.0.1:8000/api/3/">http://127.0.0.1:8000/api/3/</a>으로 이동합니다.
+<img src="/img/post/django/blog_api/7.png" alt="" />
+위 하면처럼 title을 수정하고 ‘GET’으로 다시 정보를 가져옵니다.
+<img src="/img/post/django/blog_api/8.png" alt="" /></p>
+
+<h2 id="next-step">Next Step</h2>
+<p>ViewSets과 Router를 결합하면 복잡한 API를 획기적으로 빠르게 작성할 수 있습니다.</p>
+:ET

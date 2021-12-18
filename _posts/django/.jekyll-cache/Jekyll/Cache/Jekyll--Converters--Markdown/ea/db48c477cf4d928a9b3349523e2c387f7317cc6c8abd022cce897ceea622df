@@ -1,0 +1,50 @@
+I" <h3 id="filter"><code class="language-plaintext highlighter-rouge">filter()</code></h3>
+<p>QuerySet을 필터링하기</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Post</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">publish__year</span><span class="o">=</span><span class="mi">2018</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="exclude"><code class="language-plaintext highlighter-rouge">exclude()</code></h3>
+<p>해당 내용을 쿼리셋에서 제외하기</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Post</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">publish__year</span><span class="o">=</span><span class="mi">2018</span><span class="p">).</span><span class="n">exclude</span><span class="p">(</span><span class="n">title__startswith</span><span class="o">=</span><span class="s">'New'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="order_by"><code class="language-plaintext highlighter-rouge">order_by()</code></h3>
+<p>정렬 순서 정하기</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 오름차순
+</span><span class="o">&gt;&gt;&gt;</span> <span class="n">Post</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">'title'</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">QuerySet</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">Post</span><span class="p">:</span> <span class="n">Change</span> <span class="n">Title</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Post</span><span class="p">:</span> <span class="n">New</span> <span class="n">title</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Post</span><span class="p">:</span> <span class="n">One</span> <span class="n">more</span> <span class="n">post</span><span class="o">&gt;</span><span class="p">]</span><span class="o">&gt;</span>
+<span class="c1"># 내림차순
+</span><span class="o">&gt;&gt;&gt;</span> <span class="n">Post</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">'-title'</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">QuerySet</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">Post</span><span class="p">:</span> <span class="n">One</span> <span class="n">more</span> <span class="n">post</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Post</span><span class="p">:</span> <span class="n">New</span> <span class="n">title</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">Post</span><span class="p">:</span> <span class="n">Change</span> <span class="n">Title</span><span class="o">&gt;</span><span class="p">]</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<h3 id="delete"><code class="language-plaintext highlighter-rouge">delete()</code></h3>
+<p>객체를 삭제하기<br />
+객체를 삭제하면 종속 관계도 삭제된다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">post</span> <span class="o">=</span> <span class="n">Post</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">post</span><span class="p">.</span><span class="n">delete</span><span class="p">()</span>
+<span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">{</span><span class="s">'blog.Post'</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<span class="c1"># shell에서 해당 커맨드를 입력하면 DB에서는 삭제가 되지만, 객체는 저장된 상태로 남아있다.
+</span><span class="o">&gt;&gt;&gt;</span> <span class="n">post</span>
+<span class="o">&lt;</span><span class="n">Post</span><span class="p">:</span> <span class="n">New</span> <span class="n">title</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">post</span><span class="p">.</span><span class="n">title</span>
+<span class="s">'New title'</span>
+</code></pre></div></div>
+
+<p>Django의 QuerySet은 평가(?)가 이루어지기 전까지는 데이터베이스에 도달하지 않는다.</p>
+
+<p>평가가 이루어지는 경우</p>
+
+<ul>
+  <li>처음 반복 할 때</li>
+  <li>슬라이스할 때. <code class="language-plaintext highlighter-rouge">Post.objects.all()[:3]</code></li>
+  <li>pickle이나 cache할 때</li>
+  <li><code class="language-plaintext highlighter-rouge">repr()</code>이나 <code class="language-plaintext highlighter-rouge">len()</code>을 호출 할 때</li>
+  <li>명시적으로 <code class="language-plaintext highlighter-rouge">list()</code>를 호출 할 때</li>
+  <li><code class="language-plaintext highlighter-rouge">bool()</code>, <code class="language-plaintext highlighter-rouge">or</code>, <code class="language-plaintext highlighter-rouge">and</code>, <code class="language-plaintext highlighter-rouge">if</code>와 같은 명령문에서 테스트 할 때</li>
+</ul>
+:ET

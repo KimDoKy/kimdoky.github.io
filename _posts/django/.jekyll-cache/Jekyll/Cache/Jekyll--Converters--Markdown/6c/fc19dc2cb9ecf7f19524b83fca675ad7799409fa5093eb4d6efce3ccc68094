@@ -1,0 +1,22 @@
+I"Y<p>숫자를 다루다 보면 1000단위로 콤마를 찍어야 한눈에 알아보기 편하다.
+당연히 실무에서도 그렇게 사용하고.</p>
+
+<p>파이썬으로 1000 단위에 콤마를 찍으려면 <code class="language-plaintext highlighter-rouge">format</code>을 이용하면 된다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">print</span><span class="p">(</span><span class="nb">format</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="s">","</span><span class="p">))</span>  <span class="c1"># 1,000
+</span></code></pre></div></div>
+
+<p>django의 템플릿에도 똑같이 적용해주어도 되지만,
+해당 값들을 모두 format 적용하기엔 너무나도 비효율적이다.</p>
+
+<p>django에는 해당 기능이 이미 구현되어있다.</p>
+
+<p>우선 settings.py의 INSTALLED_APPS에 <code class="language-plaintext highlighter-rouge">django.contrib.humanize</code>를 추가한다.</p>
+
+<p>그리고 템플릿의 해당 부분에 humanize를 로드하고 뒤에 <code class="language-plaintext highlighter-rouge">intcomma</code>를 붙여준다.</p>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{% load humanize %}
+{{ my_nm|intcomma }}
+</code></pre></div></div>
+
+:ET

@@ -1,0 +1,342 @@
+I"1�<h1 id="django-rest-framework---authentication">Django REST Framework - Authentication</h1>
+
+<hr />
+
+<p><em>“Auth needs to be pluggable.”</em></p>
+
+<p><em>“인증은 플러그가 가능해야 합니다.”</em></p>
+
+<p><em>— Jacob Kaplan-Moss, “REST worst practices”</em></p>
+
+<hr />
+
+<h2 id="authentication입증">Authentication(입증)</h2>
+<p>Authentication은 수신 요청을 요청한 사용자 또는 서명 된 토큰과 같은 식별 자격 증명 세트를 연결하는 메커니즘입니다. 그런 다음 <a href="http://www.django-rest-framework.org/api-guide/permissions/">권한</a>과 <a href="http://www.django-rest-framework.org/api-guide/throttling/">정책</a>은 이러한 자격 증명을 사용하여 요청을 허용해야 하는지 결정할 수 있습니다.<br />
+REST 프레임워크는 여러가지 인증 스키마를 즉시 제공하며 custom 스키마를 구현할 수도 있습니다.<br />
+Authentication은 항상 View의 맨 처음, 권한 및  제한 검사가 수행되기 전에 그리고 다른 코드가 진행되기 전에 실행됩니다.<br />
+<code class="language-plaintext highlighter-rouge">request.user</code>속성은 일반적으로 <code class="language-plaintext highlighter-rouge">contrib.auth</code>패키지의 <code class="language-plaintext highlighter-rouge">User</code>클래스 인스턴스로 설정됩니다.<br />
+<code class="language-plaintext highlighter-rouge">request.auth</code> 등록정보는 추가인증 정보에 사용됩니다. 예를 들어, request가 서명 된 인증 토큰을 나타내는데 사용될 수 있습니다.</p>
+
+<hr />
+
+<p><strong>Note</strong>: 들어오는 request를 허용하거나 거부하지 않는 인증은 request가 수행된 자격 증명을 식별하기만하면 된다는 것을 잊지 마십시오.<br />
+API에 대한 사용권한정책을 설정하는 방법에 대한 자세한 내용은 <a href="http://www.django-rest-framework.org/api-guide/permissions/">permissions documentation</a>를 참조하세요.</p>
+
+<hr />
+
+<h3 id="how-authentication-is-determined">How authentication is determined</h3>
+<p>인증 체계는 항상 클래스 list으로 정의됩니다. REST 프레임워크는 list의 각 클래스에 대해 인증을 시도하고 성공적으로 인증한 첫 번째 클래스의 반환 값을 사용하여 <code class="language-plaintext highlighter-rouge">request.user</code> 및 <code class="language-plaintext highlighter-rouge">request.auth</code>를 설정합니다.<br />
+클래스가 인증되지 않으면 <code class="language-plaintext highlighter-rouge">request.user</code>는 <code class="language-plaintext highlighter-rouge">django.contrib.auth.AnonymousUser</code>의 인스턴스로 설정되고 <code class="language-plaintext highlighter-rouge">request.auth</code>는 <code class="language-plaintext highlighter-rouge">None</code>으로 설정됩니다.<br />
+인증되지 않은 요청에 대한 <code class="language-plaintext highlighter-rouge">request.user</code>,  <code class="language-plaintext highlighter-rouge">request.auth</code>의 값은 <code class="language-plaintext highlighter-rouge">UNAUTHENTICATED_USER</code>, <code class="language-plaintext highlighter-rouge">UNAUTHENTICATED_TOKEN</code> 설정을 사용하여 수정할 수 있습니다.</p>
+
+<h3 id="setting-the-authentication-scheme">Setting the authentication scheme</h3>
+<p><code class="language-plaintext highlighter-rouge">DEFAULT_AUTHENTICATION_CLASSES</code> 설정을 사용하여 기본 인증 구성표를 전역으로 설정할 수 있습니다. 예를 들면.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'DEFAULT_AUTHENTICATION_CLASSES'</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s">'rest_framework.authentication.BasicAuthentication'</span><span class="p">,</span>
+        <span class="s">'rest_framework.authentication.SessionAuthentication'</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>또한 <code class="language-plaintext highlighter-rouge">APIVIew</code> CBV를 사용하여 view 단위 또는 view단위로 인증 체계를 구성할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework.authentication</span> <span class="kn">import</span> <span class="n">SessionAuthentication</span><span class="p">,</span> <span class="n">BasicAuthentication</span>
+<span class="kn">from</span> <span class="nn">rest_framework.permissions</span> <span class="kn">import</span> <span class="n">IsAuthenticated</span>
+<span class="kn">from</span> <span class="nn">rest_framework.response</span> <span class="kn">import</span> <span class="n">Response</span>
+<span class="kn">from</span> <span class="nn">rest_framework.views</span> <span class="kn">import</span> <span class="n">APIView</span>
+
+<span class="k">class</span> <span class="nc">ExampleView</span><span class="p">(</span><span class="n">APIView</span><span class="p">):</span>
+    <span class="n">authentication_classes</span> <span class="o">=</span> <span class="p">(</span><span class="n">SessionAuthentication</span><span class="p">,</span> <span class="n">BasicAuthentication</span><span class="p">)</span>
+    <span class="n">permission_classes</span> <span class="o">=</span> <span class="p">(</span><span class="n">IsAuthenticated</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">'user'</span><span class="p">:</span> <span class="nb">unicode</span><span class="p">(</span><span class="n">request</span><span class="p">.</span><span class="n">user</span><span class="p">),</span>  <span class="c1"># `django.contrib.auth.User` instance.
+</span>            <span class="s">'auth'</span><span class="p">:</span> <span class="nb">unicode</span><span class="p">(</span><span class="n">request</span><span class="p">.</span><span class="n">auth</span><span class="p">),</span>  <span class="c1"># None
+</span>        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+</code></pre></div></div>
+<p>또는 FBV와 함께 <code class="language-plaintext highlighter-rouge">@api_view</code>데코레이터를 사용하는 경우</p>
+
+<pre><code class="language-pyhon">@api_view(['GET'])
+@authentication_classes((SessionAuthentication, BasicAuthentication))
+@permission_classes((IsAuthenticated,))
+def example_view(request, format=None):
+    content = {
+        'user': unicode(request.user),  # `django.contrib.auth.User` instance.
+        'auth': unicode(request.auth),  # None
+    }
+    return Response(content)
+</code></pre>
+
+<h3 id="unauthorized-and-forbidden-responses무단-및-금지된-응답">Unauthorized and Forbidden responses(무단 및 금지된 응답)</h3>
+<p>인증되지 않은 요청에 권한이 거부되면 적절한 두 가지 오류 코드가 있습니다.</p>
+
+<ul>
+  <li><a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">HTTP 401 Unauthorized</a></li>
+  <li><a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.4">HTTP 403 Permission Denied</a></li>
+</ul>
+
+<p>HTTP 401 응답에는 항상 클라이언트에 인증 방법을 지시하는 <code class="language-plaintext highlighter-rouge">WWW-Authenticate</code> 헤더가 포함되어야합니다. HTTP 403 응답에는 <code class="language-plaintext highlighter-rouge">WWW-Authenticate</code> 헤더가 포함되지 않습니다.<br />
+사용되는 response의 종류는 인증 체계에 따라 다릅니다. 여러 인증 스키마가 사용 중일 수 있지만, response의 타입을 결정하는데 하나의 스키마만 사용할 수 있습니다. <strong>view에 설정된 첫번째 authentication 클래스는 response 타입을 결정 할 때 사용됩니다.</strong><br />
+request가 성공적으로 인증 될 수 있지만, 여전히 request를 수행할 권한이 거부 된 경우, 인증 스키마에 관계없이 <code class="language-plaintext highlighter-rouge">403 Permission Denied</code>응답이 항상 사용됩니다.</p>
+
+<h3 id="apache-mod_wsgi-specific-configuration">Apache mod_wsgi specific configuration</h3>
+<p>mod_wsgi를 사용하여 Apache에 배포한다면, 권한 부여 헤더는 기본적으로 응용프로그램 수준이 아닌 Apache에서 인증을 처리한다고 가정하므로, 기본적으로 WSGI 응용프로그램에 전달되지 않습니다.<br />
+Apache에 배포하고 비 세션 기반 인증을 사용하는 경우 <code class="language-plaintext highlighter-rouge">mod_wsgi</code>를 명시적으로 구성하여 필요한 헤더를 응용프로그램에 전달해야 합니다. 이는 적절한 컨텍스트에서 <code class="language-plaintext highlighter-rouge">WSGIPassAuthorization</code>지시문을 지정하고 <code class="language-plaintext highlighter-rouge">On</code>으로 설정하여 수행할 수 있습니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># 이것은 서버 설정, 가상 호스트, 디렉토리 또는 .htaccess 중 하나에 들어갈 수 있습니다.
+
+WSGIPassAuthorization On
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="api-reference">API Reference</h2>
+
+<h3 id="basicauthentication">BasicAuthentication</h3>
+<p>이 인증 체계는 사용자의 사용자 이름과 암호에 대해 서명 된 <a href="https://tools.ietf.org/html/rfc2617">HTTP basic Authentication</a>을 사용합니다. 기본 인증은 일반적으로 테스트에만 적합합니다.<br />
+성공적으로 인증되면 <code class="language-plaintext highlighter-rouge">BasicAuthencation</code>은 다음 자격 증명을 제공합니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">request.user</code>는 Django <code class="language-plaintext highlighter-rouge">User</code>인스턴스가 될 것입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">request.auth</code>는 <code class="language-plaintext highlighter-rouge">None</code>입니다.</li>
+</ul>
+
+<p>권한이 거부 된 인증되지 않은 응답은 적절한 WWW-Authenticate 헤더와 함께 <code class="language-plaintext highlighter-rouge">HTTP 401 Unauthorized</code> 웅답이 됩니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WWW-Authenticate: Basic realm="api"
+</code></pre></div></div>
+
+<p><strong>Note</strong>: 프로덕션 환경에서 <code class="language-plaintext highlighter-rouge">BasicAuthentication</code>을 사용하는 경우 <code class="language-plaintext highlighter-rouge">https</code>를 통해서만 API를 사용할 수 있어야 합니다. 또한 API 클라이언트가 로그인 할때 항상 사용자 이름과 비밀번호를 다시 요청하고 해당 세부정보를 영구 저장소에 저장하지 않도록 해야합니다.</p>
+
+<h3 id="tokenauthentication">TokenAuthentication</h3>
+<p>이 인증체계는 간단한 토큰 기반 HTTP인증체계를 사용합니다. 토큰 인증은 네이티브 데스크톱 및 모바일 클라이언트와 같은 클라이언트 - 서버 설정에 적합합니다.<br />
+<code class="language-plaintext highlighter-rouge">TokenAuthentication</code> 스키마를 사용하려면 <code class="language-plaintext highlighter-rouge">TokenAuthentication</code>을 포함하도록 <a href="http://www.django-rest-framework.org/api-guide/authentication/#setting-the-authentication-scheme">authentication클래스를 구성</a>하고 <code class="language-plaintext highlighter-rouge">INSTALLED_APPS</code>설정에 <code class="language-plaintext highlighter-rouge">rest_framework.authtoken</code>를 추가해야 합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>INSTALLED_APPS = (
+    ...
+    'rest_framework.authtoken'
+)
+</code></pre></div></div>
+
+<hr />
+
+<p><strong>Note</strong>: 설정을 변경한 후에 <code class="language-plaintext highlighter-rouge">manage.py migrate</code>를 실행해야합니다. <code class="language-plaintext highlighter-rouge">rest_framework.authtoken</code>앱은 Django 데이터베이스 마이그레이션을 제공합니다.</p>
+
+<hr />
+
+<p>또한 사용자를 위한 토큰을 만들어야 합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework.authtoken.models</span> <span class="kn">import</span> <span class="n">Token</span>
+
+<span class="n">token</span> <span class="o">=</span> <span class="n">Token</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">create</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="p">...)</span>
+<span class="k">print</span> <span class="n">token</span><span class="p">.</span><span class="n">key</span>
+</code></pre></div></div>
+<p>클라이언트가 인증하려면 토큰 키가 <code class="language-plaintext highlighter-rouge">Authorization</code> HTTP 헤더에 포함되어야합니다. 키에는 두 문자열을 공백으로 구분하여 문자열 리터럴 “Token”을 prefix로 사용해야합니다. 예:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Authorization: Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b
+</code></pre></div></div>
+<p><strong>Note</strong>: <code class="language-plaintext highlighter-rouge">Bearer</code>와 같은 헤더에 다른 키워드를 사용하려면 단순히 <code class="language-plaintext highlighter-rouge">TokenAuthentication</code>을 서브 클래스화하고 <code class="language-plaintext highlighter-rouge">keyword</code> 클래스 변수를 설정하십시오.<br />
+성공적으로 인증되면 <code class="language-plaintext highlighter-rouge">TokenAuthentication</code>은 다음 자격 증명을 제공합니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">request.user</code>는 Django <code class="language-plaintext highlighter-rouge">User</code> 인스턴스가 될 것입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">request.auth</code>는 <code class="language-plaintext highlighter-rouge">rest_framework.authtoken.models.Token</code> 인스턴스가 됩니다.</li>
+</ul>
+
+<p>권한이 거부 된 인증되지 않은 응답은 적절한 WWW-Authenticate 헤더와 함께 <code class="language-plaintext highlighter-rouge">HTTP 401 Unauthorized</code> 응답이 됩니다. 예:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WWW-Authenticate: Token
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">curl</code> command line tool은 토큰으로 인증된 API를 테스트 하는데 유용할 수 있습니다. 예:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl -X GET http://127.0.0.1:8000/api/example/ -H 'Authorization: Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b'
+</code></pre></div></div>
+
+<hr />
+<p><strong>Note</strong>: 프로덕션 환경에서 <code class="language-plaintext highlighter-rouge">TokenAuthentication</code>을 사용하는 경우 <code class="language-plaintext highlighter-rouge">https</code>를 통해서만 API를 사용할 수 있어야 합니다.</p>
+
+<hr />
+<h4 id="generating-tokens">Generating Tokens</h4>
+<h5 id="by-using-signals">By using signals</h5>
+<p>모든 사용자가 자동으로 생선 된 토큰을 갖기를 원하면 사용자의 <code class="language-plaintext highlighter-rouge">post_save</code>신호를 간단히 잡을 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">django.db.models.signals</span> <span class="kn">import</span> <span class="n">post_save</span>
+<span class="kn">from</span> <span class="nn">django.dispatch</span> <span class="kn">import</span> <span class="n">receiver</span>
+<span class="kn">from</span> <span class="nn">rest_framework.authtoken.models</span> <span class="kn">import</span> <span class="n">Token</span>
+
+<span class="o">@</span><span class="n">receiver</span><span class="p">(</span><span class="n">post_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">settings</span><span class="p">.</span><span class="n">AUTH_USER_MODEL</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">create_auth_token</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">created</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">created</span><span class="p">:</span>
+        <span class="n">Token</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">create</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">instance</span><span class="p">)</span>
+</code></pre></div></div>
+<p>이 코드는 snippet이 설치된 <code class="language-plaintext highlighter-rouge">models.py</code> 모듈이나 시작시 Django가 가져올 다른 위치에 배치해야 합니다.<br />
+이미 일부 사용자를 만든 경우 다음과 같이 모든 기존 사용자에 대한 토큰을 생성 할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.models</span> <span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">rest_framework.authtoken.models</span> <span class="kn">import</span> <span class="n">Token</span>
+
+<span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">():</span>
+    <span class="n">Token</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span>
+</code></pre></div></div>
+<h5 id="by-exposing-an-api-endpointapi-엔드포인트를-노출시킴">By exposing an api endpoint(api 엔드포인트를 노출시킴)</h5>
+<p><code class="language-plaintext highlighter-rouge">TokenAuthentication</code>을 사용할 때 클라이언트가 사용자 이름과 암호가 있는 토큰을 얻을 수 있는 메커니즘을 제공 할 수 있습니다. REST 프레임워크는 이 동작을 제공하는  built-in 뷰를 제공합니다. 그것을 사용하려면 URLconf에 <code class="language-plaintext highlighter-rouge">obtain_auth_token</code> 뷰를 추가하세요.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework.authtoken</span> <span class="kn">import</span> <span class="n">views</span>
+<span class="n">urlpatterns</span> <span class="o">+=</span> <span class="p">[</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s">'^api-token-auth/'</span><span class="p">,</span> <span class="n">views</span><span class="p">.</span><span class="n">obtain_auth_token</span><span class="p">)</span>
+<span class="p">]</span>
+</code></pre></div></div>
+<p>패턴의 URL 부분은 원하는대로 사용할 수 있습니다.<br />
+<code class="language-plaintext highlighter-rouge">obtain_auth_token</code> 뷰는 유효한 <code class="language-plaintext highlighter-rouge">사용자 이름</code> 및 <code class="language-plaintext highlighter-rouge">암호</code> 필드가 양식 데이터 또는 JSON을 사용하여 뷰에 POST되면 JSON 응답을 리턴합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{ 'token' : '9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b' }
+</code></pre></div></div>
+<p>기본 <code class="language-plaintext highlighter-rouge">obtain_auth_token</code> 뷰는 설정에서 기본 renderer 및 parser 클래스를 사용하는 대신 JSON 요청 및 응답을 명시적으로 사용합니다.
+<code class="language-plaintext highlighter-rouge">obtain_auth_token</code>view의 custom 된 버전이 필요하면 <code class="language-plaintext highlighter-rouge">ObtainAuthToken</code>view 클래스를 대체하고 URL conf에 대신 사용하세요.<br />
+기본적으로 <code class="language-plaintext highlighter-rouge">obtain_auth_token</code> view에 적용된 사용 권한이나 제한이 없습니다. 제한을 적용하려면 view클래스를 재정의하고 <code class="language-plaintext highlighter-rouge">throttle_classes</code>속성을 사용하여 view클래스를 포함해야 합니다.</p>
+
+<h5 id="with-django-admin">With Django admin</h5>
+<p>관리자 인터페이스를 통해 수동으로 토큰을 생성 할 수도 있습니다. 대규모 사용자 기반을 사용하는 경우, <code class="language-plaintext highlighter-rouge">user</code> 필드를 <code class="language-plaintext highlighter-rouge">raw_field</code>로 선언하여 <code class="language-plaintext highlighter-rouge">TokenAdmin</code> 클래스를 monkey 패치하여 필요에 맞게 custom하는 것이 좋습니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">your_app/admin.py</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework.authtoken.admin</span> <span class="kn">import</span> <span class="n">TokenAdmin</span>
+
+<span class="n">TokenAdmin</span><span class="p">.</span><span class="n">raw_id_fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'user'</span><span class="p">,)</span>
+</code></pre></div></div>
+
+<h3 id="sessionauthentication">SessionAuthentication</h3>
+<p>이 인증방식은 Django의 기본 세션 백엔드를 인증에 사용합니다. 세션 인증은 웹 사이트롸 동일한 세션 컨텍스트에서 실행되는 AJAX 클라이언트에 적합합니다.<br />
+성공적으로 인증되면 <code class="language-plaintext highlighter-rouge">SessionAuthentication</code>은 다음 자격 증명을 제공합니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">request.use</code>r는 Django <code class="language-plaintext highlighter-rouge">User</code> 인스턴스가 될 것입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">request.auth</code>는 <code class="language-plaintext highlighter-rouge">None</code>입니다.</li>
+</ul>
+
+<p>권한이 거부 된 인증되지 않은 응답은 <code class="language-plaintext highlighter-rouge">HTTP 403 Forbidden</code>응답이 됩니다.<br />
+SessionAuthentication과 함께 AJAX 스타일 API를 사용하는 경우 <code class="language-plaintext highlighter-rouge">PUT</code>, <code class="language-plaintext highlighter-rouge">PATCH</code>, <code class="language-plaintext highlighter-rouge">POST</code> 또는 <code class="language-plaintext highlighter-rouge">DELETE</code> 요청과 같은 <strong>“안전하지 않은”</strong>HTTP 메소드 호출에 유효한 CSRF 토큰을 포함시켜야합니다. 자세한 내용은 <a href="https://docs.djangoproject.com/en/1.10/ref/csrf/#ajax">Django CSRF documentation</a> 참조<br />
+<strong>Warning</strong>: 로그인 페이지를 만들 때 항상 Django의 표준 로그인 view를 사용하세요. 이렇게 하면 로그인view가 올바르게 보호됩니다.<br />
+REST 프레임워크의 CSRF 유효성 검사는 동일한 view에 대해 session 및 non-session 기반 인증을 모두 지원해야하므로 표준 Django와 약간 다르게 작동합니다. 즉, 인증 된 요청만 CSRF 토큰이 필요로 하며 익명 요청은 CSRF 토큰 없이 전송될 수 있습니다. 이 동작은 항상 CSRF 유효성 검사가 적용된 로그인 View에는 적합하지 않습니다.</p>
+
+<h2 id="custom-authentication">Custom authentication</h2>
+<p>사용자 정의 인증 체계를 구현하려면 <code class="language-plaintext highlighter-rouge">BaseAuthentication</code>을 서브 클래스화하고 <code class="language-plaintext highlighter-rouge">.authenticate(self, request)</code> 메소드를 대체하십시오. 이 메소드는 인증에 성공하면 2-tuple(user, auth)을 반환하고, 그렇지 않으면 <code class="language-plaintext highlighter-rouge">None</code>을 반환햐야 합니다.<br />
+<code class="language-plaintext highlighter-rouge">None</code>을 반환하는 대신 상황에 따라 <code class="language-plaintext highlighter-rouge">.authenticate()</code> 메서드에서 <code class="language-plaintext highlighter-rouge">AuthenticationFailed</code> 예외를 발생 시킬 수 있습니다.<br />
+일반적으로 취해야 할 접근 방식은 다음과 같습니다.</p>
+
+<ul>
+  <li>인증을 시도하지 않으면 <code class="language-plaintext highlighter-rouge">None</code>을 반환합니다. 사용중인 다른 인증 체계도 계속 검사됩니다.</li>
+  <li>인증을 시도했지만 실패한 경우 <code class="language-plaintext highlighter-rouge">AuthenticationFailed</code> 예외를 발생시킵니다. 권한 확인과 관계없이 다른 인증 스키마를 확인하지 않고 즉시 오류 응답이 반환됩니다.</li>
+</ul>
+
+<p>또한 <code class="language-plaintext highlighter-rouge">.authenticate_header(self, request)</code> 메소드를 대체 할 수 있습니다. 구현 된 경우 <code class="language-plaintext highlighter-rouge">HTTP 401 Unauthorized</code> 응답에서 <code class="language-plaintext highlighter-rouge">WWW-Authenticate</code> 헤더의 값으로 사용 될 문자열을 반환해야합니다.<br />
+<code class="language-plaintext highlighter-rouge">.authenticate_header()</code> 메소드가 대체되지 않으면, 인증 스키마는 인증되지 않은 요청이 액세스를 거부 할 때 <code class="language-plaintext highlighter-rouge">HTTP 403 Forbidden</code> 응답을 리턴합니다.</p>
+
+<h3 id="example">Example</h3>
+<p>다음 예제는 들어오는 요청을 ‘X_USERNAME’이라는 사용자 지정 request 헤더에서 사용자 이름으로 지정된 사용자로 인증합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.models</span> <span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">rest_framework</span> <span class="kn">import</span> <span class="n">authentication</span>
+<span class="kn">from</span> <span class="nn">rest_framework</span> <span class="kn">import</span> <span class="n">exceptions</span>
+
+<span class="k">class</span> <span class="nc">ExampleAuthentication</span><span class="p">(</span><span class="n">authentication</span><span class="p">.</span><span class="n">BaseAuthentication</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">authenticate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="n">request</span><span class="p">.</span><span class="n">META</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'X_USERNAME'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">username</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">User</span><span class="p">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">exceptions</span><span class="p">.</span><span class="n">AuthenticationFailed</span><span class="p">(</span><span class="s">'No such user'</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="third-party-packages">Third party packages</h2>
+<p>다음의 타사 패키지도 제공됩니다.</p>
+
+<h3 id="django-oauth-toolkit">Django OAuth Toolkit</h3>
+<p><a href="https://github.com/evonove/django-oauth-toolkit">Django OAuth Toolkit</a> 패키지는 OAuth 2.0 지원을 제공하며 Python 2.7 및 Python 3.3 이상에서 작동합니다. 이 패키지는 <a href="https://github.com/evonove/">Evonove</a>에서 유지 관리하며 우수한 <a href="https://github.com/idan/oauthlib">OAuthLib</a>을 사용합니다. 이 패키지는 잘 문서화되어 잘 지원되며 현재 <strong>OAuth 2.0 지원을위한 권장 패키지</strong>입니다.</p>
+
+<h4 id="설치와-구성">설치와 구성</h4>
+<p>pip를 사용하여 설치합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pip install django-oauth-toolkit
+</code></pre></div></div>
+<p>패키지를 <code class="language-plaintext highlighter-rouge">INSTALLED_APPS</code>에 추가하고 REST 프레임워크 설정을 수정하십시오.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>INSTALLED_APPS = (
+    ...
+    'oauth2_provider',
+)
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.ext.rest_framework.OAuth2Authentication',
+    )
+}
+</code></pre></div></div>
+<p>자세한 내용은 <a href="https://django-oauth-toolkit.readthedocs.io/en/latest/rest-framework/getting_started.html">Django REST framework - Getting started</a>를 참조하세요.</p>
+
+<h3 id="django-rest-framework-oauth">Django REST framework OAuth</h3>
+<p>Django <a href="http://jpadilla.github.io/django-rest-framework-oauth/">REST 프레임워크 OAuth</a> 패키지는 REST 프레임워크에 대한 OAuth1 및 OAuth2 지원을 제공합니다. 이 패키지는 이전에 REST 프레임 워크에 직접 포함되었지만 이제는 타사 패키지로 지원 및 유지 관리됩니다.</p>
+<h4 id="설치와-구성-1">설치와 구성</h4>
+<p>pip를 사용하여 패키지를 설치합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pip install djangorestframework-oauth
+</code></pre></div></div>
+<p>설정과 사용에 대한 자세한 내용은 Django REST 프레임워크 OAuth문서에서 <a href="http://jpadilla.github.io/django-rest-framework-oauth/authentication/">인증</a>과 <a href="http://jpadilla.github.io/django-rest-framework-oauth/permissions/">권한</a>을 참조하세요.</p>
+
+<h3 id="digest-authentication">Digest Authentication</h3>
+<p>HTTP 다이제스트 인증은 HTTP 기본 인증을 대체하기 위한 것으로 널리 구현 된 구성이며 간단한 암호화 된 인증 메커니즘을 제공합니다. <a href="https://github.com/juanriaza">Juan Riaza</a>는 REST 프레임워크에 HTTP 다이제스트 인증 지원을 제공하는 <a href="https://github.com/juanriaza/django-rest-framework-digestauth">djangorestframework-digestauth</a> 패키지를 유지 관리합니다.</p>
+
+<h3 id="django-oauth2-consumer">Django OAuth2 Consumer</h3>
+<p><a href="https://github.com/Rediker-Software">Rediker Software</a>의 <a href="https://github.com/Rediker-Software/doac">Django OAuth2 Consumer</a> 라이브러리는 <a href="https://github.com/Rediker-Software/doac/blob/master/docs/integrations.md#">REST 프레임 워크에 대한 OAuth 2.0 지원</a>을 제공하는 또 다른 패키지입니다. 이 패키지에는 토큰에 대한 토큰 범위 지정 권한이 포함되어있어 API에 대한 세밀한 액세스가 가능합니다.</p>
+
+<h3 id="json-web-token">JSON Web Token</h3>
+<p>JSON Web Token은 토큰 기반 인증에 사용할 수있는 상당히 새로운 표준입니다. 내장 된 TokenAuthentication 체계와 달리 JWT 인증은 데이터베이스를 사용하여 토큰의 유효성을 검사 할 필요가 없습니다. <a href="https://github.com/GetBlimp">Blimp</a>는 JWT 인증 클래스를 제공하는 <a href="https://github.com/GetBlimp/django-rest-framework-jwt">djangorestframework-jwt</a> 패키지와 클라이언트가 사용자 이름과 비밀번호가 있는 JWT를 얻을 수 있는 메커니즘을 유지합니다.</p>
+
+<h3 id="hawk-http-authentication">Hawk HTTP Authentication</h3>
+<p><a href="https://hawkrest.readthedocs.io/en/latest/">HawkREST</a> 라이브러리는 <a href="https://mohawk.readthedocs.io/en/latest/">Mohawk</a> 라이브러리를 기반으로 <a href="https://github.com/hueniverse/hawk">Hawk</a>에서 서명 한 요청 및 응답을 API에서 사용할 수 있도록합니다. <a href="https://github.com/hueniverse/hawk">Hawk</a>은 공유 키로 서명 된 메시지를 사용하여 두 당사자가 서로 안전하게 통신 할 수있게합니다. <a href="https://tools.ietf.org/html/draft-hammer-oauth-v2-mac-token-05">HTTP MAC 액세스 인증</a> (<a href="https://oauth.net/core/1.0a/">OAuth 1.0</a>의 일부를 기반으로 함)을 기반으로합니다.</p>
+
+<h3 id="http-signature">HTTP Signature</h3>
+<p>HTTP 서명 (현재 <a href="https://datatracker.ietf.org/doc/draft-cavage-http-signatures/">IETF 초안</a>)은 HTTP 메시지에 대한 원본 인증 및 메시지 무결성을 달성하는 방법을 제공합니다. 많은 서비스에서 사용되는 <a href="http://docs.aws.amazon.com/general/latest/gr/signature-version-4.html">Amazon의 HTTP 서명 체계</a>와 유사하게 상태 비 저장 요청 별 인증을 허용합니다. <a href="https://github.com/etoccalino/">Elvio Toccalino</a>는 사용하기 쉬운 HTTP 서명 인증 메커니즘을 제공하는 <a href="https://github.com/etoccalino/django-rest-framework-httpsignature">djangorestframework-httpsignature</a> 패키지를 유지 관리합니다.</p>
+
+<h3 id="djoser">Djoser</h3>
+<p><a href="https://github.com/sunscrapers/djoser">Djoser</a> 라이브러리는 등록, 로그인, 로그 아웃, 비밀번호 재설정 및 계정 활성화와 같은 기본 작업을 처리하기 위한 일련의 보기를 제공합니다. 패키지는 custom 사용자 모델과 작동하며 토큰 기반 인증을 사용합니다. 이것은 Django 인증 시스템의 REST 구현을 사용할 준비가되었습니다.</p>
+
+<h3 id="django-rest-auth">django-rest-auth</h3>
+<p><a href="https://github.com/Tivix/django-rest-auth">Django-rest-auth</a> 라이브러리는 등록, 인증 (소셜 미디어 인증 포함), 비밀번호 재설정, 사용자 세부 정보 검색 및 업데이트 등을 위한 일련의 REST API 엔드포인트를 제공합니다. 이러한 API 엔드포인트를 사용하면 AngularJS, iOS, Android 및 기타 사용자는 사용자 관리를 위해 REST API를 통해 독립적으로 Django 백엔드 사이트와 통신 할 수 있습니다.</p>
+
+<h3 id="django-rest-framework-social-oauth2">django-rest-framework-social-oauth2</h3>
+<p><a href="https://github.com/PhilipGarnero/django-rest-framework-social-oauth2">Django-rest-framework-social-oauth2</a> 라이브러리는 소셜 플러그인 (facebook, twitter, google 등)을 인증 시스템에 쉽게 통합하고 쉬운 oauth2 설정을 제공합니다. 이 라이브러리를 사용하면 외부 토큰 (예 : 페이스 북 액세스 토큰)을 기반으로 사용자를 인증하고 이러한 토큰을 “in-house” oauth2 토큰으로 변환하고 oauth2 토큰을 사용 및 생성하여 사용자를 인증 할 수 있습니다.</p>
+
+<h3 id="django-rest-knox">django-rest-knox</h3>
+<p><a href="https://github.com/James1345/django-rest-knox">Django-rest-knox</a> 라이브러리는 단일 페이지 응용 프로그램 및 모바일 클라이언트를 염두에 두고 기본 TokenAuthentication 체계보다 안전하고 확장 가능한 방식으로 토큰 기반 인증을 처리 할 수 있는 모델과 뷰를 제공합니다. 클라이언트 별 토큰 및 일부 다른 인증 (일반적으로 기본 인증)이 제공된 경우 생성하는 View, 토큰을 삭제 (서버 강제 로그 아웃 제공) 및 모든 토큰 삭제(사용자가 로그인 한 모든 클라이언트 로그 아웃) view를 제공합니다.).</p>
+
+<hr />
+
+<h2 id="추가-내용-token-등록-및-삭제">추가 내용 (Token 등록 및 삭제)</h2>
+
+<p><strong><code class="language-plaintext highlighter-rouge">member_myuser</code></strong>
+<img src="./images/token1.png" alt="" />
+<strong><code class="language-plaintext highlighter-rouge">authtoken_token</code></strong>
+<img src="./images/token2.png" alt="" />
+<strong><code class="language-plaintext highlighter-rouge">postman</code>에서 토큰 생성</strong>
+<img src="./images/token3.png" alt="" /></p>
+
+<p><code class="language-plaintext highlighter-rouge">token</code>의 <code class="language-plaintext highlighter-rouge">user_id</code> 값은 <code class="language-plaintext highlighter-rouge">member_myuser</code>의 <code class="language-plaintext highlighter-rouge">id</code> 값으로 등록됩니다.<br />
+postman에서 생성한 test5(username)의 <code class="language-plaintext highlighter-rouge">myuser</code>테이블에서의 id 값은 8이고, 해당 토큰값으로 <code class="language-plaintext highlighter-rouge">token</code>테이블을 비교해보면 <code class="language-plaintext highlighter-rouge">user_id</code>가 같은 것을 확인할 수 있습니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">token</code> 삭제는 해당 토큰값의 계정으로 로그인해야 삭제가 가능합니다.</p>
+
+<p><img src="./images/token_delete.png" alt="" /></p>
+<blockquote>
+  <p><code class="language-plaintext highlighter-rouge">request.user</code>를 프린트해보면 <code class="language-plaintext highlighter-rouge">username</code>값이 조회됩니다.</p>
+</blockquote>
+:ET

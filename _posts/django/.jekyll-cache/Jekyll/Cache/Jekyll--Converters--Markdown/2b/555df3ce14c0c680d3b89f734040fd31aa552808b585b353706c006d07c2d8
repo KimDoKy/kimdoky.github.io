@@ -1,0 +1,65 @@
+I"�<h2 id="django-20-으로-넘어가면서-바뀐점">Django 2.0 으로 넘어가면서 바뀐점</h2>
+
+<h3 id="1-urlpatterns">1. urlpatterns</h3>
+
+<p><code class="language-plaintext highlighter-rouge">urlpatterns</code>에서 <code class="language-plaintext highlighter-rouge">url</code>대신 <code class="language-plaintext highlighter-rouge">path</code>를 사용 (<code class="language-plaintext highlighter-rouge">url</code>도 사용 가능하지만 <code class="language-plaintext highlighter-rouge">path</code> 가 너무 편리하여 <code class="language-plaintext highlighter-rouge">path</code> 사용을 추천)<br />
+<code class="language-plaintext highlighter-rouge">path</code>를 사용하면 정규식을 사용하지 않아도 됩니다.</p>
+
+<div class="language-django highlighter-rouge"><div class="highlight"><pre class="highlight"><code> urlpatterns = [
+    # 기존
+    url(r'^blog/', include('....')),
+    # 2.0
+    path('blog/', include('...')),
+</code></pre></div></div>
+
+<p>인자를 넘겨줄때도 정규식이 필요 없어졌습니다.</p>
+
+<div class="language-django highlighter-rouge"><div class="highlight"><pre class="highlight"><code> urlpatterns = [
+    # 기존
+    url(r'^blog/', include('....')),
+    url(r'^(?P<span class="nt">&lt;id&gt;</span>\d+)/$', views....),
+    # 2.0
+    path('blog/', include('...')),
+    path('<span class="nt">&lt;id&gt;</span>/', views...),
+</code></pre></div></div>
+
+<p>url을 구현할때 더 이상 정규식에 머리 아파할 필요가 없어졌습니다.</p>
+
+<h3 id="2-related">2. related</h3>
+<p>related를 구현할때 필수 인자로 <code class="language-plaintext highlighter-rouge">on_delete</code>가 추가 되었습니다.<br />
+기존에는 필수 인자는 아니었고, 미리 선언하거나, 모델에서 필수 필드를 추가하고 <code class="language-plaintext highlighter-rouge">makemigratinos</code>시 지정해주었었는데, 2.0에서는 처음 필수 필드를 선언시 <code class="language-plaintext highlighter-rouge">on_delete</code>를 지정하지 않으면 에러가 발생합니다.</p>
+
+<div class="language-django highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class User(models.Model):
+    name = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+</code></pre></div></div>
+
+<h3 id="3-core의-url경로-변경">3. core의 url경로 변경</h3>
+<p><code class="language-plaintext highlighter-rouge">get_absolute_url()</code>를 사용하려면 <code class="language-plaintext highlighter-rouge">django.core.urlresolvers import reverse</code> 경로를 통하여 <code class="language-plaintext highlighter-rouge">reverse</code>를 임포트 하였지만, 경로가 <code class="language-plaintext highlighter-rouge">from django.urls import reverse</code>으로 수정되었습니다. <strong><a href="https://github.com/django/django/blob/2.0/django/urls/base.py">django docu</a></strong></p>
+
+<div class="language-django highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def get_absolute_url(self):
+    from django.urls import reverse
+    return reverse('people.views.details', args=[str(self.id)])
+
+# 사용시
+revered_url = resolve_url(post)
+# resolve_url은 아래 코드처럼 get_absolute_url()라는 이름의 함수를 찾아서 반환합니다.
+</code></pre></div></div>
+
+<blockquote>
+  <p><code class="language-plaintext highlighter-rouge">get_absolute_url()</code>을 사용하면 detail 주소를 쉽게 생성할 수 있습니다.</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def resolve_url(to, *args, **kwargs):
+    ...
+    if hasattr(to, 'get_absolute_url'):
+        return to.get_absolute_url()
+    ...
+    try:
+        return reverse(to, args=args, kwargs=kwargs)
+    ...
+</code></pre></div></div>
+
+<ul>
+  <li><a href="https://docs.djangoproject.com/ko/2.0/_modules/django/shortcuts/"><code class="language-plaintext highlighter-rouge">get_absolute_url()</code> 코드 참고</a></li>
+</ul>
+:ET

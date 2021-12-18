@@ -1,0 +1,9 @@
+I")<p>장고에서 작업 진행 내용을 확인하려면 로그인을 해야하는 경우들이 필수적으로 발생한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">authenticate</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">user</span> <span class="o">=</span> <span class="n">authenticate</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s">'id'</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">'password'</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">user</span><span class="p">.</span><span class="n">username</span>
+</code></pre></div></div>
+
+<p>제대로 로그인이 된다면 해당 username을 반환하고, 로그인 정보가 틀렸다면 속성 오류(None)을 반환합니다.</p>
+:ET

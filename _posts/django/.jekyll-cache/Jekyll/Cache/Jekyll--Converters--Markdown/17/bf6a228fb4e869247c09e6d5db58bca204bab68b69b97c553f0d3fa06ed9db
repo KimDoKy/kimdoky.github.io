@@ -1,0 +1,36 @@
+I"�<p>Django 프로젝트를 시작하면 최상위 디렉터리와 프로젝트 이름이 같기 때문에 서로 구분하기 위해서 프로젝트 이름을 변경합니다.</p>
+
+<p>하지만 프로젝트의 이름을 바꾸면 프로젝트 이름으로 된 셋팅된 path들을 모두 변경해주어야 합니다.</p>
+
+<blockquote>
+  <p>변경할때 프로젝트 이름이 아니라 최상위 디렉터리 이름을 변경하면 이런 경우가 발생하지 않겠지만, 추후에 프로젝트 이름을 변경한다면 언젠가는 필요한 작업들입니다.</p>
+</blockquote>
+
+<h2 id="수정해야-하는-작업들">수정해야 하는 작업들</h2>
+
+<ul>
+  <li>renameproject/manage.py</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">os</span><span class="p">.</span><span class="n">environ</span><span class="p">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">"DJANGO_SETTINGS_MODULE"</span><span class="p">,</span> <span class="s">"renameproject.settings"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>renameproject/settings.py</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ROOT_URLCONF</span> <span class="o">=</span> <span class="s">'renameproject.urls'</span>
+<span class="n">WSGI_APPLICATION</span> <span class="o">=</span> <span class="s">'renameproject.wsgi.application'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>renameproject/wsgi.py</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">os</span><span class="p">.</span><span class="n">environ</span><span class="p">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">"DJANGO_SETTINGS_MODULE"</span><span class="p">,</span> <span class="s">"renameproject.settings"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>해당 사례가 있어서 git에 올려 두었으니 참고하세요.</p>
+
+<p><a href="https://github.com/KimDoKy/study/commit/6b33c3c4d47899636a819397056882affd067240">https://github.com/KimDoKy/study/commit/6b33c3c4d47899636a819397056882affd067240</a></p>
+:ET

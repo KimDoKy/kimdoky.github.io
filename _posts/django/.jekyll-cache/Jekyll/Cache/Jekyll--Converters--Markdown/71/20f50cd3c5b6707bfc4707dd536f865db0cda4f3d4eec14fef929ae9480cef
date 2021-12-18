@@ -1,0 +1,243 @@
+I"g}<h1 id="django-rest-framework---viewsets">Django REST Framework - ViewSets</h1>
+
+<hr />
+
+<p><em>“After routing has determined which controller to use for a request, your controller is responsible for making sense of the request and producing the appropriate output.”</em></p>
+
+<p><em>“라우팅에서 request에 사용할 컨트롤러를 결정한 후에 컨트롤러는 request를 이해하고 적절한 출력을 생성해야합니다.”</em></p>
+
+<p><em>— Ruby on Rails Documentation</em></p>
+
+<hr />
+
+<h2 id="viewsets">ViewSets</h2>
+<p>Django REST 프레임워크를 사용하면 <code class="language-plaintext highlighter-rouge">ViewSet</code>이라고하는 단일 클래스에서 <code class="language-plaintext highlighter-rouge">ViewSet</code>에 대한 논리를 결합할 수 있습니다. 다른 프레임워크에서는 <code class="language-plaintext highlighter-rouge">Resources</code>나 <code class="language-plaintext highlighter-rouge">Controllers</code>와 같은 개념적으로 유사한 구현을 찾을 수도 있습니다.<br />
+<code class="language-plaintext highlighter-rouge">ViewSet</code> 클래스는 단순히 <code class="language-plaintext highlighter-rouge">.get()</code>이나 <code class="language-plaintext highlighter-rouge">.post()</code>과 같은 메소드 핸들러를 제공하지 않고 CBV 유형이며, 대신 <code class="language-plaintext highlighter-rouge">.list()</code>와 <code class="language-plaintext highlighter-rouge">.create()</code>와 같은 액션을 제공합니다.<br />
+<code class="language-plaintext highlighter-rouge">ViewSet</code>의 메서드 핸들러는 <code class="language-plaintext highlighter-rouge">.as_view()</code>메서드를 사용하여 뷰를 마무리하는 시점의 해당 액션에만 바인딩됩니다.</p>
+<blockquote>
+  <p>바인딩 : 각종 값들이 확정되어 더이상 변경 할 수 없는 상태가 되는것. 식별자(identifier)가 그 대상인 메모리 주소, 데이터형 또는 실제값으로 배정되는 것</p>
+</blockquote>
+
+<p>일반적으로 urlconf의 viewset에 뷰를 명시적을 등록하는 대신 viewset을 <code class="language-plaintext highlighter-rouge">router</code>클래스로 등록하면 자동으로 urlconf가 결정됩니다.</p>
+
+<h3 id="example">Example</h3>
+<p>시스템의 모든 사용자를 나열하거나 검색하는데 사용 할 수 있는 간단한 viewset을 정의합시다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.models</span> <span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">get_object_or_404</span>
+<span class="kn">from</span> <span class="nn">myapps.serializers</span> <span class="kn">import</span> <span class="n">UserSerializer</span>
+<span class="kn">from</span> <span class="nn">rest_framework</span> <span class="kn">import</span> <span class="n">viewsets</span>
+<span class="kn">from</span> <span class="nn">rest_framework.response</span> <span class="kn">import</span> <span class="n">Response</span>
+
+<span class="k">class</span> <span class="nc">UserViewSet</span><span class="p">(</span><span class="n">viewsets</span><span class="p">.</span><span class="n">ViewSet</span><span class="p">):</span>
+    <span class="s">"""
+    A simple ViewSet for listing or retrieving users.
+    """</span>
+    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="n">queryset</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+        <span class="n">serializer</span> <span class="o">=</span> <span class="n">UserSerializer</span><span class="p">(</span><span class="n">queryset</span><span class="p">,</span> <span class="n">many</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">serializer</span><span class="p">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">retrieve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">queryset</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">queryset</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="n">pk</span><span class="p">)</span>
+        <span class="n">serializer</span> <span class="o">=</span> <span class="n">UserSerializer</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">serializer</span><span class="p">.</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div></div>
+<p>필요한 경우 이 viewset을 다음과 같이 두 개의 개별 뷰 바인딩 할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">user_list</span> <span class="o">=</span> <span class="n">UserViewSet</span><span class="p">.</span><span class="n">as_view</span><span class="p">({</span><span class="s">'get'</span><span class="p">:</span> <span class="s">'list'</span><span class="p">})</span>
+<span class="n">user_detail</span> <span class="o">=</span> <span class="n">UserViewSet</span><span class="p">.</span><span class="n">as_view</span><span class="p">({</span><span class="s">'get'</span><span class="p">:</span> <span class="s">'retrieve'</span><span class="p">})</span>
+</code></pre></div></div>
+<p>평소엔 우리는 이것을 하지 않을 것이지만, 대신 viewset을 라우터에 등록하고 urlconf가 자동으로 생성되도록 할 것입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">myapp.views</span> <span class="kn">import</span> <span class="n">UserViewSet</span>
+<span class="kn">from</span> <span class="nn">rest_framework.routers</span> <span class="kn">import</span> <span class="n">DefaultRouter</span>
+
+<span class="n">router</span> <span class="o">=</span> <span class="n">DefaultRouter</span><span class="p">()</span>
+<span class="n">router</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="sa">r</span><span class="s">'users'</span><span class="p">,</span> <span class="n">UserViewSet</span><span class="p">)</span>
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="n">router</span><span class="p">.</span><span class="n">urls</span>
+</code></pre></div></div>
+<p>자신만의 viewset를 작성하는 대신, 기본 동작 set을 제공하는 기존 기본 클래스를 사용하는 것이 좋습니다. 예를 들어:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">UserViewSet</span><span class="p">(</span><span class="n">viewsets</span><span class="p">.</span><span class="n">ModelViewSet</span><span class="p">):</span>
+    <span class="s">"""
+    A viewset for viewing and editing user instances.
+    """</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">UserSerializer</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">View</code> 클래스를 사용하는 것보다 <code class="language-plaintext highlighter-rouge">ViewSet</code>클래스를 사용하는 두 가지 주요 이점이 있습니다.</p>
+
+<ul>
+  <li>반복 논리를 하나의 클래스로 결합 할 수 있습니다. 위의 예에서 쿼리셋은 한번만 지정하면 여러 view에서 사용됩니다.</li>
+  <li>router를 사용함으로써 우리는 더 이상 URLconf의 연결을 처리 할 필요가 없습니다.</li>
+</ul>
+
+<p>이 두가지 모두 장단점이 있습니다. 일반 views와 URL conf를 사용하면 보다 명확하게 제어할 수 있습니다. <code class="language-plaintext highlighter-rouge">ViewSet</code>는 신속하게 시작하고 실행하려는 경우, 또는 대규모 API가 있고 전체적으로 일관된 URL conf를 적용하려는 경우 유용합니다.</p>
+
+<h3 id="marking-extra-actions-for-routing">Marking extra actions for routing</h3>
+<p>REST 프레임워크에 포함 된 기본 router는 아래와 같이 <code class="language-plaintext highlighter-rouge">creste</code>/<code class="language-plaintext highlighter-rouge">retirieve</code>/<code class="language-plaintext highlighter-rouge">update</code>/<code class="language-plaintext highlighter-rouge">destroy</code> 스타일 작업의 기본 set을 위한 경로를 제공합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">UserViewSet</span><span class="p">(</span><span class="n">viewsets</span><span class="p">.</span><span class="n">ViewSet</span><span class="p">):</span>
+    <span class="s">"""
+    Example empty viewset demonstrating the standard
+    actions that will be handled by a router class.
+
+    If you're using format suffixes, make sure to also include
+    the `format=None` keyword argument for each action.
+    """</span>
+
+    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">retrieve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">partial_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">destroy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">pass</span>
+</code></pre></div></div>
+<p>라우팅해야 하는 임시 메소드가 있는 경우 <code class="language-plaintext highlighter-rouge">@detail_router</code>나 <code class="language-plaintext highlighter-rouge">@list_router</code>데코레이터를 사용하여 라우팅을 요구하는 것으로 표시 할 수 있습니다.<br />
+<code class="language-plaintext highlighter-rouge">@detail_router</code>데코레이터는 URL 패턴에 <code class="language-plaintext highlighter-rouge">pk</code>를 포함하며 단일 인스턴스가 필요한 메소드용입니다. <code class="language-plaintext highlighter-rouge">@list_router</code>데코레이터는 객체 목록에서 작동하는 메소드를 대상으로 합니다.</p>
+
+<p>예를 들어:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.models</span> <span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">rest_framework</span> <span class="kn">import</span> <span class="n">status</span>
+<span class="kn">from</span> <span class="nn">rest_framework</span> <span class="kn">import</span> <span class="n">viewsets</span>
+<span class="kn">from</span> <span class="nn">rest_framework.decorators</span> <span class="kn">import</span> <span class="n">detail_route</span><span class="p">,</span> <span class="n">list_route</span>
+<span class="kn">from</span> <span class="nn">rest_framework.response</span> <span class="kn">import</span> <span class="n">Response</span>
+<span class="kn">from</span> <span class="nn">myapp.serializers</span> <span class="kn">import</span> <span class="n">UserSerializer</span><span class="p">,</span> <span class="n">PasswordSerializer</span>
+
+<span class="k">class</span> <span class="nc">UserViewSet</span><span class="p">(</span><span class="n">viewsets</span><span class="p">.</span><span class="n">ModelViewSet</span><span class="p">):</span>
+    <span class="s">"""
+    A viewset that provides the standard actions
+    """</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">UserSerializer</span>
+
+    <span class="o">@</span><span class="n">detail_route</span><span class="p">(</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s">'post'</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">set_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">get_object</span><span class="p">()</span>
+        <span class="n">serializer</span> <span class="o">=</span> <span class="n">PasswordSerializer</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">request</span><span class="p">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">serializer</span><span class="p">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="n">user</span><span class="p">.</span><span class="n">set_password</span><span class="p">(</span><span class="n">serializer</span><span class="p">.</span><span class="n">data</span><span class="p">[</span><span class="s">'password'</span><span class="p">])</span>
+            <span class="n">user</span><span class="p">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">Response</span><span class="p">({</span><span class="s">'status'</span><span class="p">:</span> <span class="s">'password set'</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">serializer</span><span class="p">.</span><span class="n">errors</span><span class="p">,</span>
+                            <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">)</span>
+
+    <span class="o">@</span><span class="n">list_route</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">recent_users</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="n">recent_users</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">().</span><span class="n">order</span><span class="p">(</span><span class="s">'-last_login'</span><span class="p">)</span>
+
+        <span class="n">page</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">paginate_queryset</span><span class="p">(</span><span class="n">recent_users</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">page</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">serializer</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">get_serializer</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">many</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">get_paginated_response</span><span class="p">(</span><span class="n">serializer</span><span class="p">.</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="n">serializer</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">get_serializer</span><span class="p">(</span><span class="n">recent_users</span><span class="p">,</span> <span class="n">many</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">serializer</span><span class="p">.</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div></div>
+<p>데코레이터는 라우트 된 뷰에 대해서만 설정 할 추가 인수를 추가로 취할 수 있습니다. 예를 들어..</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="o">@</span><span class="n">detail_route</span><span class="p">(</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s">'post'</span><span class="p">],</span> <span class="n">permission_classes</span><span class="o">=</span><span class="p">[</span><span class="n">IsAdminOrIsSelf</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">set_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+       <span class="p">...</span>
+</code></pre></div></div>
+<p>이러한 데코레이터는 기본적으로 <code class="language-plaintext highlighter-rouge">GET</code> request를 라우트하지만 <code class="language-plaintext highlighter-rouge">methods</code>인수를 사용하여 다른 HTTP 메소드를 채택할 수도 있습니다. 예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="o">@</span><span class="n">detail_route</span><span class="p">(</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s">'post'</span><span class="p">,</span> <span class="s">'delete'</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">unset_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+       <span class="p">...</span>
+</code></pre></div></div>
+<p>두 개의 작업은  <code class="language-plaintext highlighter-rouge">^users/{pk}/set_password/$</code> 과 <code class="language-plaintext highlighter-rouge">^users/{pk}/unset_password/$</code>에서 사용 할 수 있습니다.</p>
+
+<hr />
+
+<h2 id="api-reference">API Reference</h2>
+
+<h3 id="viewset">ViewSet</h3>
+<p><code class="language-plaintext highlighter-rouge">ViewSet</code>클래스는 <code class="language-plaintext highlighter-rouge">APIView</code>에서 상속받습니다. viewset에 대한 API 정책을 제어하기 위해 <code class="language-plaintext highlighter-rouge">permission_classes</code>,<code class="language-plaintext highlighter-rouge">authentication_classes</code>와 같은 표준 속성을 사용할 수 있습니다.<br />
+<code class="language-plaintext highlighter-rouge">ViewSet</code> 클래스는 액션의 구현을 제공하지 않습니다. <code class="language-plaintext highlighter-rouge">ViewSet</code> 클래스를 사용하려면 클래스를 오버라이트하고 액션 구현을 명시적으로 정의해야합니다.</p>
+
+<h3 id="genericviewset">GenericViewSet</h3>
+<p><code class="language-plaintext highlighter-rouge">GenericViewSet</code>클래스는 <code class="language-plaintext highlighter-rouge">GenericAPIView</code>에서 상속되며, <code class="language-plaintext highlighter-rouge">get_object</code>, <code class="language-plaintext highlighter-rouge">get_queryset</code>메소드와 그 외 <code class="language-plaintext highlighter-rouge">generic view</code>의  기본 동작의 기본 set을 제공하지만, 기본적으로 어떤 액션도 포함하지 않습니다.<br />
+<code class="language-plaintext highlighter-rouge">GenericViewSet</code>클래스를 사용하려면 클래스를 재정의하고 필요한 <code class="language-plaintext highlighter-rouge">mixin</code>클래스를 혼합하거나 액션 구현을 명시적으로 정의하세요.</p>
+
+<h3 id="modelviewset">ModelViewSet</h3>
+<p><code class="language-plaintext highlighter-rouge">ModelViewSet</code>클래스는 <code class="language-plaintext highlighter-rouge">GenericAPIView</code>를 상속하며, 다양한 <code class="language-plaintext highlighter-rouge">mixin</code>클래스의 동작을 혼합하여 다양한 액션에 대한 구현을 포함합니다.<br />
+<code class="language-plaintext highlighter-rouge">ModelViewSet</code>클래스에서 제공하는 작업은 <code class="language-plaintext highlighter-rouge">.list()</code>, <code class="language-plaintext highlighter-rouge">.retrieve()</code>, <code class="language-plaintext highlighter-rouge">.create()</code>, <code class="language-plaintext highlighter-rouge">.update()</code>, <code class="language-plaintext highlighter-rouge">.partial_update()</code>, <code class="language-plaintext highlighter-rouge">.destroy()</code>입니다.</p>
+
+<h4 id="example-1">Example</h4>
+<p><code class="language-plaintext highlighter-rouge">ModelViewSet</code>은 <code class="language-plaintext highlighter-rouge">GenericAPIView</code>를 확장하기 때문에 일반적으로 적어도 <code class="language-plaintext highlighter-rouge">queryset</code>과 <code class="language-plaintext highlighter-rouge">serializer_class</code> 속성을 제공해야 합니다. 예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">AccountViewSet</span><span class="p">(</span><span class="n">viewsets</span><span class="p">.</span><span class="n">ModelViewSet</span><span class="p">):</span>
+    <span class="s">"""
+    A simple ViewSet for viewing and editing accounts.
+    """</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">Account</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">AccountSerializer</span>
+    <span class="n">permission_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">IsAccountAdminOrReadOnly</span><span class="p">]</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">GenericAPIView</code>가 제공하는 표준 속성이나 메소드 오버라이드를 사용할 수 있습니다. 예를 들어, 작동해야하는 쿼리셋을 동적으로 결정하는 viewset을 사용하려면 다음과 같이 할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">AccountViewSet</span><span class="p">(</span><span class="n">viewsets</span><span class="p">.</span><span class="n">ModelViewSet</span><span class="p">):</span>
+    <span class="s">"""
+    A simple ViewSet for viewing and editing the accounts
+    associated with the user.
+    """</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">AccountSerializer</span>
+    <span class="n">permission_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">IsAccountAdminOrReadOnly</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">request</span><span class="p">.</span><span class="n">user</span><span class="p">.</span><span class="n">accounts</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+</code></pre></div></div>
+<p>그러나 <code class="language-plaintext highlighter-rouge">ViewSet</code>에서 <code class="language-plaintext highlighter-rouge">queryset</code> 속성을 제거하면 연관된 <a href="http://www.django-rest-framework.org/api-guide/routers/">라우터</a>가 모델의 <code class="language-plaintext highlighter-rouge">base_name</code>을 자동으로 파생시킬 수 없으므로 <a href="http://www.django-rest-framework.org/api-guide/routers/">라우터 등록</a>의 일부로 <code class="language-plaintext highlighter-rouge">base_name kwarg</code>를 지정해야합니다.<br />
+또한 이 클래스는 기본적으로 <code class="language-plaintext highlighter-rouge">create</code>/<code class="language-plaintext highlighter-rouge">list</code>/<code class="language-plaintext highlighter-rouge">retrieve</code>/<code class="language-plaintext highlighter-rouge">update</code>/<code class="language-plaintext highlighter-rouge">destroy</code> 액션의 전체 set을 제공하지만 표준 권한 클래스를 사용하여 사용 가능한 작업을 제한할 수 있습니다.</p>
+
+<h3 id="readonlymodelviewset">ReadOnlyModelViewSet</h3>
+<p><code class="language-plaintext highlighter-rouge">ReadOnlyModelViewSet</code>클래스 또한 <code class="language-plaintext highlighter-rouge">GenericAPIView</code>에서 상속받습니다. <code class="language-plaintext highlighter-rouge">ModelViewSet</code>과 마찬가지로 다양한 액션에 대한 구현도 포함되지만 <code class="language-plaintext highlighter-rouge">ModelViewSet</code>과 달리 <strong>일기 전용</strong>동작인 <code class="language-plaintext highlighter-rouge">.list()</code>, <code class="language-plaintext highlighter-rouge">.retrieve()</code>만 제공됩니다.</p>
+
+<h4 id="example-2">Example</h4>
+<p><code class="language-plaintext highlighter-rouge">ModelViewSet</code>에서와 같이 일반적으로 적어도 <code class="language-plaintext highlighter-rouge">queryset</code>과 <code class="language-plaintext highlighter-rouge">serializer_class</code>속성을 제공해야 합니다. 예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">AccountViewSet</span><span class="p">(</span><span class="n">viewsets</span><span class="p">.</span><span class="n">ReadOnlyModelViewSet</span><span class="p">):</span>
+    <span class="s">"""
+    A simple ViewSet for viewing accounts.
+    """</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">Account</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">AccountSerializer</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">ModelViewSet</code>과 마찬가지로 <code class="language-plaintext highlighter-rouge">GenericAPIView</code>에서 사용할 수 있는 표준 속성과 메소드 오버라이드를 사용할 수 있습니다.</p>
+
+<h2 id="custom-viewset-base-classes">Custom ViewSet base classes</h2>
+<p><code class="language-plaintext highlighter-rouge">ModelViewSet</code> 액션의 전체 set이 없거나 다른 방식으로 동작을 사용자 정의하는 custom <code class="language-plaintext highlighter-rouge">ViewSet</code>클래스를 제공해야 할 수도 있습니다.</p>
+
+<h3 id="example-3">Example</h3>
+<p><code class="language-plaintext highlighter-rouge">create</code>, <code class="language-plaintext highlighter-rouge">list</code>, <code class="language-plaintext highlighter-rouge">retrieve</code> 조작을 제공하고, <code class="language-plaintext highlighter-rouge">GenericViewSet</code>에서 상속하며, 필요한 조치를 <code class="language-plaintext highlighter-rouge">mixin</code>하는 기본 viewset를 작성하려면 다음을 작성하세요.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">CreateListRetrieveViewSet</span><span class="p">(</span><span class="n">mixins</span><span class="p">.</span><span class="n">CreateModelMixin</span><span class="p">,</span>
+                                <span class="n">mixins</span><span class="p">.</span><span class="n">ListModelMixin</span><span class="p">,</span>
+                                <span class="n">mixins</span><span class="p">.</span><span class="n">RetrieveModelMixin</span><span class="p">,</span>
+                                <span class="n">viewsets</span><span class="p">.</span><span class="n">GenericViewSet</span><span class="p">):</span>
+    <span class="s">"""
+    `retrieve`, `create`, `list` actions을 제공하는 viewset입니다.
+
+    이것들을 사용하려면 클래스와  `.queryset`과
+    `.serializer_class`의 속성을 오버라이드하세요.
+    """</span>
+    <span class="k">pass</span>
+</code></pre></div></div>
+<p>고유한 기본 <code class="language-plaintext highlighter-rouge">ViewSet</code>클래스를 작성하여 API 전반에 걸쳐 여러 viewset에서 재사용 할 수 있는 공통적인 동작을 제공할 수 있습니다.</p>
+:ET

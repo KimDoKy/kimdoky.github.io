@@ -1,0 +1,26 @@
+I"�<p>django로 개발시 DB를 반복적으로 지우고 생성하는 작업을 하게 되는데,
+그때마다 관리자 계정을 만들어 주어야 한다.</p>
+
+<p>하지만, 같은 일을 반복한다는 것은 자동화를 할 수 있다는것!!</p>
+
+<h3 id="path">path</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>proj/app/management/commands/[지정할 명령어].py
+</code></pre></div></div>
+
+<h3 id="script">script</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">get_user_model</span>
+<span class="kn">from</span> <span class="nn">django.core.management</span> <span class="kn">import</span> <span class="n">BaseCommand</span>
+
+<span class="n">User</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">Command</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">create_superuser</span><span class="p">(</span>
+            <span class="n">username</span><span class="o">=</span><span class="s">'admin'</span><span class="p">,</span>
+            <span class="n">email</span><span class="o">=</span><span class="s">''</span><span class="p">,</span>
+            <span class="n">password</span><span class="o">=</span><span class="s">'autoadmin'</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div></div>
+:ET

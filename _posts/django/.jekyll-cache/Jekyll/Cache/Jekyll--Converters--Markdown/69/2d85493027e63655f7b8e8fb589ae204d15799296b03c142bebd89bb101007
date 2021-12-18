@@ -1,0 +1,426 @@
+I"<�<h1 id="django-rest-framework---schemas">Django REST Framework - Schemas</h1>
+
+<hr />
+
+<p><em>“A machine-readable [schema] describes what resources are available via the API, what their URLs are, how they are represented and what operations they support.”</em></p>
+
+<p><em>“기계 판독 가능한 [스키마]는 API를 통해 사용할 수있는 리소스, 해당 URL의 의미, 표현 방법 및 지원 작업을 설명합니다.”</em></p>
+
+<p><em>— Heroku, JSON Schema for the Heroku Platform API</em></p>
+
+<hr />
+
+<h2 id="schemas">Schemas</h2>
+<p>API schema는 참조 문서를 생성하거나 API와 상호 작용 할 수 있는 동적 클라이언트 라이브러리를 구동하는 등 다양한 사용 사례를 허용하는 유용한 도구입니다.</p>
+
+<h3 id="representing-schemas-internally-내부적으로-스키마-표현하기">Representing schemas internally (내부적으로 스키마 표현하기)</h3>
+<p>REST 프레임워크는 형식 독립적인 표현으로 스키마 정보를 모델링하기 위해 <a href="http://www.coreapi.org/">Core API</a>를 사용합니다. 이 정보는 다양한 스키마 형식으로 렌더링되거나 API 문서를 생성하는데 사용됩니다.<br />
+Core API를 사용하는 경우 스키마는 API에 대한 정보의 최상위 컨테이너 객체인 문서로 표시됩니다. 사용 가능한 API 상호작용은 링크 객체를 사용하여 표시됩니다. 각 링크는 URL, HTTP 메서드를 포함하며 API 엔드포인트에서 승인 할 수 있는 매개변수를 설명하는 <code class="language-plaintext highlighter-rouge">Field</code> 인스턴스 목록을 포함할 수 있습니다. <code class="language-plaintext highlighter-rouge">Link</code>와 <code class="language-plaintext highlighter-rouge">Field</code> 인스턴스에는 API 스키마를 사용자 문서로 렌더링 할 수 있는 설명이 포함될 수도 있습니다.<br />
+다음은 단일 검색 엔드포인트를 포함하는 API 설명의 예입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">coreapi</span><span class="p">.</span><span class="n">Document</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s">'Flight Search API'</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s">'https://api.example.org/'</span><span class="p">,</span>
+    <span class="n">content</span><span class="o">=</span><span class="p">{</span>
+        <span class="s">'search'</span><span class="p">:</span> <span class="n">coreapi</span><span class="p">.</span><span class="n">Link</span><span class="p">(</span>
+            <span class="n">url</span><span class="o">=</span><span class="s">'/search/'</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="s">'get'</span><span class="p">,</span>
+            <span class="n">fields</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">coreapi</span><span class="p">.</span><span class="n">Field</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s">'from'</span><span class="p">,</span>
+                    <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                    <span class="n">location</span><span class="o">=</span><span class="s">'query'</span><span class="p">,</span>
+                    <span class="n">description</span><span class="o">=</span><span class="s">'City name or airport code.'</span>
+                <span class="p">),</span>
+                <span class="n">coreapi</span><span class="p">.</span><span class="n">Field</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s">'to'</span><span class="p">,</span>
+                    <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                    <span class="n">location</span><span class="o">=</span><span class="s">'query'</span><span class="p">,</span>
+                    <span class="n">description</span><span class="o">=</span><span class="s">'City name or airport code.'</span>
+                <span class="p">),</span>
+                <span class="n">coreapi</span><span class="p">.</span><span class="n">Field</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s">'date'</span><span class="p">,</span>
+                    <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                    <span class="n">location</span><span class="o">=</span><span class="s">'query'</span><span class="p">,</span>
+                    <span class="n">description</span><span class="o">=</span><span class="s">'Flight date in "YYYY-MM-DD" format.'</span>
+                <span class="p">)</span>
+            <span class="p">],</span>
+            <span class="n">description</span><span class="o">=</span><span class="s">'Return flight availability and prices.'</span>
+        <span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="schema-output-formats">Schema output formats</h3>
+<p>HTTP response으로 표시되려면 내부 표현이 response에 사용 된 실제 바이트로 렌더링되어야 합니다.<br />
+<a href="">Core JSON</a>은 Core API와 함께 사용하기 위한 표준 형식으로 설계되었습니다. REST 프레임워크에는 이 미디어 유형을 처리하기 위한 렌더러 클래스가 포함되어 있으며, 이 렌더러클래스는 <code class="language-plaintext highlighter-rouge">CoreJSONRenderer</code>로 사용할 수 있습니다.<br />
+<a href="https://openapis.org/">Open API</a>(“Swagger”), <a href="http://json-schema.org/latest/json-schema-hypermedia.html">JSON HyperSchema</a>, <a href="https://apiblueprint.org/">API Blueprint</a>와 같은 다른 스키마 형식도 custom renderer 클래스를 구현하여 지원할 수 있습니다.</p>
+
+<h3 id="schemas-vs-hypermedia">Schemas vs Hypermedia</h3>
+<p>Core API는 API 스키마에 대한 대안적인 상호작용 스타일을 제시하는 하이퍼 미디어 응답을 모델링하는데 사용될 수 있다는 점을 여기서 지적 할 필요가 있습니다.<br />
+API 스키마를 사용할 수 있는 전체 인터페이스가 단일 엔드포인트로 제공됩니다. 개별 API 엔드포인트에 대한 응답은 일반적으로 각 response에 추가 상호 작용없이 일반 데이터로 표시됩니다.<br />
+Hypermedia를 사용하면 클라이언트에 데이터와 사용 가능한 상호 작용이 모두 포함된 문서가 제공됩니다. 각 상호 작용을 통해 현재 상태와 사용 가능한 상호 작용을 자세히 설명하는 새 문서가 생성됩니다.<br />
+REST 프레임워크를 사용하여 Hypermedia API를 빌드하는데 대한 자세한 정보와 지원은 향후 버전에서 계획됩니다.</p>
+
+<hr />
+
+<h2 id="adding-a-schema">Adding a schema</h2>
+<p>REST 프레임워크에 대한 스키마 지원을 추가하려면 <code class="language-plaintext highlighter-rouge">coreapi</code> 패키지를 설치해야합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pip install coreapi
+</code></pre></div></div>
+<p>REST 프레임워크에는 스키마 자동 생성 기능이 포함되어 있거나 명시적을 스키마를 지정할 수 있습니다. 필요한 항목에 따라 API에 스키마를 추가하는 몇가지 방법이 있습니다.</p>
+
+<h3 id="the-get_schema_view-shortcut">The get_schema_view shortcut</h3>
+<p>프로젝트에 스키마를 포함시키는 가장 간단한 방법은 <code class="language-plaintext highlighter-rouge">get_schema_view()</code>함수를 사용하는 것입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">schema_view</span> <span class="o">=</span> <span class="n">get_schema_view</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">"Server Monitoring API"</span><span class="p">)</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">url</span><span class="p">(</span><span class="s">'^$'</span><span class="p">,</span> <span class="n">schema_view</span><span class="p">),</span>
+    <span class="p">...</span>
+<span class="p">]</span>
+</code></pre></div></div>
+<p>view가 추가되면 자동 생성 스키마 정의를 검색하기 위한 API 요청을 할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">$</span> <span class="n">http</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="mf">127.0</span><span class="p">.</span><span class="mf">0.1</span><span class="p">:</span><span class="mi">8000</span><span class="o">/</span> <span class="n">Accept</span><span class="p">:</span><span class="n">application</span><span class="o">/</span><span class="n">vnd</span><span class="p">.</span><span class="n">coreapi</span><span class="o">+</span><span class="n">json</span>
+<span class="n">HTTP</span><span class="o">/</span><span class="mf">1.0</span> <span class="mi">200</span> <span class="n">OK</span>
+<span class="n">Allow</span><span class="p">:</span> <span class="n">GET</span><span class="p">,</span> <span class="n">HEAD</span><span class="p">,</span> <span class="n">OPTIONS</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">vnd</span><span class="p">.</span><span class="n">coreapi</span><span class="o">+</span><span class="n">json</span>
+
+<span class="p">{</span>
+    <span class="s">"_meta"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"title"</span><span class="p">:</span> <span class="s">"Server Monitoring API"</span>
+    <span class="p">},</span>
+    <span class="s">"_type"</span><span class="p">:</span> <span class="s">"document"</span><span class="p">,</span>
+    <span class="p">...</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">get_schema_view()</code>에 대한 인수는 다음과 같습니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">title</code> : 스키마 정의를 설명하는 제목을 제공하는데 사용할 수 있습니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">url</code> : 스키마의 표준 URL을 전달하는데 사용될 수 있습니다.</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">schema_view</span> <span class="o">=</span> <span class="n">get_schema_view</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s">'Server Monitoring API'</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s">'https://www.example.org/api/'</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">urlconf</code> : API 스키마를 생성하려는 URL conf의 가져오기 경로를 나타내는 문자열입니다. 기본값은 Django의 <code class="language-plaintext highlighter-rouge">ROOT_URLCONF</code> 설정 값입니다.</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">schema_view</span> <span class="o">=</span> <span class="n">get_schema_view</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s">'Server Monitoring API'</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s">'https://www.example.org/api/'</span><span class="p">,</span>
+    <span class="n">urlconf</span><span class="o">=</span><span class="s">'myproject.urls'</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">renderer_classes</code> : API root 엔드포인트의 렌더링에 사용할 수 있는 렌더러 클래스 셋을 전달하는데 사용할 수 있습니다.</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework.renderers</span> <span class="kn">import</span> <span class="n">CoreJSONRenderer</span>
+<span class="kn">from</span> <span class="nn">my_custom_package</span> <span class="kn">import</span> <span class="n">APIBlueprintRenderer</span>
+
+<span class="n">schema_view</span> <span class="o">=</span> <span class="n">get_schema_view</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s">'Server Monitoring API'</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s">'https://www.example.org/api/'</span><span class="p">,</span>
+    <span class="n">renderer_classes</span><span class="o">=</span><span class="p">[</span><span class="n">CoreJSONRenderer</span><span class="p">,</span> <span class="n">APIBlueprintRenderer</span><span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="using-an-explicit-schema-view">Using an explicit schema view</h3>
+<p><code class="language-plaintext highlighter-rouge">get_schema_view()</code> shortcut이 제공하는 것보다 더 많은 컨트롤이 필요한 경우 <code class="language-plaintext highlighter-rouge">SchemaGenerator</code> 클래스를 직접 사용하여 Document 인스턴스를 자동으로 생성하고 뷰에서 이를 반환 할 수 있습니다.<br />
+이 옵셥을 사용하면 원하는 모든 동작으로 스키마 엔드포인트를 설정할 수 있습니다. 예를 들어, 스키마 엔드포인트에 다른 사용 권한, 제한 또는 인증 정책을 적용 할 수 있습니다.<br />
+다음은 <code class="language-plaintext highlighter-rouge">SchemaGenerator</code>를 뷰와 함께 사용하려 스키마를 반환하는 예제입니다.</p>
+
+<p>get_schema_view () 바로 가기가 제공하는 것보다 더 많은 컨트롤이 필요한 경우 SchemaGenerator 클래스를 직접 사용하여 Document 인스턴스를 자동으로 생성하고 뷰에서이를 반환 할 수 있습니다.</p>
+
+<p><strong>views.py</strong>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework.decorators</span> <span class="kn">import</span> <span class="n">api_view</span><span class="p">,</span> <span class="n">renderer_classes</span>
+<span class="kn">from</span> <span class="nn">rest_framework</span> <span class="kn">import</span> <span class="n">renderers</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">schemas</span>
+
+<span class="n">generator</span> <span class="o">=</span> <span class="n">schemas</span><span class="p">.</span><span class="n">SchemaGenerator</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">'Bookings API'</span><span class="p">)</span>
+
+<span class="o">@</span><span class="n">api_view</span><span class="p">()</span>
+<span class="o">@</span><span class="n">renderer_classes</span><span class="p">([</span><span class="n">renderers</span><span class="p">.</span><span class="n">CoreJSONRenderer</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">schema_view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">schema</span> <span class="o">=</span> <span class="n">generator</span><span class="p">.</span><span class="n">get_schema</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span><span class="p">.</span><span class="n">Response</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><strong>urls.py</strong>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">url</span><span class="p">(</span><span class="s">'/'</span><span class="p">,</span> <span class="n">schema_view</span><span class="p">),</span>
+    <span class="p">...</span>
+<span class="p">]</span>
+</code></pre></div></div>
+<p>사용 가능한 권한에 따라 다른 사용자에게 다른 스키마를 제공할 수도 있습니다. 이 접근법은 인증되지 않은 요청이 인증된 요청과 다른 스키마로 제공되거나 API의 다른 부분이 해당 역할에 따라 다른 사용자에게 표시되도록하는데 사용할 수 있습니다.<br />
+사용자 권한으로 필터링 된 엔드포인트가 있는 스키마를 표시하려면 <code class="language-plaintext highlighter-rouge">get_schema()</code>메서드에 <code class="language-plaintext highlighter-rouge">request</code> 인수를 전달해야 합니다. 예를 들면 다음과 같습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">api_view</span><span class="p">()</span>
+<span class="o">@</span><span class="n">renderer_classes</span><span class="p">([</span><span class="n">renderers</span><span class="p">.</span><span class="n">CoreJSONRenderer</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">schema_view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">generator</span> <span class="o">=</span> <span class="n">schemas</span><span class="p">.</span><span class="n">SchemaGenerator</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">'Bookings API'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span><span class="p">.</span><span class="n">Response</span><span class="p">(</span><span class="n">generator</span><span class="p">.</span><span class="n">get_schema</span><span class="p">(</span><span class="n">request</span><span class="o">=</span><span class="n">request</span><span class="p">))</span>
+</code></pre></div></div>
+
+<h3 id="explicit-schema-definition">Explicit schema definition</h3>
+<p>자동 생성 방식의 대안은 코드베이스에 <code class="language-plaintext highlighter-rouge">Document</code> 객체를 선언하여 API 스키마를 명시적으로 지정하는 것입니다. 그렇게 하는것은 조금 더 작업 할 수 있지만 스키마 표현을 완전히 제어 할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">coreapi</span>
+<span class="kn">from</span> <span class="nn">rest_framework.decorators</span> <span class="kn">import</span> <span class="n">api_view</span><span class="p">,</span> <span class="n">renderer_classes</span>
+<span class="kn">from</span> <span class="nn">rest_framework</span> <span class="kn">import</span> <span class="n">renderers</span><span class="p">,</span> <span class="n">response</span>
+
+<span class="n">schema</span> <span class="o">=</span> <span class="n">coreapi</span><span class="p">.</span><span class="n">Document</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s">'Bookings API'</span><span class="p">,</span>
+    <span class="n">content</span><span class="o">=</span><span class="p">{</span>
+        <span class="p">...</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="o">@</span><span class="n">api_view</span><span class="p">()</span>
+<span class="o">@</span><span class="n">renderer_classes</span><span class="p">([</span><span class="n">renderers</span><span class="p">.</span><span class="n">CoreJSONRenderer</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">schema_view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">response</span><span class="p">.</span><span class="n">Response</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="static-schema-file">Static schema file</h3>
+<p>마지막 옵션은 Core JSON 또는 Open API 와 같은 사용 가능한 형식 중 하나를 사용하여 API schema를 static 파일로 작성하는 것입니다.</p>
+
+<p>다음 중 하나를 수행 할 수 있습니다.</p>
+
+<ul>
+  <li>스키마 정의를 static 파일로 작성하고 <a href="https://docs.djangoproject.com/en/1.10/howto/static-files/">static 파일을 직접 제공하세요</a>.</li>
+  <li>Core API를 사용하여 로드 된 스키마 정의를 작성한 다음 클라이언트 요청에 따라 여러가지 사용 가능한 형식중 하나로 렌더링합니다.</li>
+</ul>
+
+<hr />
+
+<h2 id="schemas-as-documentation">Schemas as documentation</h2>
+<p>API 스키마의 일반적인 사용법 중 하나는 문서 페이지를 작성하는데 사용합니다.<br />
+REST 프레임워크의 스키마 생성은 docstring을 사용하여 스키마 문서의 설명을 자동으로 채웁니다.</p>
+
+<p>이 설명은 다음을 기반으로 합니다.</p>
+
+<ul>
+  <li>해당 메소드 docstring이 있는 경우는 그것을 돌려줍니다.</li>
+  <li>docstring 클래스 내의 명명된 섹션으로, 한 줄 또는 여러 줄이 될 수 있습니다.</li>
+  <li>The class docstring.</li>
+</ul>
+
+<h3 id="examples">Examples</h3>
+<p>명시적인 메서드 docstring이 있는 <code class="language-plaintext highlighter-rouge">APIView</code>입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">ListUsernames</span><span class="p">(</span><span class="n">APIView</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="s">"""
+        Return a list of all user names in the system.
+        """</span>
+        <span class="n">usernames</span> <span class="o">=</span> <span class="p">[</span><span class="n">user</span><span class="p">.</span><span class="n">username</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">usernames</span><span class="p">)</span>
+</code></pre></div></div>
+<p>설명하는 액션 docstring이 있는 <code class="language-plaintext highlighter-rouge">ViewSet</code>입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">ListUsernames</span><span class="p">(</span><span class="n">ViewSet</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="s">"""
+        Return a list of all user names in the system.
+        """</span>
+        <span class="n">usernames</span> <span class="o">=</span> <span class="p">[</span><span class="n">user</span><span class="p">.</span><span class="n">username</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">usernames</span><span class="p">)</span>
+</code></pre></div></div>
+<p>단일 행 스타일을 사용하여 docstring 클래스의 섹션이 있는 generic view입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">UserList</span><span class="p">(</span><span class="n">generics</span><span class="p">.</span><span class="n">ListCreateAPIView</span><span class="p">):</span>
+    <span class="s">"""
+    get: List all the users.
+    post: Create a new user.
+    """</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">UserSerializer</span>
+    <span class="n">permission_classes</span> <span class="o">=</span> <span class="p">(</span><span class="n">IsAdminUser</span><span class="p">,)</span>
+</code></pre></div></div>
+<p>다중 회선 스타일을 사용하여 docstring 클래스의 섹션이 있는 generic viewset입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">UserViewSet</span><span class="p">(</span><span class="n">viewsets</span><span class="p">.</span><span class="n">ModelViewSet</span><span class="p">):</span>
+    <span class="s">"""
+    API endpoint that allows users to be viewed or edited.
+
+    retrieve:
+    Return a user instance.
+
+    list:
+    Return all users, ordered by most recently joined.
+    """</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">().</span><span class="n">order_by</span><span class="p">(</span><span class="s">'-date_joined'</span><span class="p">)</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">UserSerializer</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="alternate-schema-formats">Alternate schema formats</h2>
+<p>대체 스키마 형식을 지원하려면 <code class="language-plaintext highlighter-rouge">Document</code> 인스턴스를 바이트 표현으로 변환하는 처리를 담당하는 custom의 rederer 클래스를 구현해야합니다.<br />
+사용할 형식을 인코딩을 지원하는 Core API 코덱패키지가 있는 경우 해당 코덱을 사용하여 rederer 클래스를 구현 할 수 있습니다.</p>
+
+<h3 id="example">Example</h3>
+<p>예를 들어 <code class="language-plaintext highlighter-rouge">openapi_codec</code> 패키지는 Open API(“Swagger”) 형식의 인코딩 또는 디코딩을 지원합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework</span> <span class="kn">import</span> <span class="n">renderers</span>
+<span class="kn">from</span> <span class="nn">openapi_codec</span> <span class="kn">import</span> <span class="n">OpenAPICodec</span>
+
+<span class="k">class</span> <span class="nc">SwaggerRenderer</span><span class="p">(</span><span class="n">renderers</span><span class="p">.</span><span class="n">BaseRenderer</span><span class="p">):</span>
+    <span class="n">media_type</span> <span class="o">=</span> <span class="s">'application/openapi+json'</span>
+    <span class="nb">format</span> <span class="o">=</span> <span class="s">'swagger'</span>
+
+    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">media_type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">renderer_context</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">codec</span> <span class="o">=</span> <span class="n">OpenAPICodec</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">codec</span><span class="p">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="api-reference">API Reference</h2>
+
+<h3 id="schemagenerator">SchemaGenerator</h3>
+<p>스키마를 생성하는데 사용 할 수 있는 API view를 검토하는 클래스입니다.<br />
+일반적으로 다음과 같이 단일 인수로 <code class="language-plaintext highlighter-rouge">SchemaGenerator</code>를 인스턴스화합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>generator = SchemaGenerator(title='Stock Prices API')
+</code></pre></div></div>
+
+<p>Arguments:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">title</code> <strong>required</strong> : API의 이름.</li>
+  <li><code class="language-plaintext highlighter-rouge">url</code> : API 스키마의 루트 URL입니다. 스키마가 경로 접두어에 포함되지 않으면 이 옵션이 필요하지 않습니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">patterns</code> : 스키마를 생성 할 때 검사 할 URL 목록입니다. 기본값은 프로젝트의 URL conf입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">urlconf</code> : 스키마를 생성 할 때 사용할 URL conf 모듈 이름입니다. 기본값은 <code class="language-plaintext highlighter-rouge">settings.ROOT_URLCONF</code>입니다.</li>
+</ul>
+
+<h4 id="get_schemaself-request">get_schema(self, request)</h4>
+<p>API 스키마를 나타내는 <code class="language-plaintext highlighter-rouge">coreapi.Document</code> 인스턴스를 반환합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">api_view</span>
+<span class="o">@</span><span class="n">renderer_classes</span><span class="p">([</span><span class="n">renderers</span><span class="p">.</span><span class="n">CoreJSONRenderer</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">schema_view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">generator</span> <span class="o">=</span> <span class="n">schemas</span><span class="p">.</span><span class="n">SchemaGenerator</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">'Bookings API'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">generator</span><span class="p">.</span><span class="n">get_schema</span><span class="p">())</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">request</code> 인수는 선택 사항이며, 결과 스키마 생성에 사용자 별 권한을 적용하려는 경우에 사용할 수 있습니다.</p>
+
+<h4 id="get_linksself-request">get_links(self, request)</h4>
+<p>API 스키마에 포함되어야 하는 모든 링크가 포함된 중첩된 dict를 반환합니다.<br />
+다른 레이아웃으로 새 dict를 빌드할 수 있으므로 생성된 스키마의 결과 구조를 수정하려는 경우 이를 대체하는 것이 좋습니다.</p>
+
+<h4 id="get_linkself-path-method-view">get_link(self, path, method, view)</h4>
+<p>주어진 뷰에 해당하는 <code class="language-plaintext highlighter-rouge">coreapi.Link</code>인스턴스를 반환합니다.<br />
+특정 뷰에 대해 custom 동작을 제공해야하는 경우 이 설정을 오버라이드 할 수 있습니다.</p>
+
+<h4 id="get_descriptionself-path-method-view">get_description(self, path, method, view)</h4>
+<p>링크 설명으로 사용할 문자열을 반환합니다. 기본적으로 이는 위의 “Schemas as Documentation” 섹션에서 설명한대로 docstring을 기반으로합니다.</p>
+
+<h4 id="get_encodingself-path-method-view">get_encoding(self, path, method, view)</h4>
+<p>지정된 뷰와 상호 작용할 때 모든  request 본문에 대한 인코딩을 나타내는 문자열을 반환합니다.<br />
+예: <code class="language-plaintext highlighter-rouge">application/json</code>. request 본문을 기대하지 않는 뷰에 빈 문자열을 반환할 수 있습니다.</p>
+
+<h4 id="get_path_fieldsself-path-method-view">get_path_fields(self, path, method, view):</h4>
+<p><code class="language-plaintext highlighter-rouge">coreapi.Link()</code>인스턴스의 list를 반환합니다. URL의 각 경로 parameter에 하나씩.</p>
+
+<h4 id="get_serializer_fieldsself-path-method-view">get_serializer_fields(self, path, method, view)</h4>
+<p><code class="language-plaintext highlighter-rouge">coreapi.Link()</code> 인스턴스의 list를 반환합니다. 뷰가 사용하는 serializer 클래스의 각 필드에 하나씩.</p>
+
+<h4 id="get_pagination_fieldsself-path-method-view">get_pagination_fields(self, path, method, view)</h4>
+<p>뷰가 사용하는 pagination 클래스의 <code class="language-plaintext highlighter-rouge">get_schema_fields()</code> 메소드가 반환 한 <code class="language-plaintext highlighter-rouge">coreapi.Link()</code> 인스턴스의 list를 반환합니다.</p>
+
+<h4 id="get_filter_fieldsself-path-method-view">get_filter_fields(self, path, method, view)</h4>
+<p>뷰에 의해 사용 된 filter 클래스의 <code class="language-plaintext highlighter-rouge">get_schema_fields()</code> 메소드에 의해 돌려 주어지는 <code class="language-plaintext highlighter-rouge">coreapi.Link()</code> 인스턴스의  list를 돌려줍니다.</p>
+
+<hr />
+
+<h3 id="core-api">Core API</h3>
+
+<p>이 문서는 API 스키마를 표현하는데 사용되는 <code class="language-plaintext highlighter-rouge">coreapi</code> 패키지 내의 구성 요소에 대한 간략한 개요를 제공합니다.<br />
+이러한 클래스는 <code class="language-plaintext highlighter-rouge">rest_framework</code> 패키지가 아니라 <code class="language-plaintext highlighter-rouge">coreapi</code>패키지에서 가져옵니다.</p>
+
+<h4 id="document">Document</h4>
+<p>API 스키마 컨테이너를 나타냅니다.<br />
+<code class="language-plaintext highlighter-rouge">title</code> : API의 이름<br />
+<code class="language-plaintext highlighter-rouge">url</code> : API의 표준 URL<br />
+<code class="language-plaintext highlighter-rouge">content</code> : 스키마에 포함 된 <code class="language-plaintext highlighter-rouge">Link</code> 개체를 포함하는 dict입니다.</p>
+
+<p>스키마에 더 많은 구조를 제공하기 위해 content dict는 일반적으로 두번째 레벨로 중첩 될 수 있습니다.<br />
+예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">content</span><span class="o">=</span><span class="p">{</span>
+    <span class="s">"bookings"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"list"</span><span class="p">:</span> <span class="n">Link</span><span class="p">(...),</span>
+        <span class="s">"create"</span><span class="p">:</span> <span class="n">Link</span><span class="p">(...),</span>
+        <span class="p">...</span>
+    <span class="p">},</span>
+    <span class="s">"venues"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"list"</span><span class="p">:</span> <span class="n">Link</span><span class="p">(...),</span>
+        <span class="p">...</span>
+    <span class="p">},</span>
+    <span class="p">...</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="link">Link</h4>
+<p>개별 API 엔드포인트를 나타냅니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">url</code> : 엔드포인트의 URL. <code class="language-plaintext highlighter-rouge">/users/{username}/</code>와 같은 URI 템플릿 일 수 있습니다.<br />
+<code class="language-plaintext highlighter-rouge">action</code> : 엔드포인트와 연관된 HTTP 방법. 하나 개 이상의 HTTP 메서드를 지원하는 URL은, 각각 하나의 <code class="language-plaintext highlighter-rouge">Link</code>에 해당해야합니다.<br />
+<code class="language-plaintext highlighter-rouge">fields</code> : 입력에 사용 할 수 있는 parameter를 설명하는 <code class="language-plaintext highlighter-rouge">Field</code>인스턴스의 list입니다.<br />
+<code class="language-plaintext highlighter-rouge">description</code> : 엔드포인트의 의미와 용도에 대해 간단한 설명.</p>
+
+<h4 id="field">Field</h4>
+<p>지정된 API 엔드포인트에서 단일 입력 매개변수를 나타냅니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">name</code> : 입력을 설명하는 이름입니다.<br />
+<code class="language-plaintext highlighter-rouge">required</code> : 클라이언트가 값을 포함하는 경우 또는 parameter를 생략할 수 있는지 여부를 나타내는 boolean 입니다.<br />
+<code class="language-plaintext highlighter-rouge">location</code> : 정보가 request에 어떻게 인코딩되는지 결정합니다. 다음 문자열 중 하나이어야 합니다.</p>
+<blockquote>
+
+  <p><strong>“path”</strong><br />
+템플릿 화 된 URL에 포함됩니다. 예를 들어 <code class="language-plaintext highlighter-rouge">/products/slim-fit-jeans/</code>와 같은 URL path에서 API 입력을 처리하기 위해 <code class="language-plaintext highlighter-rouge">/products/{product_code}/</code>의 URL 값을 <code class="language-plaintext highlighter-rouge">"path"</code> 입력란과 함께 사용할 수 있습니다.<br />
+이 필드는 대개 <a href="https://docs.djangoproject.com/en/1.10/topics/http/urls/#named-groups">프로젝트 URL conf의 명명 된 인수</a>와 일치합니다.</p>
+
+  <p><strong>“query”</strong><br />
+URL 쿼리 매개변수로 포함됩니다. 예: <code class="language-plaintext highlighter-rouge">?search=sale</code>. 일반적으로 <code class="language-plaintext highlighter-rouge">GET</code> 요청에 사용됩니다.<br />
+이러한 필드는 일반적으로 뷰의 pagination 및 필터링 컨트롤과 일치합니다.</p>
+
+  <p><strong>“form”</strong>
+request 본문에 JSON 객체 또는 HTML 양식의 단일 항목으로 포함됩니다. 예 : <code class="language-plaintext highlighter-rouge">{"color":"blue",...}</code>. 일반적으로 <code class="language-plaintext highlighter-rouge">POST</code>, <code class="language-plaintext highlighter-rouge">PUT</code> 및 <code class="language-plaintext highlighter-rouge">PATCH</code> 요청에 사용됩니다. 여러 <code class="language-plaintext highlighter-rouge">"form"</code>입력란은 단일 링크에 포함될 수 있습니다.<br />
+이러한 필드는 일반적으로 뷰의 serializer 필드와 일치합니다.</p>
+
+  <p><strong>“body”</strong>
+전체 request 본문에 포함됩니다. 일반적으로 <code class="language-plaintext highlighter-rouge">POST</code>, <code class="language-plaintext highlighter-rouge">PUT</code>및 <code class="language-plaintext highlighter-rouge">PATCH</code> 요청에 사용됩니다. 링크에는 둘 이상의 <code class="language-plaintext highlighter-rouge">"body"</code> 필드가 존재 할 수 없습니다. <code class="language-plaintext highlighter-rouge">"form"</code>필드와 함께 사용 할 수 없습니다.<br />
+이러한 필드는 보통 <code class="language-plaintext highlighter-rouge">ListSerializer</code>를 사용하는 request 입력의 유효성을 검사하거나 파일 업로드 뷰를 사용하는 view와 일치합니다.</p>
+</blockquote>
+
+<p><code class="language-plaintext highlighter-rouge">encoding</code></p>
+<blockquote>
+
+  <p><strong>“application/json”</strong><br />
+JSON 인코딩 된 request 컨텐츠. <code class="language-plaintext highlighter-rouge">JSONParser</code>를 사용하는 뷰에 해당합니다. 하나 이상의 <code class="language-plaintext highlighter-rouge">location="form"</code>필드 또는 단일 <code class="language-plaintext highlighter-rouge">location="body"</code>필드가 링크에 포함 된 경우에만 유효합니다.</p>
+
+  <p><strong>“multipart/form-data”</strong><br />
+멀티 파트로 인코딩 된 request content. <code class="language-plaintext highlighter-rouge">MultiPartParser</code>를 사용하는 뷰에 해당합니다 하나 이상의 <code class="language-plaintext highlighter-rouge">location="form"</code>필드가 링크에 포함 된 경우에만 유효합니다.</p>
+
+  <p><strong>“application/x-www-form-urlencoded”</strong><br />
+URL로 인코딩 된 requetst content. <code class="language-plaintext highlighter-rouge">FormParser</code>를 사용하는 뷰에 해당합니다. 하나 이상의 <code class="language-plaintext highlighter-rouge">location="form"</code>필드가 링크에 포함 된 경우에만 유효합니다.</p>
+
+  <p><strong>“application/octet-stream”</strong><br />
+이진 업로드 request content. <code class="language-plaintext highlighter-rouge">FileUploadParser</code>를 사용하는 뷰에 해당합니다. <code class="language-plaintext highlighter-rouge">location="body"</code>필드가 링크에 포함된 경우에만 유효합니다.</p>
+</blockquote>
+
+<p><code class="language-plaintext highlighter-rouge">description</code> : 입력 필드의 의미와 용도에 대한 간단한 설명</p>
+:ET

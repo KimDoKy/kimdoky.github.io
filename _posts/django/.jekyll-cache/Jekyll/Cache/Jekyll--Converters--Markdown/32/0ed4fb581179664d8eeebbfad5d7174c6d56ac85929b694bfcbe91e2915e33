@@ -1,0 +1,478 @@
+I"��<h1 id="internationalization-and-localization-languages-and-time-zones"><a href="http://www.marinamele.com/taskbuster-django-tutorial/internationalization-localization-languages-time-zones">Internationalization and Localization. Languages and Time zones</a></h1>
+
+<p>이번 파트에서는 국제화(Internationalization), 현지화(Localization), 표준 시간대(Time Zones)에 대해 다룹니다.</p>
+
+<p>우리 웹 사이트는 두 가지 다른 언어를 정의하고 각 언어에 맞는 URL을 만들고, 두 언어를 지원하는 웹 사이트를 만듭니다.</p>
+
+<p>또한 표준 시간대와 템플리셍 현지 시간을 표시하는 방법을 설명합니다.</p>
+
+<p>이 파트의 개요는 다음과 같습니다.</p>
+
+<ul>
+  <li>Internationalization – Settings</li>
+  <li>Internationalization – Urls</li>
+  <li>Internationalization – Templates</li>
+  <li>Internationalization – Translation</li>
+  <li>Localization</li>
+  <li>Time Zones</li>
+</ul>
+
+<p>시작해봅시다!</p>
+
+<h2 id="internationalization--settings">Internationalization – Settings</h2>
+
+<p>국제화를 구현하는 방법, 즉 우리 페이지가 여러 언어를 지원할 수 있는 방법에 대해 작업합니다.</p>
+
+<p>먼저 모든 번역 파일을 저장할 폴더를 만듭니다. 이 파일들은 Django에 의해 자동으로 생성되어 우리가 번역하고자하는 문자열을 작성합니다. Django에게 어떤 문자열을 후자로 번역할지를 알려주는 방법을 설명하겠지만, 파일을 편집하고 각 문자열에 대한 번역을 수동으로 넣는 것이 아이디어입니다. 이렇게하면 장고는 사용자 환경 설저엥 따라 하나의 언어 또는 다른 언어를 선택하게 됩니다.</p>
+
+<p>번역의 폴더는 taskbuster 폴더 안에 있습니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ mkdir taskbuster/locale
+</code></pre></div></div>
+
+<p>다음으로 ‘settings/base.py’ 파일을 열고 다음 코드가 있는지 확인하세요.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>USE_I18N = True
+</code></pre></div></div>
+
+<p>탬플릿 컨텍스트 프로세서 <code class="language-plaintext highlighter-rouge">django.templates.context_processors.i18n</code>은 <code class="language-plaintext highlighter-rouge">TEMPLATES['OPTION']['context_processors']</code> 설정 안에 있습니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>TEMPLATES = [
+    {
+        ...
+        'OPTIONS': {
+            'context_processors': [
+                ...
+                'django.template.context_processors.i18n',
+            ],
+        },
+    },
+]
+</code></pre></div></div>
+
+<p>Note: Django 쉡을 사용하여 특정 설정의 값을 찾을 수도 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">$</span> <span class="n">python</span> <span class="n">manage</span><span class="p">.</span><span class="n">py</span> <span class="n">shell</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">settings</span><span class="p">.</span><span class="n">TEMPLATES</span>
+</code></pre></div></div>
+
+<p>해당 변수의 현재 값을 출력합니다.</p>
+
+<p>그 후, 다음 요청 컨텍스트를 통해 사용자의 언어 기본 설정을 결정할 수 있도록 올바른 위치에 Locale middleware를 추가하세요.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MIDDLEWARE_CLASSES = (
+    ...
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    ...
+)
+</code></pre></div></div>
+
+<p>다음으로 사용할 언어를 지정하세요.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>from django.utils.translation import ugettext_lazy as _
+LANGUAGES = (
+    ('en', _('English')),
+    ('ca', _('Catalan')),
+)
+</code></pre></div></div>
+<p>우리는 영어와 카탈로이나어를 사용할 것입니다. 원하는 언어를 자유롭게 입력해도 됩니다. <code class="language-plaintext highlighter-rouge">ugettext_lazy</code> 함수는 번역 할 언어 이름을 표시하는데 사용되며 일반적으로 함수의 바로가기를 사용합니다.</p>
+
+<p>Note: 다른 함수인 <code class="language-plaintext highlighter-rouge">ugettext</code>가 번역에 사용됩니다. 두 함수의 차이점은 <code class="language-plaintext highlighter-rouge">ugettext</code>가 문자열을 즉시 반환하는 반면, <code class="language-plaintext highlighter-rouge">ugettext_lazy</code>는 템플릿을 렌더링 할 때 문자열을 반환합니다.</p>
+
+<p>‘settings.py’의 경우 다른 함수로 인해 import 루프가 발생할 수 있기 때문에  <code class="language-plaintext highlighter-rouge">ugettext_lazy</code>를 사용해야 합니다. 일반적으로 <code class="language-plaintext highlighter-rouge">ugettext_lazy</code>는 models.py과 forms.py 파일에도 사용해야 합니다.</p>
+
+<p>또한 <code class="language-plaintext highlighter-rouge">LANGUAGE_CODE</code> 설정은 번역이 없을 경우 Django가 사용할 기본 언어를 정의합니다. 기본값을 그대로 둡니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LANGUAGE_CODE = 'en-us'
+</code></pre></div></div>
+
+<p>마지막으로 이전에 생성한 locale 폴더를 지정하세요.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">LOCALE_PATHS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s">'locale'</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p>콤마 잊지 마세요.</p>
+
+<h2 id="internationalization--urls">Internationalization – Urls</h2>
+
+<p>이제 설정을 구성했으니 앱을 다른 언어로 작동시키는 방법에 대해 생각해봐야 합니다. 여기서는 다음과 같은 방식을 취할 것입니다: 각 URL에 Django에게 사용할 언어를 알려주는 언어 접두어를 포함시킵니다. 홈페이지의 경우 다음과 같습니다.</p>
+
+<ul>
+  <li>mysite.com/en</li>
+  <li>mysite.com/ca</li>
+</ul>
+
+<p>‘mysite.com/myapp’와 같은 나머지 URL은 다음과 같습니다.</p>
+
+<ul>
+  <li>mysite.com/en/myapp</li>
+  <li>mysite.com/ca/myapp</li>
+</ul>
+
+<p>이 방법으로 사용자는 한 언어에서 다른 언어로 쉽게 변경할 수 있습니다. 하지만, 우리는 어떤 robots.txt를 원하지 않습니다. humans.txt도 이 구조를 따릅니다. (검색 엔진은 구조에 따라 ‘mysite.com/robots.txt’와 ‘mysite.com/humans.txt’를 찾을 것입니다.)</p>
+
+<p>이를 구현하는 방법은 ‘urls.py’을 사용하는 것입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># -*- coding: utf-8 -*-
+</span><span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">admin</span>
+<span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">path</span>
+<span class="kn">from</span> <span class="nn">django.conf.urls.i18n</span> <span class="kn">import</span> <span class="n">i18n_patterns</span>
+<span class="kn">from</span> <span class="nn">.views</span> <span class="kn">import</span> <span class="n">home</span><span class="p">,</span> <span class="n">home_files</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">path</span><span class="p">(</span><span class="s">'&lt;filename&gt;'</span><span class="p">,</span> <span class="n">home_files</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'home-files'</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="n">urlpatterns</span> <span class="o">+=</span> <span class="n">i18n_patterns</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">(</span><span class="s">'admin/'</span><span class="p">,</span> <span class="n">admin</span><span class="p">.</span><span class="n">site</span><span class="p">.</span><span class="n">urls</span><span class="p">),</span>
+    <span class="n">path</span><span class="p">(</span><span class="s">''</span><span class="p">,</span> <span class="n">home</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'home'</span><span class="p">),</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<p>robots.txt와 humans.txt 파일을 같은 URL로 남겨두었고, 우리가 번역하고 싶은 것들은 <code class="language-plaintext highlighter-rouge">i18n_patterns</code> 함수를 사용합니다.</p>
+
+<p>로컬 서버를 실행하고 홈페이지를 방문하면 <code class="language-plaintext highlighter-rouge">/en</code> 또는 <code class="language-plaintext highlighter-rouge">/ca</code>로 리다이렉션되어야 합니다. DJango의 공식 언어 문서에서 <a href="https://docs.djangoproject.com/en/1.8/topics/i18n/translation/#how-django-discovers-language-preference">how Django discovers language preference</a>에 대해 더 배울 수 있습니다.</p>
+
+<p>사용자가 언어 환경 설정을 어떻게 변경할까요? DJango는 이것을 하는 뷰를 가지고 있습니다.</p>
+
+<p>이 뷰에는 언어 매개변수가 포함된 POST 요청이 예상됩니다. 하지만 상단 검색바를 customizing 할 때 본 튜토리얼의 다른 시간대에 해당 뷰를 처리합니다. 사용 가능한 모든 언어를 가진 드롭다운 메뉴를 선택한 후 변경할 언어를 선택하는 것이 좋습니다.</p>
+
+<p>계속하기 전에 테스트를 실행해봅니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ python mange.py test taskbuster.test
+</code></pre></div></div>
+
+<p>하나는 실패합니다! 실제로 ‘taskbuster/test.py’에서 가장 작은 항목이 모두 실패합니다. <code class="language-plaintext highlighter-rouge">reverse('home')</code>을 사용할 때 렌더링되는 탬플릿을 찾을 수 없기 때문입니다. 우리는 reverse가 제대로 작동하게 하기 위해 active language를 설정해야 합니다. 먼저 파일 맨 위애 다음을 임포트합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.utils.translation</span> <span class="kn">import</span> <span class="n">activate</span>
+</code></pre></div></div>
+
+<p>그 다음은 테스트 선언 직후에 선택할 언어를 활성화하세요.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">test_uses_index_template</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">activate</span><span class="p">(</span><span class="s">'en'</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s">"home"</span><span class="p">))</span>
+    <span class="bp">self</span><span class="p">.</span><span class="n">assertTemplateUsed</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s">"taskbuster/index.html"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>다른 테스트에도 동일하게 적용하세요. (test_uses_base_template)</p>
+
+<p>이제 테스트는 통과합니다. ‘functional_tests/test_all_users.py’에도 동일한 작업을 해야 합니다.(<code class="language-plaintext highlighter-rouge">activate</code>를 임포트하고, setUp 메소드의 마지막에 <code class="language-plaintext highlighter-rouge">activate('en')</code>을 추가해야 합니다.)</p>
+
+<h2 id="internationalization--templates">Internationalization – Templates</h2>
+
+<p>이제 홈페이지의 title(h1 Hello World)를 번역하는데 집중합니다. index.html을 열고 <code class="language-plaintext highlighter-rouge">&lt;h1&gt;Hello, world!&lt;/h1&gt;</code>를 찾습니다.</p>
+
+<p>두 가지 템플릿 태그를 사용합니다.</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">trans</code>는 한 줄을 번역하는데 사용됩니다. 제목에 사용합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">blocktrans</code>는 확정 된 콘텐츠에 사용됩니다. 단락에 사용합니다.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">jumbotron</code> 컨테이너의 h1과 p 내용을 다음 코드와 같이 변경하세요.</p>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"jumbotron"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"container"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;h1&gt;</span>{% trans "Welcome to TaskBuster!"%}<span class="nt">&lt;/h1&gt;</span>
+        <span class="nt">&lt;p&gt;</span>{% blocktrans %}TaskBuster is a simple Task manager that helps you organize your daylife. <span class="nt">&lt;/br&gt;</span> You can create todo lists, periodic tasks and more! <span class="nt">&lt;/br&gt;&lt;/br&gt;</span> If you want to learn how it was created, or create it yourself!, check www.django-tutorial.com{% endblocktrans %}<span class="nt">&lt;/p&gt;</span>
+        <span class="nt">&lt;p&gt;&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-primary btn-lg"</span> <span class="na">role=</span><span class="s">"button"</span><span class="nt">&gt;</span>Learn more <span class="ni">&amp;raquo;</span><span class="nt">&lt;/a&gt;&lt;/p&gt;</span>
+      <span class="nt">&lt;/div&gt;</span>
+    <span class="nt">&lt;/div&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+</code></pre></div></div>
+
+<p>또한 이전 템플릿 태그를 엑세스하려면 템플릿 맨 위에 <code class="language-plaintext highlighter-rouge">{% load i18n %}</code>를 써야 합니다. 이 경우 base.html 태그에서 확장됩니다.</p>
+
+<h2 id="internationalization--translation">Internationalization – Translation</h2>
+
+<p>마지막으로 문자열을 번역합니다.</p>
+
+<p>‘taskbuster_project’ 폴더(manage.py파일과 동등 레벨)의 터미널로 이동하고 다음을 실행하세요.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ python manage.py makemessages -l ca
+</code></pre></div></div>
+<p>이렇게 하면 번역하려는 언어에 대한 메시지 파일이 생성됩니다. 모든 코드를 영어로 작성하므로 해당 언어에 대한 메시지 파일을 만들 필요가 없습니다.</p>
+
+<p>그러나 GNU gettext가 설치되어 있지 않다는 오류가 발생합니다. <a href="https://www.gnu.org/software/gettext/">GNU gettext 홈페이지</a>에 접속해서 최신버전을 설치하세요.</p>
+
+<p>기본적으로 패키지 폴더(압축을 푼 경우) 안에 들어가서 다음을 입력해야 합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ ./configure
+</code></pre></div></div>
+
+<p>시스템에 맞게 설치를 구성하세요. 그 다음은</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ make
+</code></pre></div></div>
+
+<p>패키지를 컴파일 합니다. 터미널에서 설치할때 끔찍한 코드들을 출력하는지 궁금해집니다.</p>
+
+<p>원한다면</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ make check
+</code></pre></div></div>
+
+<p>설치하기 전에 패키지 테스트를 실행하여 모든 것이 잘 작동하는지 확인하세요. 마지막으로 실행합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ make install
+</code></pre></div></div>
+<p>패키지를 설치하세요.</p>
+
+<p>이제 개발 환경으로 돌아가서 메시지 파일을 생성해 봅니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ python manage.py makemessages -l ca
+</code></pre></div></div>
+
+<p>이제 ‘taskbuster/locale’ 폴더로 가서 안에 있는 내용을 확인하세요.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ cd taskbuster/locale
+$ ls
+</code></pre></div></div>
+
+<p>‘ca’(또는 번역을 위해 선택된 언어)라는 폴더가 있고 ‘LC_MESSAGES’라는 폴더가 내부에 있습니다. 그 안에 들어가면 ‘django.po’라는 파일을 찾을 수 있습니다. 에디터로 해당 파일을 열어봅세요.</p>
+
+<p>파일의 시작 부분에 메타 데이터가 있지만 그 후에는 변환을 위해 표시 한 문자열을 볼 수 있습니다.</p>
+
+<ul>
+  <li>‘base.py’ 설정 파일의 언어 이름은 ‘English’와 ‘Catalan’입니다.</li>
+  <li>‘index.html’파일의 title은 ‘Welcome to TaskBuster!’입니다.</li>
+  <li>‘index.html’ 파일의 제목 뒤 단락</li>
+</ul>
+
+<p>각 문장은 msgid로 시작하는 줄에 나타납니다. 다음 행에 msgstr로 시작하는 번역을 넣어야 합니다.</p>
+
+<p>title 번역은 간단합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msgid "Welcome to TaskBuster!"
+msgstr "Benvingut a TaskBuster!"
+</code></pre></div></div>
+<p>단락을 사용하면 각 줄을 <code class="language-plaintext highlighter-rouge">""</code>으로 시작하고 끝내야 합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msgid ""
+"TaskBuster is a simple Task manager that helps you organize your daylife. &lt;/"
+"br&gt; You can create todo lists, periodic tasks and more! &lt;/br&gt;&lt;/br&gt; If you "
+"want to learn how it was created, or create it yourself!, check www.django-"
+"tutorial.com"
+msgstr ""
+"TaskBuster és un administrador senzill de tasques que t'ajuda a administrar "
+"el teu dia a dia. &lt;/br&gt; Pots crear llistes de coses pendents, tasques "
+"periòdiques i molt més! &lt;/br&gt;&lt;/br&gt; Si vols apendre com s'ha creat, o"
+"crear-lo tu mateix!, visita la pàgina &lt;a href='http://www.marinamele.com/taskbuster-django-tutorial' target=_'blank'&gt;Taskbuster Django Tutorial&lt;/a&gt;."
+</code></pre></div></div>
+
+<p>또한 줄 끝 부분의 최종 공간을 기록하세요. 해당 공백을 포함하지 않으면 줄 끝의 단어와 다음 줄의 시작 부분에 있는 단어가 연결됩니다.</p>
+
+<p>모든 번역이 설정되면 다음과 같이 컴파일해야 합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ python manage.py compilemessages -l ca
+</code></pre></div></div>
+
+<p>로컬 서버를 실행하고 홈페이지로 이동하여 효과를 볼 수 있지만 먼저 테스트를 작성하는 것이 좋습니다.</p>
+
+<p>‘functional_tests/test_all_users.py’에 다음의 테스트를 추가하세요.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">test_internationalization</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">lang</span><span class="p">,</span> <span class="n">h1_text</span> <span class="ow">in</span> <span class="p">[(</span><span class="s">'en'</span><span class="p">,</span> <span class="s">'Welcome to TaskBuster!'</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s">'ca'</span><span class="p">,</span> <span class="s">'Benvingut a TaskBuster!'</span><span class="p">)]:</span>
+        <span class="n">activate</span><span class="p">(</span><span class="n">lang</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">browser</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">get_full_url</span><span class="p">(</span><span class="s">"home"</span><span class="p">))</span>
+        <span class="n">h1</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">browser</span><span class="p">.</span><span class="n">find_element_by_tag_name</span><span class="p">(</span><span class="s">"h1"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">h1</span><span class="p">.</span><span class="n">text</span><span class="p">,</span> <span class="n">h1_text</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>다른 언어를 사용하는 경우 ‘Benvingut a TaskBuster’으로 변경되었다는 것과 <code class="language-plaintext highlighter-rouge">activate('ca')</code>을 변경하는 것을 기억하세요.</p>
+
+<p>모든 테스트가 통과되기를 바랍니다. :)</p>
+
+<h2 id="localization">Localization</h2>
+
+<p>Django는 현재 <strong>locale</strong> 에 지정된 형식을 사용하여 템플릿의 시간과 날짜를 렌더링할 수 있습니다. 즉, 서로 다른 지역의 두 사람이 템플릿에서 서로 다른 날짜 포맷을 볼 수 있습니다.</p>
+
+<p>Localization을 사용하려면 base.py 설정 파일에서 다음 코드를 확인하세요.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>USE_L10N = True
+</code></pre></div></div>
+
+<p>이렇게 하면 템플릿에 값을 포함할 때 Django는 locale 포맷을 사용하여 값을 렌더링합니다. 자동 포맷팅을 비활성화하는 방법도 필요합니다. 예를 들어, javascript를 사용할 때는 모든 지역에 대해 동일한 포맷을 사용해야 합니다.</p>
+
+<p>그걸 위한 테스트를 작성합니다. 홈페이지에서 로컬 날짜 포맷과 비 로컬 포맷을 모두 사용하여 오늘 날짜와 시간을 표시합니다.</p>
+
+<p>‘functional_tests/test_all_users.py’을 열어서 다음 코드를 임포트합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<span class="kn">from</span> <span class="nn">django.utils</span> <span class="kn">import</span> <span class="n">formats</span>
+</code></pre></div></div>
+
+<p>그 후 <code class="language-plaintext highlighter-rouge">HomeNewVisitorTest</code>클래스에 테스트 메서드를 추가하세요.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">test_localization</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">today</span> <span class="o">=</span> <span class="n">date</span><span class="p">.</span><span class="n">today</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">lang</span> <span class="ow">in</span> <span class="p">[</span><span class="s">'en'</span><span class="p">,</span> <span class="s">'ca'</span><span class="p">]:</span>
+        <span class="n">activate</span><span class="p">(</span><span class="n">lang</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">browser</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">get_full_url</span><span class="p">(</span><span class="s">"home"</span><span class="p">))</span>
+        <span class="n">local_date</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">browser</span><span class="p">.</span><span class="n">find_element_by_id</span><span class="p">(</span><span class="s">"local-date"</span><span class="p">)</span>
+        <span class="n">non_local_date</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">browser</span><span class="p">.</span><span class="n">find_element_by_id</span><span class="p">(</span><span class="s">"non-local-date"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">formats</span><span class="p">.</span><span class="n">date_format</span><span class="p">(</span><span class="n">today</span><span class="p">,</span> <span class="n">use_l10n</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+                              <span class="n">local_date</span><span class="p">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">today</span><span class="p">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">'%Y-%m-%d'</span><span class="p">),</span> <span class="n">non_local_date</span><span class="p">.</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>그런 다음 테스트를 먼저 실행하여 무엇을 먼저 구현해야 하는지 확인하세요. 다음 명령으로 테스트를 실행할 수 있습니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ python manage.py test functional_tests.test_all_users.HomeNewVisitorTest.test_localization
+</code></pre></div></div>
+
+<p><strong>local-date</strong> id가 있는 요소를 찾을 수 없어서 테스트가 실패합니다. 그걸 만들어 봅니다.</p>
+
+<p>‘taskbuster/index.html’ 템플릿을 열어서 파일의 시작부분에 locale 템플릿 태그를 로드합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{% load l10n %}
+</code></pre></div></div>
+
+<p>그 후 <code class="language-plaintext highlighter-rouge">div</code> 컨테이너를 찾습니다. 처음 두 열을 편집하여 h2 헤더에 날짜를 표시합니다.</p>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-md-4"</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;h2</span> <span class="na">id=</span><span class="s">"local-date"</span><span class="nt">&gt;</span>{{today}}<span class="nt">&lt;/h2&gt;</span>
+      <span class="nt">&lt;p&gt;</span>This is the time using your local information <span class="nt">&lt;/p&gt;</span>
+      <span class="nt">&lt;p&gt;&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-default"</span> <span class="na">href=</span><span class="s">"#"</span> <span class="na">role=</span><span class="s">"button"</span><span class="nt">&gt;</span>View details <span class="ni">&amp;raquo;</span><span class="nt">&lt;/a&gt;&lt;/p&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+<span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-md-4"</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;h2</span> <span class="na">id=</span><span class="s">"non-local-date"</span><span class="nt">&gt;</span>{{today|unlocalize}}<span class="nt">&lt;/h2&gt;</span>
+      <span class="nt">&lt;p&gt;</span>This is the default time format.<span class="nt">&lt;/p&gt;</span>
+      <span class="nt">&lt;p&gt;&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-default"</span> <span class="na">href=</span><span class="s">"#"</span> <span class="na">role=</span><span class="s">"button"</span><span class="nt">&gt;</span>View details <span class="ni">&amp;raquo;</span><span class="nt">&lt;/a&gt;&lt;/p&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+</code></pre></div></div>
+
+<p>두 번째 헤더의 필터가 locale 해제됨을 유의하세요. 이렇게 하면 <strong>today</strong> 변수를 렌더링하는 동안 localization 포맷을 사용할 수 없게 됩니다. 또한 대형 block을 비활성하는 또 다른 템플릿 태그가 있습니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{% localize off %} code without localization {% endlocalize %}
+</code></pre></div></div>
+
+<p><a href="https://docs.djangoproject.com/en/1.8/topics/i18n/formatting/#template-tags">Django docs</a>에서 더 자세히 알 수 있습니다.</p>
+
+<p>테스트를 저장하고 다시 실행하세요. <strong>today</strong> 변수를 home 뷰에 전달하지 않았기 때문에 다시 실패합니다.</p>
+
+<p>views.py에 home 뷰를 수정합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">datetime</span>
+
+<span class="k">def</span> <span class="nf">home</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">.</span><span class="n">date</span><span class="p">.</span><span class="n">today</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">"taskbuster/index.html"</span><span class="p">,</span> <span class="p">{</span><span class="s">'today'</span><span class="p">:</span> <span class="n">today</span><span class="p">})</span>
+</code></pre></div></div>
+
+<p>테스트를 재실행합니다. 이제 모든 테스트가 통과합니다.</p>
+
+<blockquote>
+  <p>날짜 표기법이 달라서 테스트가 통과하지 못한다면 base.py 셋팅파일에 <code class="language-plaintext highlighter-rouge">DATE_FORMAT = 'Y-m-d'</code>를 추가하세요.</p>
+</blockquote>
+
+<h2 id="time-zones">Time Zones</h2>
+
+<p>프로젝트가 전 세계의 날짜와 시간을 처리해야하는 경우 UTC(조정된 세계 시간)로 작업하는 것이 좋습니다. 이렇게 하면 모든 날짜와 시간에 데이터베이스의 규칙이 균일해져서 사용자의 시간대와 상관없이 비교할 수 있습니다.</p>
+
+<p>Django는 폼과 템플릿에서 원하는 시간대로 자동으로 변환하므로 걱정하지 않아도 됩니다.</p>
+
+<p>time zones을 사용하려면 base.py 설정 파일을 열어서 다음 내용을 확인합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>USE_TZ = True
+</code></pre></div></div>
+
+<p>Django는 시간대 계산을 허용하는 Python 패키지인 <a href="http://pytz.sourceforge.net/">pytz</a>도 설치하도록 권장합니다. 이 또한 튜토리얼 후반에 사용할 테스크 큐 관리자인 [Celery]를 사용하는데 필요한 패키지입니다. 설치하죠.</p>
+
+<p>개발 환경을 활성화하고 다음을 입력합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ pip install pytz
+</code></pre></div></div>
+
+<p>requirement base.txt에 추가하세요.(pip freeze로 설치된 버전을 확인할 수 있습니다.) 테스트 환경에도 설치해야 합니다.</p>
+
+<p>두 가지 종류의 datetime 객체가 있는데, 표준 시간대 객체와 그렇지 않은 객체를 인식합니다. 어떤 날짜 인지를 결정하기 위해 datetime 메서드 <code class="language-plaintext highlighter-rouge">is_aware()</code>와 <code class="language-plaintext highlighter-rouge">is_naive()</code>를 사용할 수 있습니다.</p>
+
+<p>표준 시간대 지원을 활성화하면 모든 datetime 인스턴스가 인식됩니다. 따라서 저장된 datetime과 상호 작용하려면 aware datetime 인스턴스를 만들어야 합니다.</p>
+
+<p>얘를 들어:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">django.utils.timezone</span> <span class="kn">import</span> <span class="n">utc</span>
+
+<span class="n">now_naive</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">.</span><span class="n">datetime</span><span class="p">.</span><span class="n">now</span><span class="p">()</span>
+<span class="n">now_aware</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">.</span><span class="n">datetime</span><span class="p">.</span><span class="n">utcnow</span><span class="p">().</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">utc</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>또한 <code class="language-plaintext highlighter-rouge">USE_TZ=True</code>과 같이 time zone이 활성화 된 경우 현재 aware 시간을 가져오는 바로가기가 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.utils.timezone</span> <span class="kn">import</span> <span class="n">now</span>
+<span class="n">now_aware</span> <span class="o">=</span> <span class="n">now</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>그러나 Django 문서에서 설명한 것처럼 HTTP 헤더를 통해 사용자 time zone 기본 설정을 결정할 수 있는 방법은 없습니다. 우리가 할 일은 선호하는 time zone를 사용자에게 묻고 사용자 프로필에 저장하는 것입니다. 하지만 튜토리얼의 후반에 하게 됩니다.</p>
+
+<p>한편, 우리는 설정 변수로 기본 time zone을 정의할 것입니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>TIME_ZONE = 'Europe/Madrid'
+</code></pre></div></div>
+
+<p>이 코드는 바르셀로나의 time zone입니다. <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">time zone</a>에서 선택할 수 있습니다.</p>
+
+<p>이제 바르셀로나에서 현재 시간(기본 time zone을 사용), UTC 시간과 뉴욕 시간을 표시하는 방법을 살펴봅니다.</p>
+
+<p>‘functional_tests/test_all_users.py’을 열고 다음 테스트를 작성하세요.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">test_time_zone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="p">.</span><span class="n">browser</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">get_full_url</span><span class="p">(</span><span class="s">"home"</span><span class="p">))</span>
+    <span class="n">tz</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">browser</span><span class="p">.</span><span class="n">find_element_by_id</span><span class="p">(</span><span class="s">"time-tz"</span><span class="p">).</span><span class="n">text</span>
+    <span class="n">utc</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">browser</span><span class="p">.</span><span class="n">find_element_by_id</span><span class="p">(</span><span class="s">"time-utc"</span><span class="p">).</span><span class="n">text</span>
+    <span class="n">ny</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">browser</span><span class="p">.</span><span class="n">find_element_by_id</span><span class="p">(</span><span class="s">"time-ny"</span><span class="p">).</span><span class="n">text</span>
+    <span class="bp">self</span><span class="p">.</span><span class="n">assertNotEqual</span><span class="p">(</span><span class="n">tz</span><span class="p">,</span> <span class="n">utc</span><span class="p">)</span>
+    <span class="bp">self</span><span class="p">.</span><span class="n">assertNotIn</span><span class="p">(</span><span class="n">ny</span><span class="p">,</span> <span class="p">[</span><span class="n">tz</span><span class="p">,</span> <span class="n">utc</span><span class="p">])</span>
+</code></pre></div></div>
+<p>바르셀로나, UTC, 뉴욕시간이 다른지 확인합니다.</p>
+
+<p>이 테스트를 실행하면 id가 <strong>time-tz</strong> 인 요소가 없기 때문에 실패합니다. index.html 템플릿을 열고 세 번째 열을 편집하세요.</p>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-md-4"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;h2&gt;</span>Time Zones<span class="nt">&lt;/h2&gt;</span>
+    <span class="nt">&lt;p&gt;</span> Barcelona: <span class="nt">&lt;span</span> <span class="na">id=</span><span class="s">"time-tz"</span><span class="nt">&gt;</span>{{now|time:"H:i"}}<span class="nt">&lt;/span&gt;&lt;/p&gt;</span>
+    <span class="nt">&lt;p&gt;</span> UTC: <span class="nt">&lt;span</span> <span class="na">id=</span><span class="s">"time-utc"</span><span class="nt">&gt;</span>{{now|utc|time:"H:i"}}<span class="nt">&lt;/span&gt;&lt;/p&gt;</span>
+    <span class="nt">&lt;p&gt;</span> New York: <span class="nt">&lt;span</span> <span class="na">id=</span><span class="s">"time-ny"</span><span class="nt">&gt;</span>
+           {{now|timezone:"America/New_York"|time:"H:i"}}<span class="nt">&lt;/span&gt;&lt;/p&gt;</span>
+    <span class="nt">&lt;p&gt;&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-default"</span> <span class="na">href=</span><span class="s">"#"</span> <span class="na">role=</span><span class="s">"button"</span><span class="nt">&gt;</span>View details <span class="ni">&amp;raquo;</span><span class="nt">&lt;/a&gt;&lt;/p&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+</code></pre></div></div>
+
+<p>time filter만 사용하여 시간만 표시했습니다. 테스트를 다시 실행하면 <strong>utc</strong> 필터를 찾을 수 없어서 실패합니다. ‘index.html’ 파일 상단에 다음 코드를 추가합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{% load tz %}
+</code></pre></div></div>
+
+<p>테스트를 다시 실행하면 뷰가 현재 변수를 전달하지 않았기 때문에 이번에는 실패합니다. ‘views.py’을 열고 파일 시작 부분에 임포트를 추가합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.utils.timezone</span> <span class="kn">import</span> <span class="n">now</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">now</code> 변수를 home 뷰에 추가합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">home</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">.</span><span class="n">date</span><span class="p">.</span><span class="n">today</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s">"taskbuster/index.html"</span><span class="p">,</span>
+                       <span class="p">{</span><span class="s">'today'</span><span class="p">:</span> <span class="n">today</span><span class="p">,</span> <span class="s">'now'</span><span class="p">:</span> <span class="n">now</span><span class="p">()})</span>
+</code></pre></div></div>
+
+<p>테스트를 다시 실행하면 통과해야 합니다!</p>
+
+<p>이제 튜토리얼의 마지막 부분입니다. 변경 사항을 커밋하는 것을 잊지 마세요.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ git add .
+$ git status
+$ git commit -m "Internationalization and localization"
+$ git push origin master
+</code></pre></div></div>
+
+<p>GitHub와 같은 클라우드 저장소에 푸시하려는 경우에만 마지막 명령을 실행하세요.</p>
+:ET

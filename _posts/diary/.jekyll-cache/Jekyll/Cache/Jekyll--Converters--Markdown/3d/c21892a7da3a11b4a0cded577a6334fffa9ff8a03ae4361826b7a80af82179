@@ -1,0 +1,42 @@
+I"�<p>http://asc-ind.com/ 이 사이트의 검색기능을 만들고 싶어서 모델을 짜던중에 이해가 안가는 에러가 발생했습니다.</p>
+
+<p>models.py</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Product</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="n">parts</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">engine</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Engine</span><span class="p">)</span>
+<span class="n">make</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Maker</span><span class="p">)</span>
+<span class="n">other_make</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Maker</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s">"other"</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Model</span><span class="p">)</span>
+<span class="n">models</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Model</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s">"models"</span><span class="p">)</span>
+<span class="nb">type</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Type</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>...
+AttributeError: 'ForeignKey' object has no attribute 'ForeignKey'
+</code></pre></div></div>
+<p>분명 ForeignKey는 models의 오브젝트인데 에러는 ForeignKey의 오브젝트라고… 구글링 해도 안나오네요…ㅠ
+아 그리고. 모델의 하나의 클래스에 ForeignKey를 사용할 수 있는 갯수 한계가 있을까요?? 저 위에 있는 구성으로 하면 다른 필드를 추가해도 models 가 안먹는것 같아요…</p>
+
+<p>삽질은 언제쯤 끝날까…</p>
+
+<hr />
+<p><a href="https://www.facebook.com/groups/askdjango/" target="_blank">askdjango</a>의 이진석님께서 도움을 주셨습니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>외래키 갯수 제한은 없습니다.
+
+아래 코드에서 모델명이 models 라서
+models = models.ForeignKey(Model, related_name="models")
+
+다음 줄에서 참조 오류가 뜬 것입니다.
+type = models.ForeignKey(Type)
+
+그런데, 다음 정의는 중복같습니다.
+model = models.ForeignKey(Model)
+models = models.ForeignKey(Model, related_name="models")
+
+model 만 있어도 충분할 듯 합니다.
+</code></pre></div></div>
+
+<p>ForeignKey의 갯수 제한은 없다는 것과 네이밍의 중요성을 다시 한번 깨닫게 되었습니다.</p>
+:ET

@@ -1,0 +1,406 @@
+I"�<h1 id="model-creation-foreignkey-relations-testing-and-the-django-admin"><a href="http://www.marinamele.com/taskbuster-django-tutorial/model-creation-foreignkey-relationship-testing-django-admin">Model creation, ForeignKey relations, testing and the Django Admin</a></h1>
+
+<p>이번 파트에서는 우리의 모델을 계속 정의합니다. 우리는 Project와  Tag 모델을 정의 할 것이며, Profile 모델과 <strong>Foreign Key</strong> 관계를 가지고 있습니다.</p>
+
+<p>또한, <strong>inline model</strong> 을 사용하여 <strong>custom validation</strong>, 테스트, customizing <strong>Admin Site</strong> 에 대해 설명합니다.</p>
+
+<p>이번 파트의 개요입니다.</p>
+
+<ul>
+  <li>UML Diagram 수정</li>
+  <li>The Project Model: Foreign Key Relationships and custom validators</li>
+  <li>Tests for the Project Model</li>
+  <li>Django Admin for the Project Model: custom list display and Model Inline</li>
+  <li>The Tag Model: Another simple model with a ForeignKey relationship</li>
+</ul>
+
+<h2 id="uml-diagram-revision">UML Diagram Revision</h2>
+
+<p>마지막으로 User 모델과 OneToOne 관계가 있는 <strong>Profile</strong> 모델을 만들었습니다.</p>
+
+<p>모델의 UML 다이어그램을 살펴봅시다.</p>
+
+<p><img src="/img/post/django/TB/uml_10.png" alt="" /></p>
+
+<p>요점은 다시 언급하자면,</p>
+
+<ul>
+  <li>Profile 모델에는 User 모델과 OneToOne 관계가 있습니다.</li>
+  <li>Project 모델과 Tag 모델 모두 Profile 모델과 ForeignKey 관계가 있으며,</li>
+  <li>Task 모델에는</li>
+  <li>Project 모델과의 ForeignKey 관계</li>
+  <li>Tag 모델과의 ManyToMany 관계</li>
+  <li>Task 모델(자기 자신)의 자체 ForeignKey 관계</li>
+</ul>
+
+<h2 id="the-project-model-foreign-key-relationships-and-custom-validators">The Project Model: Foreign Key Relationships and custom validators</h2>
+
+<p>먼저 여러 태그 이름으로 작업을 그룹화하는데 사용할 Project 모델을 정의합니다.</p>
+
+<p>이 모델에 대한 자세한 UML 다이어그렘입니다.</p>
+
+<p><img src="/img/post/django/TB/UML_project.png" alt="" /></p>
+
+<p>‘taskbuster/apps/taskmanager/models.py’에 추가합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.core.validators</span> <span class="kn">import</span> <span class="n">RegexValidator</span>
+
+
+<span class="k">class</span> <span class="nc">Project</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="c1"># Relations
+</span>    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span>
+        <span class="n">Profile</span><span class="p">,</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s">"projects"</span><span class="p">,</span>
+        <span class="n">verbose_name</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s">"user"</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="c1"># Attributes - Mandatory
+</span>    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">verbose_name</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s">"name"</span><span class="p">),</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s">"Enter the project name"</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s">"#fff"</span><span class="p">,</span>
+        <span class="n">validators</span><span class="o">=</span><span class="p">[</span><span class="n">RegexValidator</span><span class="p">(</span>
+            <span class="s">"(^#[0-9a-fA-F]{3}$)|(^#[0-9a-fA-F]{6}$)"</span><span class="p">)],</span>
+        <span class="n">verbose_name</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s">"color"</span><span class="p">),</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s">"Enter the hex color code, like #ccc or #cccccc"</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="c1"># Attributes - Optional
+</span>    <span class="c1"># Object Manager
+</span>    <span class="n">objects</span> <span class="o">=</span> <span class="n">managers</span><span class="p">.</span><span class="n">ProjectManager</span><span class="p">()</span>
+    <span class="c1"># Custom Properties
+</span>    <span class="c1"># Methods
+</span>
+    <span class="c1"># Meta and String
+</span>    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">verbose_name</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">"Project"</span><span class="p">)</span>
+        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">"Projects"</span><span class="p">)</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="p">(</span><span class="s">"user"</span><span class="p">,</span> <span class="s">"name"</span><span class="p">)</span>
+        <span class="n">unique_together</span> <span class="o">=</span> <span class="p">(</span><span class="s">"user"</span><span class="p">,</span> <span class="s">"name"</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">"%s - %s"</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">user</span><span class="p">,</span> <span class="bp">self</span><span class="p">.</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>‘taskbuster/apps/taskmanager/managers.py’에 추가합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">ProjectManager</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Manager</span><span class="p">):</span>
+    <span class="k">pass</span>
+</code></pre></div></div>
+
+<p>이 코드는 다음과 같습니다.</p>
+
+<ul>
+  <li>Project 모델은 Profile 모델과 ForeignKey 관계</li>
+  <li>각 프로젝트 인스턴스는 하나의 사용자 프로필과 관련이 있어야 합니다.(프로필 필드는 필수 항목 임)</li>
+  <li>각 사용자 프로필은 0개, 하나 이상의 프로젝트와 관련이 될 수 있습니다.</li>
+  <li>myproject라는 프로젝트 인스턴스에서 다음과 같은 관련 profile을 얻을 수 있습니다. : <code class="language-plaintext highlighter-rouge">myproject.user</code></li>
+  <li>Project에 정의된 속성 이름은 profile이 아니라 user 입니다.</li>
+  <li>myprofile라는 프로필 인스턴스에서 다음과 같은 관련 project을 얻을 수 있습니다. : <code class="language-plaintext highlighter-rouge">myprofile.projects.all()</code></li>
+  <li>related_name을 지정하지 않으면 기본적으로 <code class="language-plaintext highlighter-rouge">myprofile.projects.all()</code>을 사용하여 profile의 project를 엑세스해야 합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">myprofile.project</code>는 object manager를 반환하므로 프로젝트 인스턴스를 가져오려면 <code class="language-plaintext highlighter-rouge">all()</code>, <code class="language-plaintext highlighter-rouge">filter()</code>, <code class="language-plaintext highlighter-rouge">exclude()</code> 등과 같은 일반적인 쿼리 메서드를 사용해야 합니다. custom ProjectManager 클래스에 정의된 custom 메서드를 호출 할 수도 있습니다.</li>
+  <li>이번 부분에서 보았듯이, 자세한 이름은 이 속성의 사람이 읽을 수 있는 이름을 나타냅니다.</li>
+  <li>ugettext_lazy 변환 함수를 사용한다는 점을 유의하세요.</li>
+  <li>프로젝트의 이름은 <strong>CharField</strong> 속성이며, 최대 길이는 100자입니다.</li>
+  <li><strong>help_text</strong> 는 model forms에 표시되는 텍스트이므로 사용자는 작성해야 할 내용을 알 수 있습니다.</li>
+  <li><strong>Color</strong> 는 다른 <strong>CharField</strong> 속성이며, 최대 길이는 7입니다.</li>
+  <li>Hex color는 3자리 16진수로 구성되어 있으며, 00부터 FF 사이에 있고, red, green, blue의 레벨을 나타냅니다. 합쳐 쓰면 <strong>#XXXXXX</strong> 와 같은 <code class="language-plaintext highlighter-rouge">#</code>을 더한 6개의 문자열을 만듭니다.</li>
+  <li>예를 들어, black은 <strong>#000000</strong>, white는 <strong>#FFFFFF</strong> 입니다.</li>
+  <li>하지만 3개의 숫자가 #001122와 같이 같은 쌍으로 구성될 경우 각 숫자는 #012와 같이 한 자리로 축약 될 수 있습니다. 이 방법으로 black은 #000, white는 #FFF로 쓸 수 있습니다.</li>
+  <li>기본적으로 이 필드는 white입니다.</li>
+  <li>올바른 16진수 값을 허용하기 위해 custom validator를 사용합니다. <strong>RegexValidator</strong> 는 지정된 정규 표현식과 일치하는 문자열만 허용합니다.</li>
+  <li>우리는 managers.py, ProjectManager에 정의된 custom object manager를 포함합니다.</li>
+  <li>Meta에서는 이렇게 정의합니다:</li>
+  <li>사람이 읽을 수 있는 클래스의 이름</li>
+  <li>프로젝트 인스턴스 질의의 기본 정렬 순서</li>
+  <li>데이터베이스 레벨에서 정의한 <code class="language-plaintext highlighter-rouge">unique_together</code> 속성은 같은 프로필의 경우 같은 이름의 두 프로젝트를 작성할 수 없습니다.</li>
+  <li><strong>str</strong> 메서드는 str() 메서드가 admin 사이트와 같이 객체에 호출되거나 Django 템플릿에 객체를 보여줄 때마다 호출됩니다.</li>
+</ul>
+
+<p>이제 모델을 정의했으므로, 이러한 변경 사항을 데이터베이스로 마이그레이션 해야 합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ python manage.py check
+$ python manage.py makemigrations taskmanager
+$ python manage.py migrate taskmanager
+</code></pre></div></div>
+
+<p>다음은 이 모델에 대한 몇 가지 테스트를 작성합니다.</p>
+
+<h2 id="tests-for-the-project-model">Tests for the Project Model</h2>
+
+<p>Django 모델에 대한 테스트를 작성할 때 일반적으로 DJango의 기본값이 아닌 속성이나 동작을 가진 custom 특성과 함수에만 집중합니다.</p>
+
+<p>예를 들어 CharField에서 max_length의 올바른 동작을 테스트하지는 않습니다. 내장 된 기능이므로 Django 개발자가 충분히 테스트를 마쳤습니다.</p>
+
+<p>그러나 color 속성의 사용자 지정 유효성 검사를 위한 졸은 정규식을 작성했는지 테스트해야 합니다.</p>
+
+<p>‘taskbuster/apps/taskmanager/tests.py’에 다음 테스트를 추가합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.core.exceptions</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">TestProjectModel</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">User</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">username</span><span class="o">=</span><span class="s">"taskbuster"</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">"django-tutorial"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">profile</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">user</span><span class="p">.</span><span class="n">profile</span>
+
+    <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">user</span><span class="p">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">test_validation_color</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># This first project uses the default value, #fff
+</span>        <span class="n">project</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">Project</span><span class="p">(</span>
+            <span class="n">user</span><span class="o">=</span><span class="bp">self</span><span class="p">.</span><span class="n">profile</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s">"TaskManager"</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">project</span><span class="p">.</span><span class="n">color</span> <span class="o">==</span> <span class="s">"#fff"</span><span class="p">)</span>
+        <span class="c1"># Validation shouldn't rise an Error
+</span>        <span class="n">project</span><span class="p">.</span><span class="n">full_clean</span><span class="p">()</span>
+
+        <span class="c1"># Good color inputs (without Errors):
+</span>        <span class="k">for</span> <span class="n">color</span> <span class="ow">in</span> <span class="p">[</span><span class="s">"#1cA"</span><span class="p">,</span> <span class="s">"#1256aB"</span><span class="p">]:</span>
+            <span class="n">project</span><span class="p">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">color</span>
+            <span class="n">project</span><span class="p">.</span><span class="n">full_clean</span><span class="p">()</span>
+
+        <span class="c1"># Bad color inputs:
+</span>        <span class="k">for</span> <span class="n">color</span> <span class="ow">in</span> <span class="p">[</span><span class="s">"1cA"</span><span class="p">,</span> <span class="s">"1256aB"</span><span class="p">,</span> <span class="s">"#1"</span><span class="p">,</span> <span class="s">"#12"</span><span class="p">,</span> <span class="s">"#1234"</span><span class="p">,</span>
+                      <span class="s">"#12345"</span><span class="p">,</span> <span class="s">"#1234567"</span><span class="p">]:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="p">.</span><span class="n">assertRaises</span><span class="p">(</span>
+                    <span class="n">ValidationError</span><span class="p">,</span>
+                    <span class="n">msg</span><span class="o">=</span><span class="s">"%s didn't raise a ValidationError"</span> <span class="o">%</span> <span class="n">color</span><span class="p">):</span>
+                <span class="n">project</span><span class="p">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">color</span>
+                <span class="n">project</span><span class="p">.</span><span class="n">full_clean</span><span class="p">()</span>
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">setUp</code> 메서드는 각 시험의 시작에서 실행됩니다.</li>
+  <li>user 인스턴스를 생성합니다.</li>
+  <li>user 인스턴스는 관련 profile 인스턴스를 생성하는 signals를 발생시킵니다.</li>
+  <li>둘 다 추후에 사용하기 위해 스스로 저장됩니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">test_validation_color</code>는 color 속성의 여러 입력 테스트를 합니다.</li>
+  <li>먼저 기본값을 사용하여 프로젝트를 만들고 <strong>ValidationError</strong> 를 발생시키는지 확인합니다.</li>
+  <li>다음으로 올바른 입력을 확인합니다.</li>
+  <li>잘못된 입력이 <strong>ValidationError</strong> 를 발생시키는지 확인합니다.</li>
+  <li>ValidationError를 발생시키려면 인스턴스의 <code class="language-plaintext highlighter-rouge">full_clean()</code> 메서드를 호출해야합니다. 단순히 메서드를 저장하면 작동하지 않습니다</li>
+  <li><code class="language-plaintext highlighter-rouge">tearDown</code> 메서드는 각각의 테스트의 끝에서 실행됩니다.</li>
+  <li>사용자 인스턴스를 삭제합니다.</li>
+  <li>사용자 인스턴스를 삭제하면 이 인스턴스에 종속된 모든 관련 인스턴스도 삭제됩니다.</li>
+  <li>profile은 사용자에 달려있습니다.</li>
+  <li>프로젝트는 profile에 달려있습니다.</li>
+  <li>이렇게하면 테스트 데이터베이스를 테스트 시작시처럼 깨끗하게 유지할 수 있습니다.</li>
+</ul>
+
+<p>테스트를 이해했으므로 다음과 같이 실행 할 수 있습니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ python manage.py test taskbuster.apps.taskmanager.tests.TestProjectModel
+</code></pre></div></div>
+
+<h2 id="django-admin-for-the-project-model-custom-list-display-and-model-inline">Django Admin for the Project Model: custom list display and Model Inline</h2>
+
+<p>모델을 정의하고 테스트를 마쳤으니, Admin 사이트에 모델을 포함시킬 수 있습니다.</p>
+
+<p>그러나 프로젝트가 특정 사용자 프로필과 관련되어 있으므로 이전 게시물에서 정의한 ProfileAdmin을 수정합니다. 이렇게하면 특정 프로필을 편집할 때 관련 프로젝트를 추가하거나 편집할 수 있습니다.</p>
+
+<p>‘taskbuster/apps/taskmanager/admin.py’의 ProfileAdmin을 수정합니다</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># -*- coding: utf-8 -*-
+</span><span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">admin</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">models</span>
+
+
+<span class="k">class</span> <span class="nc">ProjectsInLine</span><span class="p">(</span><span class="n">admin</span><span class="p">.</span><span class="n">TabularInline</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">Project</span>
+    <span class="n">extra</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+<span class="o">@</span><span class="n">admin</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Profile</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ProfileAdmin</span><span class="p">(</span><span class="n">admin</span><span class="p">.</span><span class="n">ModelAdmin</span><span class="p">):</span>
+
+    <span class="n">list_display</span> <span class="o">=</span> <span class="p">(</span><span class="s">"username"</span><span class="p">,</span> <span class="s">"interaction"</span><span class="p">,</span> <span class="s">"_projects"</span><span class="p">)</span>
+
+    <span class="n">search_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s">"user__username"</span><span class="p">]</span>
+
+    <span class="n">inlines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ProjectsInLine</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_projects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="p">.</span><span class="n">projects</span><span class="p">.</span><span class="nb">all</span><span class="p">().</span><span class="n">count</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>서버를 실행하여 변경사항을 볼 수 있습니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ python manage runserver
+</code></pre></div></div>
+
+<p>Admin Profile 리스트로 이동하세요. 이전 코드를 단계별로 설명합니다.</p>
+
+<p>먼저, Profile 인스턴스를 수정(또는 Profile 인스턴스가 없는 경우 생성)하세요. 다음과 비슷한 것을 볼 수 있습니다.</p>
+
+<p><img src="/img/post/django/TB/admin_profile_instance.png" alt="" /></p>
+
+<p>맨 아래에 블로그와 TaskBuster의 두 가지 프로젝트를 만들었습니다. 두 프로젝트가 왜 여기에 나타날까요?</p>
+
+<p>Django TabularInline에서 상속받은 ProjectsInLine 클래스를 정의하면 됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">ProjectsInLine</span><span class="p">(</span><span class="n">admin</span><span class="p">.</span><span class="n">TabularInline</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">Project</span>
+    <span class="n">extra</span> <span class="o">=</span> <span class="mi">0</span>
+</code></pre></div></div>
+
+<p>extra 파라미터는 Profile 인스턴스를 수정할 때 얼마나 많은 추가 프로젝트가 표시되어야 하는지 나타냅니다.(비어있는 것으로 나타납니다.) 5로 바꾸고 어떤 일이 일어나는지 확인하세요.</p>
+
+<p>또한 <strong>ProjectsInLine</strong> 과 <strong>ProfileAdmin</strong> 간의 연결은 여기에서 수행됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">admin</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Profile</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ProfileAdmin</span><span class="p">(</span><span class="n">admin</span><span class="p">.</span><span class="n">ModelAdmin</span><span class="p">):</span>
+    <span class="p">...</span>
+    <span class="n">inlines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ProjectsInLine</span>
+    <span class="p">]</span>
+    <span class="p">...</span>
+</code></pre></div></div>
+
+<p>Profile 인스턴스 내에 새 프로젝트를 만들 때 이 두 객체간의 관계가 자동으로 설정됩니다(프로젝트 인스턴스에서 Profile 필드를 지정할 필요가 없음). 또한 현재 Profile 인스턴스와 관련된 프로젝트만이 여기에 표시됩니다.</p>
+
+<p>반면, Profile 리스트로 돌아가면 다음과 같은 내용이 표시됩니다.</p>
+
+<p><img src="/img/post/django/TB/admin_profile2.png" alt="" /></p>
+
+<p>Username, Interaction, 프로젝트와 관계된 수를 지정하여 Profile 인스턴스 리스트를 보여줍니다.</p>
+
+<p>여기에 모델 속성만 표시할 수 있는걸까요? 사용자 정의 함수를 정의할 수도 있습니다.</p>
+
+<p>list_display 속성을 살펴봅시다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">list_display</span> <span class="o">=</span> <span class="p">(</span><span class="s">"username"</span><span class="p">,</span> <span class="s">"interaction"</span><span class="p">,</span> <span class="s">"_projects"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>uername, interaction, 모델 속성이나 사용자 속성이 아닌 다른 속성 <code class="language-plaintext highlighter-rouge">_projects</code>를 포함합니다. 그러나 ProfileAdmin 내부에 정의된 사용자 정의 메서드가 표시됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">_projects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="p">.</span><span class="n">projects</span><span class="p">.</span><span class="nb">all</span><span class="p">().</span><span class="n">count</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">self</code>(ProfileAdmin 인스턴스)와 <code class="language-plaintext highlighter-rouge">obj</code>(편집주인 Profile 인스턴스)의 두 인수를 취합니다.</p>
+
+<p>따라서 이 방법은 Profile 인스턴스와 관련된 모든 프로젝트를 쿼리하고 계산합니다.</p>
+
+<h2 id="the-tag-model-another-simple-model-with-a-foreignkey-relationship">The Tag Model: Another simple model with a ForeignKey relationship</h2>
+
+<p>UML 다이어그램에서 볼 수 있듯이 Tag 모델은 프로젝트 모델과 매우 비슷합니다.</p>
+
+<p><img src="/img/post/django/TB/uml_tag.png" alt="" /></p>
+
+<ul>
+  <li>profile 모델과 ForeignKey 관계가 있습니다.</li>
+  <li>name property가 있습니다.</li>
+</ul>
+
+<p>추가 기능이 없으므로 models.py와 managers.py 파일에서 직접 정의할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># models.py
+</span>
+<span class="k">class</span> <span class="nc">Tag</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="c1"># Relations
+</span>    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span>
+        <span class="n">Profile</span><span class="p">,</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s">"tags"</span><span class="p">,</span>
+        <span class="n">verbose_name</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s">"user"</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="c1"># Attributes - Mandatory
+</span>    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">verbose_name</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s">"Name"</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="c1"># Attributes - Optional
+</span>    <span class="c1"># Object Manager
+</span>    <span class="n">objects</span> <span class="o">=</span> <span class="n">managers</span><span class="p">.</span><span class="n">TagManager</span><span class="p">()</span>
+    <span class="c1"># Custom Properties
+</span>    <span class="c1"># Methods
+</span>
+    <span class="c1"># Meta and String
+</span>    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">verbose_name</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">"Tag"</span><span class="p">)</span>
+        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">"Tags"</span><span class="p">)</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="p">(</span><span class="s">"user"</span><span class="p">,</span> <span class="s">"name"</span><span class="p">,)</span>
+        <span class="n">unique_together</span> <span class="o">=</span> <span class="p">(</span><span class="s">"user"</span><span class="p">,</span> <span class="s">"name"</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">"%s - %s"</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">user</span><span class="p">,</span> <span class="bp">self</span><span class="p">.</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># managers.py
+</span>
+<span class="k">class</span> <span class="nc">TagManager</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Manager</span><span class="p">):</span>
+    <span class="k">pass</span>
+</code></pre></div></div>
+
+<p>그리고 admin.py 파일을 편집하여 Tag 모델을 인라인으로 추가하세요.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># admin.py
+</span>
+<span class="c1"># -*- coding: utf-8 -*-
+</span><span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">admin</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">models</span>
+
+
+<span class="k">class</span> <span class="nc">ProjectsInLine</span><span class="p">(</span><span class="n">admin</span><span class="p">.</span><span class="n">TabularInline</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">Project</span>
+    <span class="n">extra</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+<span class="k">class</span> <span class="nc">TagsInLine</span><span class="p">(</span><span class="n">admin</span><span class="p">.</span><span class="n">TabularInline</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">Tag</span>
+    <span class="n">extra</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+<span class="o">@</span><span class="n">admin</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Profile</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ProfileAdmin</span><span class="p">(</span><span class="n">admin</span><span class="p">.</span><span class="n">ModelAdmin</span><span class="p">):</span>
+
+    <span class="n">list_display</span> <span class="o">=</span> <span class="p">(</span><span class="s">"username"</span><span class="p">,</span> <span class="s">"interaction"</span><span class="p">,</span> <span class="s">"_projects"</span><span class="p">,</span> <span class="s">"_tags"</span><span class="p">)</span>
+
+    <span class="n">search_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s">"user__username"</span><span class="p">]</span>
+
+    <span class="n">inlines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ProjectsInLine</span><span class="p">,</span> <span class="n">TagsInLine</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_projects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="p">.</span><span class="n">projects</span><span class="p">.</span><span class="nb">all</span><span class="p">().</span><span class="n">count</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="p">.</span><span class="n">tags</span><span class="p">.</span><span class="nb">all</span><span class="p">().</span><span class="n">count</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>이제 데이터베이스를 마이그레이션 하세요.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ python manage.py check
+$ python manage.py makemigrations taskmanager
+$ python manage.py migrate taskmanager
+</code></pre></div></div>
+
+<p>admin 사이트에서 결과를 확인하세요.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ python manage.py runserver
+</code></pre></div></div>
+
+<p><img src="/img/post/django/TB/admin_tag.png" alt="" /></p>
+
+<p>테스트를 다시 실행하고 고장난 곳이 있는지 확인하세요.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ python manage.py test
+</code></pre></div></div>
+
+<p>마지막으로 변경 사항을 git에 커밋합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ git status
+$ git add .
+$ git commit -m "End of part X"
+</code></pre></div></div>
+:ET

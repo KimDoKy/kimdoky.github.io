@@ -1,0 +1,299 @@
+I"�S<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<h3 id="최선의-장고-설정-방법">최선의 장고 설정 방법</h3>
+
+<ul>
+  <li>버전 컨트롤 시스템으로 모든 설정 파일을 관리해야 한다.(특히 운영환경)</li>
+  <li>반복되는 설정들을 없애야 한다.</li>
+  <li>암호나 비밀키 등은 안전하게 보관해야 한다.</li>
+</ul>
+
+<h2 id="51-avoid-non-versioned-local-settings">5.1 Avoid Non-Versioned Local Settings</h2>
+
+<p>운영 환경 외에도 개발자를 위한 로컬 환경이 존재합니다.<br />
+당연히 두 환경은 셋팅이 다릅니다.(ex. <code class="language-plaintext highlighter-rouge">SECRET_KEY</code>, ..etc)</p>
+
+<p>일반적으로 <code class="language-plaintext highlighter-rouge">local_settings.py</code>라는 모듈을 생성하고 해당 파일을 버전 컨트롤에서 제외하는 방법이 있습니다. 해당 방법으로 스테이징 서버와 개발 서버에서는 버전 컨트롤 관리 없이도 세팅과 로직을 유지할 수 있습니다.<br />
+하지만 이 방법은 단점들이 있습니다.</p>
+
+<ul>
+  <li>모든 머신에 버전 컨트롤에 기록되지 않는 코드가 존재하게 된다.</li>
+  <li>운영 환경의 문제점을 로컬 환경에서 구현해보기 위해 많은 시간을 허비한 후에야 문제의 원인이 오직 운영 환경에서만 일어나는 사실을 발견하게 된다.</li>
+  <li>로컬 환경의 버그를 수정 후 운영 환경에 푸시하면, 해당 버그는 로컬 환경(<code class="language-plaintext highlighter-rouge">local_settings.py</code>)에 의한 것임을 알아챌 때가 생긴다.</li>
+  <li>여러 팀원이 <code class="language-plaintext highlighter-rouge">local_settings.py</code>를 복사해서 쓰면 반복하지 말라는 규칙을 위반하는 것이다.</li>
+</ul>
+
+<p>그래서 개발 환경, 스테이징 환경, 테스트 환경, 운영 환경 설정을 공통되는 객체로부터 상속받아 구성된 서로 다른 세팅 파일을 나누어 버전 컨트롤로 관리하는 방법을 사용합니다.</p>
+
+<h2 id="52-using-multiple-settings-files">5.2 Using Multiple Settings Files</h2>
+
+<p>한개의 settings.py 파일을 다음과 같이 환경별로 구성합니다.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>settings/
+   ├── __init__.py
+   ├── base.py       <span class="c"># 공통 세팅 파일</span>
+   ├── local.py      <span class="c"># 로컬 환경(개발 전용 로컬)</span>
+   ├── staging.py    <span class="c"># 스테이징서버</span>
+   ├── test.py       <span class="c"># 테스트를 위한 세팅</span>
+   ├── production.py <span class="c"># 운영 서버</span>
+   <span class="c"># 지속적 통합 서버에서 쓰이는 ci.py 가 필요할 수도 있음</span>
+</code></pre></div></div>
+
+<h3 id="각-환경별-실행-방법">각 환경별 실행 방법</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 로컬 환경 쉘 실행</span>
+<span class="nv">$ </span>python3 manage.py shell <span class="nt">--settings</span><span class="o">=</span>twoscoops.settings.local
+
+<span class="c"># 로컬 환경 개발 서버 실행</span>
+<span class="nv">$ </span>python3 manage.py runserver <span class="nt">--settings</span><span class="o">=</span>twoscoops.settings.local
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">--settings</code>의 인자로 실행하려는 환경 설정 파일을 지정하면 됩니다.</p>
+
+<h3 id="521-a-development-settings-example">5.2.1 A Development Settings Example</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># settings/local.py
+</span>
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">DEBUG</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">EMAIL_BACKEND</span> <span class="o">=</span> <span class="s">'django.core.mail.backends.console.EmailBackend'</span>
+
+<span class="n">DATABASES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'default'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">'ENGINE'</span><span class="p">:</span> <span class="s">'django.db.backends.postgresql'</span><span class="p">,</span>
+        <span class="s">'NAME'</span><span class="p">:</span> <span class="s">'twoscoops'</span><span class="p">,</span>
+        <span class="s">'HOST'</span><span class="p">:</span> <span class="s">'localhost'</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">INSTALLED_APPS</span> <span class="o">+=</span> <span class="p">[</span><span class="s">'debug_toolbar'</span><span class="p">,</span> <span class="p">]</span>
+</code></pre></div></div>
+
+<p>이 파일로 인해 개발자들은 같은 개발 세팅 파일을 공유하게 됩니다.<br />
+각 환경별 <code class="language-plaintext highlighter-rouge">if DEBUG</code>와 같은 코드를 사용하지 않아도 된다는 장점도 있습니다.</p>
+
+<h3 id="522-multiple-development-settings">5.2.2 Multiple Development Settings</h3>
+
+<p>큰 프로젝트의 경우 개발자마다 자기만의 환경이 필요한 경우가 잇습니다.
+이런 경우 개발자별로 세팅 파일을 추가 할 수 있습니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>settings/
+    __init__.py
+    base.py
+    local_audreyr.py &lt;-
+    local_pydanny.py &lt;-
+    local.py
+    staging.py
+    test.py
+    production.py
+</code></pre></div></div>
+
+<h2 id="53-separate-configuration-from-code">5.3 Separate Configuration From Code</h2>
+
+<p>코드에서 설정을 분리해야 하는 이유들은 다음과 같습니다.</p>
+
+<ul>
+  <li>설정은 배포 환경에 따라 다르지만 코드는 그렇지 않다.</li>
+  <li>비밀 키들은 설정값들이지, 코드가 아니다.</li>
+  <li>비밀값들은 반드시 남이 알 수 없어야 한다. 이를 버전 컨트롤 시스템에 추가하면 코드 저장소에 접근할 수 있는 누구에게나 공개된다.</li>
+  <li>PaaS 환경에서는 각각의 독립된 서버에서 코드를 수정하도록 허용하지 않고있다. 가능하다 할지라도 독립된 서버에서 직접 코드를 수정하는 것은 매우 위험한 방법이다.</li>
+</ul>
+
+<p>이를 해결하기 위해 <strong>환경 변수</strong>를 이용하면 됩니다. 이 방법의 장점은 다음과 같습니다.</p>
+
+<ul>
+  <li>환경 변수를 이용하여 비밀 키를 보관함으로써 걱정 없이 세팅 파일을 버전 컨트롤 시스템에 추가할 수 있다.</li>
+  <li>버전 컨트롤로 관리되는 단일한 settings/local.py를 나눠 쓸 수 있다.</li>
+  <li>코드 수정 없이 시스템 관리자들이 프로젝트 코드를 쉽게 배치할 수 있다.</li>
+  <li>대부분 PaaS가 설정을 환경 변수를 통해 이용하기를 추천하고 있고, 이를 워ㅣ한 기능들이 내장되어 있다.</li>
+</ul>
+
+<h3 id="531-a-caution-before-using-environmant-variable-for-secrets">5.3.1 A Caution Before Using Environmant Variable for Secrets</h3>
+
+<ul>
+  <li>저장되는 비밀 전보를 관리할 방법</li>
+  <li>서버에서 bash가 환경 변수와 작용하는 방식에 대한 이해나 PaaS 이용 여부</li>
+</ul>
+
+<h3 id="532-how-to-set-environment-variables-locally">5.3.2 How to Set Environment Variables Locally</h3>
+
+<p><code class="language-plaintext highlighter-rouge">bashrc</code>, <code class="language-plaintext highlighter-rouge">.bash_profile</code>, <code class="language-plaintext highlighter-rouge">.profile</code>에 다음 구문을 추가합니다.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">export </span><span class="nv">SOME_SECRET_KEY</span><span class="o">=</span>1c3-cr3am-15-yummy
+<span class="nb">export </span><span class="nv">AUDREY_FREEZER_KEY</span><span class="o">=</span>y34h-r1ght-d0nt-t0uch-my-1c3-cr34m
+</code></pre></div></div>
+
+<h3 id="533-how-to-unset-environment-variables-locally">5.3.3 How to Unset Environment Variables Locally</h3>
+
+<p>virtualenv를 비활성화하더라도 환경 변수는 그대로 유지됩니다.
+환경 변수를 해지하는 방법입니다.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">unset </span>SOME_SECRET_KEY
+<span class="nb">unset </span>AUDREY_FREEZER_KEY
+</code></pre></div></div>
+
+<h3 id="534-how-to-set-environment-variables-in-production">5.3.4 How to Set Environment Variables in Production</h3>
+
+<p>파이썬에서 환경 변수 접근하는 방법</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Top of settings/production.py
+</span><span class="kn">import</span> <span class="nn">os</span>
+<span class="n">SOME_SECRET_KEY</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">environ</span><span class="p">[</span><span class="s">'SOME_SECRET_KEY'</span><span class="p">]</span>
+</code></pre></div></div>
+
+<h3 id="535-handling-missing-secret-key-exceptions">5.3.5 Handling Missing Secret Key Exceptions</h3>
+
+<p>환경 변수를 사용할 수 없는 경우, KeyError로 인해 프로젝트를 시작할 수 없을 것입니다.
+하지만 KeyError가 문제의 원인을 알려주는 것은 아니기에 디버그가 어렵습니다.<br />
+이런 경우 settings/base.py에 아래와 같은 예외 처리를 해주면 됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">django.core.exceptions</span> <span class="kn">import</span> <span class="n">ImproperlyConfigured</span>
+
+<span class="k">def</span> <span class="nf">get_env_variable</span><span class="p">(</span><span class="n">var_name</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">os</span><span class="p">.</span><span class="n">environ</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span> 
+    <span class="k">except</span> <span class="nb">KeyError</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="s">'Set the {} environment variable'</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">var_name</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">ImproperlyConfigured</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+</code></pre></div></div>
+
+<blockquote>
+  <p>ImproperlyConfigured는 장고에서 바르게 설정되지 못한 프로젝트에 대해서 발생시키는 예외처리이다. 에러 메세지에 문제가 되는 세팅 이름을 추가로 나타낼 수 있다.</p>
+</blockquote>
+
+<h2 id="54-when-you-cant-use-environment-variables">5.4 When You Can’t Use Environment Variables</h2>
+
+<p>환경 변수를 사용할 수 없는 환경이라면 <strong>비밀 파일 패턴</strong>(secrets file pattern)을 이용할 수 있습니다.</p>
+
+<ol>
+  <li>JSON, Config, YAML or XML 중 한 가지 포맷을 선택하여 비밀 파일을 생성한다.</li>
+  <li>비밀 파일을 관리하기 위한 비밀 파일 로더를 추가한다.</li>
+  <li>파일 이름을 버전관리에서 제외한다.(.gitignore)</li>
+</ol>
+
+<h3 id="541-using-json-files">5.4.1 Using JSON Files</h3>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"FILENAME"</span><span class="p">:</span><span class="w"> </span><span class="s2">"secrets.json"</span><span class="p">,</span><span class="w"> 
+    </span><span class="nl">"SECRET_KEY"</span><span class="p">:</span><span class="w"> </span><span class="s2">"I've got a secret!"</span><span class="p">,</span><span class="w"> 
+    </span><span class="nl">"DATABASES_HOST"</span><span class="p">:</span><span class="w"> </span><span class="s2">"127.0.0.1"</span><span class="p">,</span><span class="w"> 
+    </span><span class="nl">"PORT"</span><span class="p">:</span><span class="w"> </span><span class="s2">"5432"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">django.core.exceptions</span> <span class="kn">import</span> <span class="n">ImproperlyConfigured</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">'secrets.json'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">secrets</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">get_secret</span><span class="p">(</span><span class="n">setting</span><span class="p">,</span> <span class="n">secrets</span><span class="o">=</span><span class="n">secrets</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">secrets</span><span class="p">[</span><span class="n">setting</span><span class="p">]</span> 
+    <span class="k">except</span> <span class="nb">KeyError</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="s">'Set the {0} environment variable'</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">setting</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">ImproperlyConfigured</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+
+<span class="n">SECRET_KEY</span> <span class="o">=</span> <span class="n">get_secret</span><span class="p">(</span><span class="s">'SECRET_KEY'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="542-using-env-config-yaml-and-xml-file-formats">5.4.2 Using .env, Config, YAML, and XML File Formats</h3>
+
+<p>다른 포맷으로 작업을 할 수도 있습니다. 
+원하는 포멧으로 작업할때 <a href="">Section 28.10: Defend Against Python Code Injection Attacks.</a>를 참고하세요.</p>
+
+<h2 id="55-using-multiple-requirements-files">5.5 Using Multiple Requirements Files</h2>
+
+<p>requirements 파일을 환경 별로 아래와 같이 구성합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>requirements/
+   ├── base.txt
+   ├── local.txt
+   ├── staging.txt
+   ├── production.txt
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># base.txt
+# 모든 환경에서 공통으로 이용하는 의존성
+Django==3.2.0
+psycopg2-binary==2.8.8
+djangorestframework==3.11.0
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># local.txt
+-r base.txt # includes the base.txt
+coverage==5.1
+django-debug-toolbar==2.2
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># ci.txt
+-r base.txt # includes the base.txt
+coverage==5.1
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># production.txt
+-r base.txt # includes the base.txt
+</code></pre></div></div>
+
+<p>일반적으로 production.txt가 base.txt라고 불리기도 합니다.</p>
+
+<h3 id="551-installing-from-multiple-requirements-files">5.5.1 Installing From Multiple Requirements Files</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># 로컬 환경
+$ pip install -r requirements/local.txt
+
+# 운영 환경
+$ pip install -r requirements/production.txt
+</code></pre></div></div>
+
+<h2 id="56-handling-file-paths-in-settings">5.6 Handling File Paths in Settings</h2>
+
+<p>경로는 <strong>하드 코딩</strong>은 절대 피해야 합니다.</p>
+
+<h3 id="pathlib-으로-세팅하는-방법python-34-이상">pathlib 으로 세팅하는 방법(Python 3.4 이상)</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># settings/base.py
+</span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">BASE_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">__file__</span><span class="p">).</span><span class="n">resolve</span><span class="p">().</span><span class="n">parent</span><span class="p">.</span><span class="n">parent</span><span class="p">.</span><span class="n">parent</span>
+<span class="n">MEDIA_ROOT</span> <span class="o">=</span> <span class="n">BASE_DIR</span> <span class="o">/</span> <span class="s">'media'</span>
+<span class="n">STATIC_ROOT</span> <span class="o">=</span> <span class="n">BASE_DIR</span> <span class="o">/</span> <span class="s">'static_root'</span>
+<span class="n">STATICFILES_DIRS</span> <span class="o">=</span> <span class="p">[</span><span class="n">BASE_DIR</span> <span class="o">/</span> <span class="s">'static'</span><span class="p">]</span>
+<span class="n">TEMPLATES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s">'BACKEND'</span><span class="p">:</span> <span class="s">'django.template.backends.django.DjangoTemplates'</span><span class="p">,</span>
+        <span class="s">'DIRS'</span><span class="p">:</span> <span class="p">[</span><span class="n">BASE_DIR</span> <span class="o">/</span> <span class="s">'templates'</span><span class="p">]</span>
+    <span class="p">},</span>
+<span class="p">]</span>
+</code></pre></div></div>
+
+<h3 id="ospath-라이브러리만으로-세팅하는-방법">os.path 라이브러리만으로 세팅하는 방법</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># settings/base.py
+</span><span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">abspath</span><span class="p">,</span> <span class="n">dirname</span><span class="p">,</span> <span class="n">join</span>
+
+<span class="k">def</span> <span class="nf">root</span><span class="p">(</span><span class="o">*</span><span class="n">dirs</span><span class="p">):</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">),</span> <span class="s">'..'</span><span class="p">,</span> <span class="s">'..'</span><span class="p">)</span> 
+    <span class="k">return</span> <span class="n">abspath</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="o">*</span><span class="n">dirs</span><span class="p">))</span>
+
+<span class="n">BASE_DIR</span> <span class="o">=</span> <span class="n">root</span><span class="p">()</span>
+<span class="n">MEDIA_ROOT</span> <span class="o">=</span> <span class="n">root</span><span class="p">(</span><span class="s">'media'</span><span class="p">)</span>
+<span class="n">STATIC_ROOT</span> <span class="o">=</span> <span class="n">root</span><span class="p">(</span><span class="s">'static_root'</span><span class="p">)</span>
+<span class="n">STATICFILES_DIRS</span> <span class="o">=</span> <span class="p">[</span><span class="n">root</span><span class="p">(</span><span class="s">'static'</span><span class="p">)]</span>
+<span class="n">TEMPLATES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s">'BACKEND'</span><span class="p">:</span> <span class="s">'django.template.backends.django.DjangoTemplates'</span><span class="p">,</span> 
+        <span class="s">'DIRS'</span><span class="p">:</span> <span class="p">[</span><span class="n">root</span><span class="p">(</span><span class="s">'templates'</span><span class="p">)],</span>
+    <span class="p">},</span> 
+<span class="p">]</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">BASE_DIR</code>에 기반을 둔 경로라면 settings 파일의 경로들은 문제없이 작동할 것입니다.</p>
+:ET

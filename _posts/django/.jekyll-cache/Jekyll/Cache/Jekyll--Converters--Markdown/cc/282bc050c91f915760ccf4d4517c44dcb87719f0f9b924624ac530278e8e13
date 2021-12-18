@@ -1,0 +1,18 @@
+I"B<h3 id="this-field-is-required">“This field is required”</h3>
+
+<p>위 오류는 DB에 새로운 내용을 넣을 때 발생하는 빈번히 볼 수 있다.<br />
+당연히 필수 필드를 입력하지 않아서 그렇다고 생각하겠지만,<br />
+메소드를 잘못 설정하거나 템플릿에서 설정이 잘못된 경우에도 발생한다.</p>
+
+<p>딱히 오류가 아니기 때문에(설정이 잘못되었을뿐) 로그도 찍히지 않아서 생각보다 잘못된 부분을 찾기 힘들다.</p>
+
+<p>“This field is required” 의 상황을 정리하여 다음 부분들을 확인해보면 된다.</p>
+
+<ol>
+  <li>모델의 필수값 설정 : <code class="language-plaintext highlighter-rouge">blank=True</code> 를 지정했는지 확인.</li>
+  <li>템플릿 폼 타입 확인 : <code class="language-plaintext highlighter-rouge">form</code> 태그에서 <code class="language-plaintext highlighter-rouge">enctype=multipart/form-data</code>이 설정되었는지 확인.</li>
+  <li>뷰에서 메소드가 잘 지정되었는지 확인 : <code class="language-plaintext highlighter-rouge">request.POST</code>으로 메소드 지정이 올바르게 되었는지 확인</li>
+</ol>
+
+<p>로그에도 찍히지 않고, 너무나 기본적인 것이라서 눈에 잘 안띈다. 이런 경우 위의 경우를 체크해 보자.</p>
+:ET

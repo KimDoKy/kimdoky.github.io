@@ -1,0 +1,108 @@
+I"G<p>두 번째 실습이라서 요점만 포스팅합니다.</p>
+
+<blockquote>
+  <p>Django 1.11.1 / Python 3.5.2 버전으로 실습 진행하였습니다.
+실습 당시와 지금은 버전 차이가 있기 때문에 오류들을 만나시게 될 겁니다.
+하나하나 해결해 나가셔도 되겠지만, 이 글을 보신다면 파이썬에 익숙하지 않으실 가능성이 높으므로,
+최신 버전으로 개정된 <a href="http://www.hanbit.co.kr/store/books/look.php?p_code=B4329597070">파이썬 웹 프로그래밍(개정판)</a>을 구매시는 걸 추천 드립니다. 이 포스팅은 개정되기 전 버전의 <a href="http://www.hanbit.co.kr/store/books/look.php?p_code=B7703021280">파이썬 웹 프로그래밍</a>을 실습한 내용입니다.</p>
+</blockquote>
+
+<h2 id="11-mtv-개발-방식">1.1 MTV 개발 방식</h2>
+
+<h3 id="mtv">MTV</h3>
+<ul>
+  <li>Model : <code class="language-plaintext highlighter-rouge">models.py</code></li>
+  <li>Template : <code class="language-plaintext highlighter-rouge">templates/*.html</code></li>
+  <li>View : <code class="language-plaintext highlighter-rouge">views.py</code>)<br />
+장점 : 모델, 템플릿, 뷰 모듈 간에 독립성을 유지, 디자이너, 응용 개발자, DB 설계자 간에 협업이 쉬워짐
+<code class="language-plaintext highlighter-rouge">startproject</code>, <code class="language-plaintext highlighter-rouge">startapp</code> 명령으로 디렉터리와 파일을 만듬.</li>
+</ul>
+
+<h2 id="12-mtv-코딩-순서">1.2 MTV 코딩 순서</h2>
+<p>MTV 방식에 따르면 화면 설계는 뷰와 템플릿 코딩으로 연결되고, 테이블 설계는 모델 코딩에 반영<br />
+그렇기 때문에 독립적으로 개발할 수 있는 모델을 먼저하고, 뷰와 템플릿은 서로 영향을 미치므로 같이 코딩하는 것이 일반적</p>
+
+<p>UI 화면을 생각하면서 로직을 풀어나가는 것이 쉽기 때문에  보통은 템플릿을 먼저 코딩
+클래스형 뷰(CBV)처럼 뷰의 코딩이 매우 간단한 경우는 뷰를 먼저 코딩</p>
+
+<h3 id="실습에서의-순서">실습에서의 순서</h3>
+<p>실습에서는 대부분 CBV이기 때문에 모델, 뷰, 템플릿 순서를 기준으로 진행하며, 그 외에도 프로젝트 설정 파일인 URLconf 파일까지 포함해 다음 순서로 코딩합니다.</p>
+
+<ul>
+  <li><strong>프로젝트 뼈대 만들기</strong> : 프로젝트 및 앱 개발에 필요한 디렉터리와 파일 생성</li>
+  <li><strong>모델 코딩하기</strong> : 테이블 관련 사항을 개발(models.py, admin.py)</li>
+  <li><strong>URLconf 코딩하기</strong> : URL 및 뷰 매핑 관계를 정의(urls.py)</li>
+  <li><strong>뷰 코딩하기</strong> : 애플리케이션 로직 개발(views.py)</li>
+  <li><strong>템플릿 코딩하기</strong> : 화면 UI 개발(templates/)</li>
+</ul>
+
+<h2 id="13-settingspy-주요-사항">1.3 settings.py 주요 사항</h2>
+<p>settings.py는 프로젝트 설정 파일</p>
+
+<ul>
+  <li><strong>데이터베이스 설정</strong> : 디폴트로 <code class="language-plaintext highlighter-rouge">SQLite3</code></li>
+  <li><strong>템플릿 항목 설정</strong> : <code class="language-plaintext highlighter-rouge">TEMPLATES</code></li>
+  <li><strong>정적 파일 항목 설정</strong> : <code class="language-plaintext highlighter-rouge">STATIC_URL</code></li>
+  <li><strong>애플리케이션 등록</strong></li>
+  <li><strong>타임존 지정</strong> : 한국 시간으로 변경해야 합니다.</li>
+</ul>
+
+<p>settings.py는 루트 디렉터리를 포함한 각종 디렉터리의 위치, 로그의 형식, 디버그 모드, 보안 관련 사항 등 프로젝트의 전반적인 사항들을 설정</p>
+
+<h2 id="14-modelspy-주요-사항">1.4 models.py 주요 사항</h2>
+<p>데이터베이스 처리는 ORM(Object Relation Mapping)을 사용<br />
+테이블을 클래스로 매핑해서 테이블에 대한 CRUD(Create, Read, Update, Delete) 기능을 클래스 객체에 대해 수행하면, 장고가 내부적으로 데이터베이스에 반영</p>
+
+<p>테이블 클래스는 django.db.models.Model 클래스를 상속받아 정의<br />
+각 클래스 변수의 타입도 장고에서 미리 정의해 놓은 필드 클래스를 사용</p>
+
+<p>models.py 파일에서 데이터베이스 변경 사항이 발생하면, 마이그레이션(migrations)을 해야함.
+장고에서는 <code class="language-plaintext highlighter-rouge">makemigrations</code> 및 <code class="language-plaintext highlighter-rouge">migrate</code> 명령으로 실제 데이터베이스에 적용합.</p>
+
+<h2 id="15-urlconf-주요-사항">1.5 URLconf 주요 사항</h2>
+<p>URLconf는 URL과 뷰(함수 또는 메소드)를 매핑해주는 urls.py파일입니다.</p>
+
+<p>프로젝트 전체 URL을 정의하는 <strong>프로젝트 URL</strong> 과 앱마다 정의하는 <strong>앱 URL</strong> , 2계층으로 나눠서 코딩하는 방식을 추천.</p>
+
+<p>URL 패턴별로 이름을 지정할 수 있고, 패턴 그룹에 대해 이름공간(namespace)을 지정할 수도 있음.</p>
+
+<h2 id="16-viewspy-주요-사항">1.6 views.py 주요 사항</h2>
+
+<p>가독성과 유지보수 편리, 재활용 등을 고려해야 함.(프로젝트가 커질 것을 대비)</p>
+
+<p><strong>함수형 뷰(Function-based-view)</strong> 와 <strong>클래스형 뷰(Class-based-view)</strong> 로 구분</p>
+
+<p>클래스형 뷰를 사용하는 것이 장고가 제공하는 제네릭 뷰를 사용할 수 있고 재활용 및 확장성 측면에서 유리하기 때문에, 클래스형 뷰를 더 활용하기를 권장.</p>
+
+<h2 id="17-templates-주요-사항">1.7 templates 주요 사항</h2>
+
+<p>웹 페이지 별로 템플릿 파일(<code class="language-plaintext highlighter-rouge">*.html</code>)이 하나씩 필요</p>
+
+<p>템플릿 디렉터리는 프로젝트 템플릿 디렉터리와 앱 템플릿 디렉터리를 구분해서 사용(프로젝트 템플릿 디렉터리는<code class="language-plaintext highlighter-rouge">TEMPLATES</code> 설정의 <code class="language-plaintext highlighter-rouge">DIRS</code> 항목에 지정된 디렉터리)</p>
+
+<p>프로젝트 템플릿 디렉터리에는 base.html 등 전체 프로젝트의 룩앤필(Look and feel)에 관련된 파일들을 모아두고, 각 앱에서 사용하는 템플릿 파일들은 앱 템플릿 디렉터리에 위치</p>
+
+<p>예를 들어, mysite 프로젝트에서 bookmark 앱을 개발한다면, 일반적인 경우 템플릿 디렉터리의 구조는 다음과 같습니다.</p>
+
+<ul>
+  <li><strong>프로젝트 베이스(루트) 디렉터리</strong> : /home/user/pyDjango/2nd/</li>
+  <li><strong>프로젝트 디렉터리</strong> : /home/user/pyDjango/2nd/mysite/</li>
+  <li><strong>프로젝트 템플릿 디렉터리</strong> : /home/user/pyDjango/2nd/templates/</li>
+  <li><strong>앱 템플릿 디렉터리</strong> : /home/user/pyDjango/2nd/bookmark/templates/</li>
+</ul>
+
+<p>앱 템플릿이 여러개라면 <code class="language-plaintext highlighter-rouge">INSTALED_APPS</code> 설정 항목에 등록된 순서대로 검색합니다.</p>
+
+<h2 id="18-admin-사이트">1.8 Admin 사이트</h2>
+
+<p>Admin 사이트에서 User와 Group 테이블을 포함해, 테이블에 대한 데이터의 입력, 수정, 삭제 등의 작업을 할 수 있음.
+Admin 화면에서 기본적으로 User와 Group 테이블이 보이는 것은 이미 settings.py 파일에 django.contrib.auth 애플리케이션이 등록되어 있기 때문.(굿)</p>
+
+<p>SQL 없이도 테이블의 모습 및 내용을 확인하고 테이블에 레코드를 입력하고 수정할 수 있음.</p>
+
+<h2 id="19-개발용-웹-서버---runserver">1.9 개발용 웹 서버 - runserver</h2>
+
+<p>장고에서는 <code class="language-plaintext highlighter-rouge">runserver</code>라는 테스트용 웹 서버를 제공.</p>
+
+<p>프로젝트를 상용화를 고려한다면, runserver 대신 Apache 또는 Nginx 등의 상용 웹 서버를 사용해야 함.</p>
+:ET

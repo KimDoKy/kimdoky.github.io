@@ -1,0 +1,556 @@
+I"�<h1 id="django-rest-framework---serializer-relations">Django REST framework - Serializer relations</h1>
+
+<hr />
+
+<p><em>“Bad programmers worry about the code. Good programmers worry about data structures and their relationships.”</em></p>
+
+<p><em>“나쁜 프로그래머는 코드에 대해 걱정합니다. 좋은 프로그래머는 데이터 구조와 그 관계에 대해 걱정합니다.”</em></p>
+
+<p><em>— Linus Torvalds</em></p>
+
+<hr />
+
+<h2 id="serializer-relations">Serializer relations</h2>
+<p>relational field는 모델 관계를 나타내는데 사용됩니다. <code class="language-plaintext highlighter-rouge">ForeignKey</code>, <code class="language-plaintext highlighter-rouge">ManyToManyField</code> 및 <code class="language-plaintext highlighter-rouge">OneToOneField</code> 관계는 물론 관계 및  custom 관계 (예 : <code class="language-plaintext highlighter-rouge">GenericForeignKey</code>)를 역으로 적용 할 수 있습니다.</p>
+
+<hr />
+
+<p><strong>Note</strong>: 관계형 필드는 <code class="language-plaintext highlighter-rouge">relations.py</code>에 선언되어 있지만, 관습에 따라 <code class="language-plaintext highlighter-rouge">serializer</code> 모듈에서 가져와야하며, <code class="language-plaintext highlighter-rouge">rest_framework import serializer</code>에서 사용하고 <code class="language-plaintext highlighter-rouge">serializer.&lt;FiledName&gt;</code> 로 필드를 참조해야합니다.</p>
+
+<hr />
+
+<h3 id="inspecting-relationships">Inspecting relationships.</h3>
+<p><code class="language-plaintext highlighter-rouge">ModelSerializer</code> 클래스를 사용하면 serializer 필드와 관계가 자동으로 생성됩니다. 이러한 자동 생성 필드를 검사하는 것은 관계 스타일을 custom하는 방법을 결정하는데 유용한 도구가 될 수 있습니다.<br />
+이렇게 하려면, Django의 쉘을 열고, <code class="language-plaintext highlighter-rouge">python manage.py shell</code>을 사용하고, serializer 클래스를 가져와서 인스턴스화하고, 객체 표현을 출력하세요.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">myapp.serializers</span> <span class="kn">import</span> <span class="n">AccountSerializer</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">serializer</span> <span class="o">=</span> <span class="n">AccountSerializer</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span> <span class="nb">repr</span><span class="p">(</span><span class="n">serializer</span><span class="p">)</span>  <span class="c1"># Or `print(repr(serializer))` in Python 3.x.
+</span><span class="n">AccountSerializer</span><span class="p">():</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s">'ID'</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">allow_blank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">owner</span> <span class="o">=</span> <span class="n">PrimaryKeyRelatedField</span><span class="p">(</span><span class="n">queryset</span><span class="o">=</span><span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">())</span>
+</code></pre></div></div>
+
+<h2 id="api-reference">API Reference</h2>
+<p>다양한 유형의 관계 필드를 설명하기 위해 예제에 몇가지 간단한 모델을 사용합니다. 우리 모델은 음악 앨범과 각 앨범에 수록된 트랙을 대상으로 합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Album</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">album_name</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">artist</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Track</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">album</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Album</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s">'tracks'</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">IntegerField</span><span class="p">()</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">IntegerField</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">unique_together</span> <span class="o">=</span> <span class="p">(</span><span class="s">'album'</span><span class="p">,</span> <span class="s">'order'</span><span class="p">)</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s">'order'</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">'%d: %s'</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">order</span><span class="p">,</span> <span class="bp">self</span><span class="p">.</span><span class="n">title</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="stringrelatedfield">StringRelatedField</h3>
+<p><code class="language-plaintext highlighter-rouge">StringRelatedField</code>는 <code class="language-plaintext highlighter-rouge">__unicode__</code>메서드를 사용하여 관계의 대상을 나타내는데 사용할 수 있습니다.<br />
+예를 들어 다음 serializer와 같습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">AlbumSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="n">tracks</span> <span class="o">=</span> <span class="n">serializers</span><span class="p">.</span><span class="n">StringRelatedField</span><span class="p">(</span><span class="n">many</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Album</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'album_name'</span><span class="p">,</span> <span class="s">'artist'</span><span class="p">,</span> <span class="s">'tracks'</span><span class="p">)</span>
+</code></pre></div></div>
+<p>다음과 같은 표현으로 serializer합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+    <span class="s">'album_name'</span><span class="p">:</span> <span class="s">'Things We Lost In The Fire'</span><span class="p">,</span>
+    <span class="s">'artist'</span><span class="p">:</span> <span class="s">'Low'</span><span class="p">,</span>
+    <span class="s">'tracks'</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">'1: Sunflower'</span><span class="p">,</span>
+        <span class="s">'2: Whitetail'</span><span class="p">,</span>
+        <span class="s">'3: Dinosaur Act'</span><span class="p">,</span>
+        <span class="p">...</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>이 필드는 읽기 전용입니다.</p>
+
+<p><strong>Arguments</strong>:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">many</code> : to-many 관계에 적용되면 이 인수는 <code class="language-plaintext highlighter-rouge">True</code>로 설정해야합니다.</li>
+</ul>
+
+<h3 id="primarykeyrelatedfield">PrimaryKeyRelatedField</h3>
+<p><code class="language-plaintext highlighter-rouge">primaryKeyRelatedField</code>는 primary key를 사용하여 관계의 대상을 나타내는데 사용할 수 있습니다.<br />
+예를 들어 다음 serializer가 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">AlbumSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="n">tracks</span> <span class="o">=</span> <span class="n">serializers</span><span class="p">.</span><span class="n">PrimaryKeyRelatedField</span><span class="p">(</span><span class="n">many</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Album</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'album_name'</span><span class="p">,</span> <span class="s">'artist'</span><span class="p">,</span> <span class="s">'tracks'</span><span class="p">)</span>
+</code></pre></div></div>
+<p>다음과 같이 표현할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+    <span class="s">'album_name'</span><span class="p">:</span> <span class="s">'Undun'</span><span class="p">,</span>
+    <span class="s">'artist'</span><span class="p">:</span> <span class="s">'The Roots'</span><span class="p">,</span>
+    <span class="s">'tracks'</span><span class="p">:</span> <span class="p">[</span>
+        <span class="mi">89</span><span class="p">,</span>
+        <span class="mi">90</span><span class="p">,</span>
+        <span class="mi">91</span><span class="p">,</span>
+        <span class="p">...</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>기본적으로 이 필드는 읽기전용이지만, <code class="language-plaintext highlighter-rouge">read_only</code>플래그를 사용하여 이 동작을 변경할 수 있습니다.</p>
+
+<p><strong>Arguments</strong>:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">queryset</code> : 필드 입력의 유효성을 검사 할 때 모델 인스턴스 조회에 사용되는 쿼리 세트입니다. 관계는 명시적으로 쿼리 세트를 설정하거나 <code class="language-plaintext highlighter-rouge">read_only=True</code>로 설정해야합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">many</code> : to-many 관계에 적용되면이 인수를 <code class="language-plaintext highlighter-rouge">True</code>로 설정해야합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">allow_null</code> : <code class="language-plaintext highlighter-rouge">True</code>로 설정하면 필드에 <code class="language-plaintext highlighter-rouge">None</code> 값 또는 null 허용 관계에 대한 빈 문자열을 허용합니다. 기본값은 <code class="language-plaintext highlighter-rouge">False</code>입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">pk_field</code> : primary key 값의 serialzier/deserializer를 제어하는 ​​필드로 설정합니다. 예를 들어 ₩pk_field=UUIDField(format=’hex’)₩는 UUID primary key를 컴팩트 16 진수 표현으로 serializer화합니다.</li>
+</ul>
+
+<h3 id="hyperlinkedrelatedfield">HyperlinkedRelatedField</h3>
+<p><code class="language-plaintext highlighter-rouge">HyperlinkedRelatedField</code>는 하이퍼링크를 사용하여 관계의 대상을 나타내는데 사용할 수 있습니다.<br />
+예를 들어 다음 serializer가 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">AlbumSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="n">tracks</span> <span class="o">=</span> <span class="n">serializers</span><span class="p">.</span><span class="n">HyperlinkedRelatedField</span><span class="p">(</span>
+        <span class="n">many</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">read_only</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">view_name</span><span class="o">=</span><span class="s">'track-detail'</span>
+    <span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Album</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'album_name'</span><span class="p">,</span> <span class="s">'artist'</span><span class="p">,</span> <span class="s">'tracks'</span><span class="p">)</span>
+</code></pre></div></div>
+<p>다음과 같이 표현할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+    <span class="s">'album_name'</span><span class="p">:</span> <span class="s">'Graceland'</span><span class="p">,</span>
+    <span class="s">'artist'</span><span class="p">:</span> <span class="s">'Paul Simon'</span><span class="p">,</span>
+    <span class="s">'tracks'</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">'http://www.example.com/api/tracks/45/'</span><span class="p">,</span>
+        <span class="s">'http://www.example.com/api/tracks/46/'</span><span class="p">,</span>
+        <span class="s">'http://www.example.com/api/tracks/47/'</span><span class="p">,</span>
+        <span class="p">...</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>기본적으로 이 필드는 읽기전용이지만, <code class="language-plaintext highlighter-rouge">read_only</code>플래그를 사용하여 이 동작을 변경할 수 있습니다.</p>
+
+<hr />
+
+<p><strong>Note</strong>: 이 필드는 <code class="language-plaintext highlighter-rouge">lookup_field</code> 및 <code class="language-plaintext highlighter-rouge">lookup_url_kwarg</code> 인수를 사용하여 설정된대로 단일 URL 키워드 인수를 허용하는 URL에 매핑되는 개체를 위해 설계되었습니다.<br />
+URL의 일부로 단일 primary key 또는 slug 인수가 포함된 URL에 적합힙니다.<br />
+보다 복잡한 하이퍼 링크로 표현이 필요한 경우에는 아래의 <a href="http://www.django-rest-framework.org/api-guide/relations/#custom-hyperlinked-fields">custom hyperlinked field</a>섹션에 설명 된대로 custom해야 합니다.</p>
+
+<hr />
+
+<p><strong>Arguments</strong>:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">view_name</code> : 관계의 대상으로 사용해야하는 view 이름입니다. <a href="">표준 라우터 클래스</a>를 사용하는 경우 <code class="language-plaintext highlighter-rouge">&lt;modelname&gt;-detail</code> 형식의 문자열이 됩니다. <strong>필수.</strong></li>
+  <li><code class="language-plaintext highlighter-rouge">queryset</code> : 필드 입력의 유효성을 검사 할 때 모델 인스턴스 조회에 사용되는 쿼리셋입니다. 관계는 명시적으로 쿼리셋을 설정하거나 <code class="language-plaintext highlighter-rouge">read_only=True</code>로 설정해야합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">many</code> - to-many 관계에 적용되면 이 인수를 <code class="language-plaintext highlighter-rouge">True</code>로 설정해야합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">allow_null</code> : <code class="language-plaintext highlighter-rouge">True</code>로 설정하면 필드에 <code class="language-plaintext highlighter-rouge">None</code> 값 또는 null 허용 관계에 대한 빈 문자열을 허용합니다. 기본값은 <code class="language-plaintext highlighter-rouge">False</code>입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">lookup_field</code> : 조회에 사용해야하는 대상의 필드입니다. 참조 된 뷰의 URL 키워드 인수에 해당해야합니다. 기본값은 <code class="language-plaintext highlighter-rouge">pk</code>입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">lookup_url_kwarg</code> : 조회 필드에 해당하는 URL conf에 정의된 키워드 인수의 이름입니다. 기본적으로 <code class="language-plaintext highlighter-rouge">lookup_field</code>와 같은 값을 사용합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">format</code> : format suffix를 사용하는 경우, 하이퍼 링크 된 필드는 <code class="language-plaintext highlighter-rouge">format</code>인수를 사용하여 오버라이드하지 않는 한 대상에 대해 동일한 format suffix를 사용합니다.</li>
+</ul>
+
+<h3 id="slugrelatedfield">SlugRelatedField</h3>
+<p><code class="language-plaintext highlighter-rouge">slugRelatedField</code>는 대상 필드를 사용하여 관계 대상을 나타내는데 사용할 수 있습니다.<br />
+예를 들어 다음 serializer가 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">AlbumSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="n">tracks</span> <span class="o">=</span> <span class="n">serializers</span><span class="p">.</span><span class="n">SlugRelatedField</span><span class="p">(</span>
+        <span class="n">many</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">read_only</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">slug_field</span><span class="o">=</span><span class="s">'title'</span>
+     <span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Album</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'album_name'</span><span class="p">,</span> <span class="s">'artist'</span><span class="p">,</span> <span class="s">'tracks'</span><span class="p">)</span>
+</code></pre></div></div>
+<p>다음과 같이 표현할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+    <span class="s">'album_name'</span><span class="p">:</span> <span class="s">'Dear John'</span><span class="p">,</span>
+    <span class="s">'artist'</span><span class="p">:</span> <span class="s">'Loney Dear'</span><span class="p">,</span>
+    <span class="s">'tracks'</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">'Airport Surroundings'</span><span class="p">,</span>
+        <span class="s">'Everything Turns to You'</span><span class="p">,</span>
+        <span class="s">'I Was Only Going Out'</span><span class="p">,</span>
+        <span class="p">...</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>기본적으로 이 필드는 읽기 전용이지만, <code class="language-plaintext highlighter-rouge">read_only</code>플래그를 사용하여 이 동작을 변경할 수 있습니다.<br />
+<code class="language-plaintext highlighter-rouge">SlugRelatedField</code>를 read-write 필드로 사용할 때는 일반적으로 slug 필드가 <code class="language-plaintext highlighter-rouge">unique=True</code>인 모델 필드에 해당하는지 확인해야합니다.</p>
+
+<p><strong>Arguments</strong>:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">slug_field</code> : 그것을 나타내는데 사용해야하는 대상의 필드입니다. 주어진 인스턴스를 고유하게 식별하는 필드이어야 합니다. 예: <code class="language-plaintext highlighter-rouge">username</code>. <strong>필수</strong></li>
+  <li><code class="language-plaintext highlighter-rouge">queryset</code> : 필드 입력의 유효성을 검사 할 때 모델 인스턴스 조회에 사용되는 쿼리셋입니다. 관계는 명시적으로 쿼리셋을 설정하거나 <code class="language-plaintext highlighter-rouge">read_only=True</code>로 설정해야 합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">many</code> : to-many 관계에 적용되면 이 인수를 <code class="language-plaintext highlighter-rouge">True</code>로 설정해야합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">allow_null</code> : <code class="language-plaintext highlighter-rouge">True</code>로 설정하면 필드에 <code class="language-plaintext highlighter-rouge">None</code> 값 또는 null 허용 관계에 대한 빈 문자열을 허용합니다. 기본값은 <code class="language-plaintext highlighter-rouge">False</code>입니다.</li>
+</ul>
+
+<h3 id="hyperlinkedidentityfield">HyperlinkedIdentityField</h3>
+<p>이 필드는 <code class="language-plaintext highlighter-rouge">HyperlinkedModelSerializer</code>의 <code class="language-plaintext highlighter-rouge">url</code>필드와 같은 동일한 관계로 적용될 수 있습니다. 객체의 속성에도 사용할 수 있습니다. 예를 들어, 다음 serializer가 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">AlbumSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">HyperlinkedModelSerializer</span><span class="p">):</span>
+    <span class="n">track_listing</span> <span class="o">=</span> <span class="n">serializers</span><span class="p">.</span><span class="n">HyperlinkedIdentityField</span><span class="p">(</span><span class="n">view_name</span><span class="o">=</span><span class="s">'track-list'</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Album</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'album_name'</span><span class="p">,</span> <span class="s">'artist'</span><span class="p">,</span> <span class="s">'track_listing'</span><span class="p">)</span>
+</code></pre></div></div>
+<p>다음과 같이 표현할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+    <span class="s">'album_name'</span><span class="p">:</span> <span class="s">'The Eraser'</span><span class="p">,</span>
+    <span class="s">'artist'</span><span class="p">:</span> <span class="s">'Thom Yorke'</span><span class="p">,</span>
+    <span class="s">'track_listing'</span><span class="p">:</span> <span class="s">'http://www.example.com/api/track_list/12/'</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>이 필드는 항상 읽기 전용입니다.</p>
+
+<p><strong>Arguments</strong>:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">view_name</code> : 관계의 대상으로 사용해야하는 view 이름입니다. 표준 라우터 클래스를 사용하는 경우 <code class="language-plaintext highlighter-rouge">&lt;model_name&gt;-detail</code> 형식의 문자열이 됩니다. <strong>필수</strong></li>
+  <li><code class="language-plaintext highlighter-rouge">lookup_field</code> : 조회에 사용해야하는 대상의 필드입니다. 참조 된 뷰의 URL 키워드 인수에 해당해야합니다. 기본값은 <code class="language-plaintext highlighter-rouge">'pk'</code>입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">lookup_url_kwarg</code> : 조회 필드에 해당하는 URL conf에 정의 된 키워드 인수의 이름입니다. 기본적으로 <code class="language-plaintext highlighter-rouge">lookup_field</code>와 같은 값을 사용합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">format</code> -  format suffix를 사용하는 경우 하이퍼 링크 된 필드는 <code class="language-plaintext highlighter-rouge">format</code> 인수를 사용하여  오버라이드하지 않는한 대상에 대해 동일한  format suffix를 사용합니다.</li>
+</ul>
+
+<hr />
+
+<h2 id="nested-relationships">Nested relationships</h2>
+<p>중첩 된 관계는 serializer를 필드로 사용하여 표현할 수 있습니다.<br />
+필드가 to-many 관계를 나타내는데 사용되는 경우 serializer필드에 <code class="language-plaintext highlighter-rouge">many=True</code>플래그를 추가해야합니다.</p>
+
+<h3 id="example">Example</h3>
+<p>예를 들어 다음 serializer가 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">TrackSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Track</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'order'</span><span class="p">,</span> <span class="s">'title'</span><span class="p">,</span> <span class="s">'duration'</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">AlbumSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="n">tracks</span> <span class="o">=</span> <span class="n">TrackSerializer</span><span class="p">(</span><span class="n">many</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Album</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'album_name'</span><span class="p">,</span> <span class="s">'artist'</span><span class="p">,</span> <span class="s">'tracks'</span><span class="p">)</span>
+</code></pre></div></div>
+<p>다음과 같이 중첩된 표현으로 serializer 합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">album</span> <span class="o">=</span> <span class="n">Album</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">create</span><span class="p">(</span><span class="n">album_name</span><span class="o">=</span><span class="s">"The Grey Album"</span><span class="p">,</span> <span class="n">artist</span><span class="o">=</span><span class="s">'Danger Mouse'</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Track</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">create</span><span class="p">(</span><span class="n">album</span><span class="o">=</span><span class="n">album</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">'Public Service Announcement'</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mi">245</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">Track</span><span class="p">:</span> <span class="n">Track</span> <span class="nb">object</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Track</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">create</span><span class="p">(</span><span class="n">album</span><span class="o">=</span><span class="n">album</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">'What More Can I Say'</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mi">264</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">Track</span><span class="p">:</span> <span class="n">Track</span> <span class="nb">object</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Track</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">create</span><span class="p">(</span><span class="n">album</span><span class="o">=</span><span class="n">album</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">'Encore'</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mi">159</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">Track</span><span class="p">:</span> <span class="n">Track</span> <span class="nb">object</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">serializer</span> <span class="o">=</span> <span class="n">AlbumSerializer</span><span class="p">(</span><span class="n">instance</span><span class="o">=</span><span class="n">album</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">serializer</span><span class="p">.</span><span class="n">data</span>
+<span class="p">{</span>
+    <span class="s">'album_name'</span><span class="p">:</span> <span class="s">'The Grey Album'</span><span class="p">,</span>
+    <span class="s">'artist'</span><span class="p">:</span> <span class="s">'Danger Mouse'</span><span class="p">,</span>
+    <span class="s">'tracks'</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s">'order'</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s">'title'</span><span class="p">:</span> <span class="s">'Public Service Announcement'</span><span class="p">,</span> <span class="s">'duration'</span><span class="p">:</span> <span class="mi">245</span><span class="p">},</span>
+        <span class="p">{</span><span class="s">'order'</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s">'title'</span><span class="p">:</span> <span class="s">'What More Can I Say'</span><span class="p">,</span> <span class="s">'duration'</span><span class="p">:</span> <span class="mi">264</span><span class="p">},</span>
+        <span class="p">{</span><span class="s">'order'</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s">'title'</span><span class="p">:</span> <span class="s">'Encore'</span><span class="p">,</span> <span class="s">'duration'</span><span class="p">:</span> <span class="mi">159</span><span class="p">},</span>
+        <span class="p">...</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="writable-nested-serializers">Writable nested serializers</h3>
+<p>기본적으로 nested serializer는 읽기 전용입니다. 중첩 된 serializer 필드에 대한 쓰기 작업을 지원하려면 <code class="language-plaintext highlighter-rouge">creat()</code>와 <code class="language-plaintext highlighter-rouge">/</code>또는 <code class="language-plaintext highlighter-rouge">update()</code>메서드를 만들어 자식 관계를 저장하는 방법을 명시적으로 지정해야합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">TrackSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Track</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'order'</span><span class="p">,</span> <span class="s">'title'</span><span class="p">,</span> <span class="s">'duration'</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">AlbumSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="n">tracks</span> <span class="o">=</span> <span class="n">TrackSerializer</span><span class="p">(</span><span class="n">many</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Album</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'album_name'</span><span class="p">,</span> <span class="s">'artist'</span><span class="p">,</span> <span class="s">'tracks'</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">validated_data</span><span class="p">):</span>
+        <span class="n">tracks_data</span> <span class="o">=</span> <span class="n">validated_data</span><span class="p">.</span><span class="n">pop</span><span class="p">(</span><span class="s">'tracks'</span><span class="p">)</span>
+        <span class="n">album</span> <span class="o">=</span> <span class="n">Album</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">create</span><span class="p">(</span><span class="o">**</span><span class="n">validated_data</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">track_data</span> <span class="ow">in</span> <span class="n">tracks_data</span><span class="p">:</span>
+            <span class="n">Track</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">create</span><span class="p">(</span><span class="n">album</span><span class="o">=</span><span class="n">album</span><span class="p">,</span> <span class="o">**</span><span class="n">track_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">album</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'album_name'</span><span class="p">:</span> <span class="s">'The Grey Album'</span><span class="p">,</span>
+    <span class="s">'artist'</span><span class="p">:</span> <span class="s">'Danger Mouse'</span><span class="p">,</span>
+    <span class="s">'tracks'</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s">'order'</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s">'title'</span><span class="p">:</span> <span class="s">'Public Service Announcement'</span><span class="p">,</span> <span class="s">'duration'</span><span class="p">:</span> <span class="mi">245</span><span class="p">},</span>
+        <span class="p">{</span><span class="s">'order'</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s">'title'</span><span class="p">:</span> <span class="s">'What More Can I Say'</span><span class="p">,</span> <span class="s">'duration'</span><span class="p">:</span> <span class="mi">264</span><span class="p">},</span>
+        <span class="p">{</span><span class="s">'order'</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s">'title'</span><span class="p">:</span> <span class="s">'Encore'</span><span class="p">,</span> <span class="s">'duration'</span><span class="p">:</span> <span class="mi">159</span><span class="p">},</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">serializer</span> <span class="o">=</span> <span class="n">AlbumSerializer</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">serializer</span><span class="p">.</span><span class="n">is_valid</span><span class="p">()</span>
+<span class="bp">True</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">serializer</span><span class="p">.</span><span class="n">save</span><span class="p">()</span>
+<span class="o">&lt;</span><span class="n">Album</span><span class="p">:</span> <span class="n">Album</span> <span class="nb">object</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="custom-relational-fields">Custom relational fields</h2>
+<p>기존의 관계형 스타일이 필요하지 않은 경우가 드물지만 모델 인스턴스에서 출력 표현을 생성하는 방법을 정확하게 설명하는 완벽한 custom relational field를 구현할 수 있습니다.<br />
+custom relational field를 구현하려면 RelatedField를 오버라이드하고 <code class="language-plaintext highlighter-rouge">.to_representation(self, value)</code> 메서드를 구현해야합니다. 이 메서드는 필드의 대상을 <code class="language-plaintext highlighter-rouge">value</code>인수로 사용하고 대상을 serializer하는데 사용해야하는 표현을 반환해야합니다. <code class="language-plaintext highlighter-rouge">value</code>인수는 일반적으로 모델 인스턴스입니다.<br />
+ read-write relational field를 구현하려면 <code class="language-plaintext highlighter-rouge">.to_internal_value(self, data)</code> 메소드도 구현해야합니다.<br />
+contextd를 기반으로 동적 쿼리셋을 제공하려면 클래스에서 <code class="language-plaintext highlighter-rouge">.queryset</code>을 지정하거나 필드를 초기화 할 때 <code class="language-plaintext highlighter-rouge">.get_queryset(self)</code>를 오버라이드 할 수도 있습니다.</p>
+
+<h3 id="example-1">Example</h3>
+<p>예를 들어, 순서, 제목, 기간을 사용하여 트랙을 custom 문자열 표현으로 serializer하는 relational field를 정의할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="k">class</span> <span class="nc">TrackListingField</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">RelatedField</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">to_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="n">time</span><span class="p">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">'%M:%S'</span><span class="p">,</span> <span class="n">time</span><span class="p">.</span><span class="n">gmtime</span><span class="p">(</span><span class="n">value</span><span class="p">.</span><span class="n">duration</span><span class="p">))</span>
+        <span class="k">return</span> <span class="s">'Track %d: %s (%s)'</span> <span class="o">%</span> <span class="p">(</span><span class="n">value</span><span class="p">.</span><span class="n">order</span><span class="p">,</span> <span class="n">value</span><span class="p">.</span><span class="n">name</span><span class="p">,</span> <span class="n">duration</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">AlbumSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="n">tracks</span> <span class="o">=</span> <span class="n">TrackListingField</span><span class="p">(</span><span class="n">many</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Album</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'album_name'</span><span class="p">,</span> <span class="s">'artist'</span><span class="p">,</span> <span class="s">'tracks'</span><span class="p">)</span>
+</code></pre></div></div>
+<p>이 custom 필드는 다음 표현으로 serializer 됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+    <span class="s">'album_name'</span><span class="p">:</span> <span class="s">'Sometimes I Wish We Were an Eagle'</span><span class="p">,</span>
+    <span class="s">'artist'</span><span class="p">:</span> <span class="s">'Bill Callahan'</span><span class="p">,</span>
+    <span class="s">'tracks'</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">'Track 1: Jim Cain (04:39)'</span><span class="p">,</span>
+        <span class="s">'Track 2: Eid Ma Clack Shaw (04:19)'</span><span class="p">,</span>
+        <span class="s">'Track 3: The Wind and the Dove (04:34)'</span><span class="p">,</span>
+        <span class="p">...</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="custom-hyperlinked-fields">Custom hyperlinked fields</h2>
+<p>어떤 경우에는 하나 이상의 조회 필드가 필요한 URL을 나타내기 위해 하이퍼링크 필드의 동작을 custom 해야 할 수도 있습니다.<br />
+<code class="language-plaintext highlighter-rouge">HyperlinkedRelatedField</code>를 오버라이드 하여 이 작업을 수행 할 수 있습니다. 오버라이드 할 수 있는 두 가지 방법이 있습니다.</p>
+
+<h4 id="get_urlself-obj-view_name-request-format">get_url(self, obj, view_name, request, format)</h4>
+<p><code class="language-plaintext highlighter-rouge">get_url</code> 메서드는 객체 인스턴스를 URL 표현에 매핑하는 데 사용됩니다.<br />
+<code class="language-plaintext highlighter-rouge">view_name</code> 및 <code class="language-plaintext highlighter-rouge">lookup_field</code> 속성이 URL conf와 정확하게 일치하도록 구성되지 않은 경우 <code class="language-plaintext highlighter-rouge">NoReverseMatch</code>를 발생시킬 수 있습니다.</p>
+
+<h4 id="get_objectself-queryset-view_name-view_args-view_kwargs">get_object(self, queryset, view_name, view_args, view_kwargs)</h4>
+<p>쓰기 가능한 하이퍼링크 필드를 지원하려면 들어오는 URL을 그들이 나타내는 객체로 다시 매핑하기 위해 <code class="language-plaintext highlighter-rouge">get_object</code>를 오버라이드해야합니다. 읽기 전용 하이퍼링크 필드의 경우 이 메서드를 오버라이드 할 필요가 없습니다.<br />
+이 메서드의 반환 값은 일치하는 URL conf 인수에 해당하는 객체이어야 합니다.<br />
+<code class="language-plaintext highlighter-rouge">ObjectDoesNotExist</code> 예외가 발생할 수 있습니다.</p>
+
+<h3 id="example-2">Example</h3>
+<p>다음과 같이 두 개의 키워드 인수를 취하는 고객 객체의 URL이 있다고 가정해보세요.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/api/&lt;organization_slug&gt;/customers/&lt;customer_pk&gt;/
+</code></pre></div></div>
+<p>단일의 lookup field 만을 받아들이는 기본 구현에서는 이것을 표현할 수 없습니다.<br />
+이 경우 우리가 원하는 동작을 얻으려면 <code class="language-plaintext highlighter-rouge">HyperlinkedRelatedField</code>를 오버라이드해야합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">rest_framework</span> <span class="kn">import</span> <span class="n">serializers</span>
+<span class="kn">from</span> <span class="nn">rest_framework.reverse</span> <span class="kn">import</span> <span class="n">reverse</span>
+
+<span class="k">class</span> <span class="nc">CustomerHyperlink</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">HyperlinkedRelatedField</span><span class="p">):</span>
+    <span class="c1"># We define these as class attributes, so we don't need to pass them as arguments.
+</span>    <span class="n">view_name</span> <span class="o">=</span> <span class="s">'customer-detail'</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">Customer</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">view_name</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="nb">format</span><span class="p">):</span>
+        <span class="n">url_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">'organization_slug'</span><span class="p">:</span> <span class="n">obj</span><span class="p">.</span><span class="n">organization</span><span class="p">.</span><span class="n">slug</span><span class="p">,</span>
+            <span class="s">'customer_pk'</span><span class="p">:</span> <span class="n">obj</span><span class="p">.</span><span class="n">pk</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">reverse</span><span class="p">(</span><span class="n">view_name</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">url_kwargs</span><span class="p">,</span> <span class="n">request</span><span class="o">=</span><span class="n">request</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view_name</span><span class="p">,</span> <span class="n">view_args</span><span class="p">,</span> <span class="n">view_kwargs</span><span class="p">):</span>
+        <span class="n">lookup_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+           <span class="s">'organization__slug'</span><span class="p">:</span> <span class="n">view_kwargs</span><span class="p">[</span><span class="s">'organization_slug'</span><span class="p">],</span>
+           <span class="s">'pk'</span><span class="p">:</span> <span class="n">view_kwargs</span><span class="p">[</span><span class="s">'customer_pk'</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">get_queryset</span><span class="p">().</span><span class="n">get</span><span class="p">(</span><span class="o">**</span><span class="n">lookup_kwargs</span><span class="p">)</span>
+</code></pre></div></div>
+<p>이 스타일을 generic view 와 함께 사용하려는 경우 올바른 조회 동작을 얻으려면 뷰에서 <code class="language-plaintext highlighter-rouge">.get_object</code>를 오버라이드 해야합니다.<br />
+일반적으로 가능한 경우 API 표현에 플랫 스타일을 사용하는 것이 좋지만, 중첩된 URL 스타일은 적당히 사용하면 합리적일 수 있습니다.</p>
+
+<hr />
+
+<h2 id="further-notes">Further notes</h2>
+
+<h3 id="the-queryset-argument">The <code class="language-plaintext highlighter-rouge">queryset</code> argument</h3>
+<p><code class="language-plaintext highlighter-rouge">queryset</code>인수는 쓰기 가능한 관계 필드에만 필요합니다. 이 경우 기본 인스턴스 사용자 입력 모델 인스턴스로 매핑되는 모델 인스턴스 조회를 수행하는데 사용됩니다.<br />
+버전 2.x에서는 serializer 클래스가 <code class="language-plaintext highlighter-rouge">ModelSerializer</code> 클래스가 사용되는 경우 <code class="language-plaintext highlighter-rouge">queryset</code> 인수를 자동으로 결정할 수 있습니다.<br />
+이 동작은 이제 쓰기 가능한 관계형 필드에 대해 명시적 쿼리셋 인수를 항상 사용하여 대체되었습니다.<br />
+이렇게하면 <code class="language-plaintext highlighter-rouge">ModelSerializer</code>이 제공하는 숨겨진 ‘magic’양이 줄어들고 필드의 동작이 더 명확해지며 <code class="language-plaintext highlighter-rouge">ModelSerializer</code> shortcut를 사용하거나 완전하게 명시적인 <code class="language-plaintext highlighter-rouge">Serializer</code>클래스를 사용하는 것이 쉽다는 것을 보증합니다.</p>
+
+<h3 id="customizing-the-html-display">Customizing the HTML display</h3>
+<p>모델의 내장 <code class="language-plaintext highlighter-rouge">__str__</code>메서드는 <code class="language-plaintext highlighter-rouge">choices</code>속성을 채우는데 사용 된 객체의 문자열 표현을 생성하는데 사용됩니다. 이러한 선택사항은 탐색 가능한 API에서 선택된 HTML 입력을 채우는데 사용됩니다.<br />
+이러한 입력에 대해 custom 된 표현을 제공하려면 <code class="language-plaintext highlighter-rouge">RelatedField</code> 서브 클래스의 <code class="language-plaintext highlighter-rouge">display_value()</code>를 대체하세요. 이 메서드는 모델 객체를 수신하고 모델 객체를 나타내는데 적합한 문자열을 반환해야합니다. 예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">TrackPrimaryKeyRelatedField</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">PrimaryKeyRelatedField</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">display_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">'Track: %s'</span> <span class="o">%</span> <span class="p">(</span><span class="n">instance</span><span class="p">.</span><span class="n">title</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="select-field-cutoffs">Select field cutoffs</h3>
+<p>browsable API에서 렌더링 될 때 관계형 필드는 기본적으로 최대 1000개의 선택 가능한 항목만 표시합니다. 더 많은 항목이 있으면 “More than 1000 items…“와 함께 비활성화 된 옵션이 표시됩니다.<br />
+이 동작은 매우 많은 수의 관계가 표시되어 허용되는 범위 내에서 템플릿을 렌더링 할 수 없도록 하기 위한 것입니다.<br />
+이 동작을 제어하는데 사용할 수 있는 두 개의 키워드인수가 있습니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">html_cutoff</code> : 설정된 경우 HTML 선택 드롭 다운에 표시 될 최대 선택 항목 수입니다. 제한을 해제하려면 <code class="language-plaintext highlighter-rouge">None</code>으로 설정하십시오. 기본값은 <code class="language-plaintext highlighter-rouge">1000</code>입니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">html_cutoff_text</code> - 설정된 경우 HTML 선택 드롭 다운에서 최대 항목 수가 잘린 경우 텍스트 표시를 보여줍니다. 기본값은 <code class="language-plaintext highlighter-rouge">"More than {count} items…"</code>입니다.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">HTML_SELECT_CUTOFF</code> 및 <code class="language-plaintext highlighter-rouge">HTML_SELECT_CUTOFF_TEXT</code> 설정을 사용하여 전역으로 제어 할 수도 있습니다.<br />
+컷오프가 적용되는 경우 HTML 양식에 일반 입력 필드를 대신 사용할 수 있습니다. <code class="language-plaintext highlighter-rouge">style</code> 키워드 인수를 사용하면됩니다. 예 :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">assigned_to</span> <span class="o">=</span> <span class="n">serializers</span><span class="p">.</span><span class="n">SlugRelatedField</span><span class="p">(</span>
+   <span class="n">queryset</span><span class="o">=</span><span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">(),</span>
+   <span class="n">slug_field</span><span class="o">=</span><span class="s">'username'</span><span class="p">,</span>
+   <span class="n">style</span><span class="o">=</span><span class="p">{</span><span class="s">'base_template'</span><span class="p">:</span> <span class="s">'input.html'</span><span class="p">}</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="reverse-relations">Reverse relations</h3>
+<p>reverse 관계는 <code class="language-plaintext highlighter-rouge">ModelSerializer</code>및 <code class="language-plaintext highlighter-rouge">HyperlinkedModelSerializer</code>클래스에 자동으로 포함되지 않습니다. reverse 관계를 포함 시키려면 필드 목록에 명시적으로 추가해야합니다. 예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">AlbumSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'tracks'</span><span class="p">,</span> <span class="p">...)</span>
+</code></pre></div></div>
+<p>일반적으로 필드 이름으로 사용할 수 있는 적절한 <code class="language-plaintext highlighter-rouge">related_name</code>인수를 관계에 설정했는지 확인해야합니다. 예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Track</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">album</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Album</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s">'tracks'</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="p">...</span>
+</code></pre></div></div>
+<p>reverse 관계에 대한 관련 이름을 설정하지 않은 경우 <code class="language-plaintext highlighter-rouge">fields</code>인수에 자동으로 생성 된 관련 이름을 사용해야합니다. 예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">AlbumSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="s">'track_set'</span><span class="p">,</span> <span class="p">...)</span>
+</code></pre></div></div>
+<p>자세한 내용은 <a href="https://docs.djangoproject.com/en/1.10/topics/db/queries/#following-relationships-backward">reverse relationships</a>에 대한 Django 문서를 참조하세요.</p>
+
+<h3 id="generic-relationships">Generic relationships</h3>
+<p>일반적인 foreign key를 serializer하려면 관계의 대상을 serializer화하는 방법을 명시적으로 결정하기 위해 custom 필드를 정의해야합니다.<br />
+예를 들어, 다른 임의의 모델과 일반적인 관계가 있는 태그에 대해 다음 모델이 제공됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">TaggedItem</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="s">"""
+    Tags arbitrary model instances using a generic relation.
+
+    See: https://docs.djangoproject.com/en/stable/ref/contrib/contenttypes/
+    """</span>
+    <span class="n">tag_name</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">SlugField</span><span class="p">()</span>
+    <span class="n">content_type</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">ContentType</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="n">object_id</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">PositiveIntegerField</span><span class="p">()</span>
+    <span class="n">tagged_object</span> <span class="o">=</span> <span class="n">GenericForeignKey</span><span class="p">(</span><span class="s">'content_type'</span><span class="p">,</span> <span class="s">'object_id'</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">tag_name</span>
+</code></pre></div></div>
+<p>그리고 다음 두 모델의 관련 태그를 가질 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Bookmark</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="s">"""
+    A bookmark consists of a URL, and 0 or more descriptive tags.
+    """</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">URLField</span><span class="p">()</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="n">GenericRelation</span><span class="p">(</span><span class="n">TaggedItem</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Note</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="s">"""
+    A note consists of some text, and 0 or more descriptive tags.
+    """</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="n">GenericRelation</span><span class="p">(</span><span class="n">TaggedItem</span><span class="p">)</span>
+</code></pre></div></div>
+<p>태그가 지정된 인스턴스를 serializer하는데 사용할 수 있는 custom 필드를 정의하여 각 인스턴스의 유형을 사용하여 serializer 해야하는 방식을 결정할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">TaggedObjectRelatedField</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">RelatedField</span><span class="p">):</span>
+    <span class="s">"""
+    A custom field to use for the `tagged_object` generic relationship.
+    """</span>
+
+    <span class="k">def</span> <span class="nf">to_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="s">"""
+        Serialize tagged objects to a simple textual representation.
+        """</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Bookmark</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s">'Bookmark: '</span> <span class="o">+</span> <span class="n">value</span><span class="p">.</span><span class="n">url</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Note</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s">'Note: '</span> <span class="o">+</span> <span class="n">value</span><span class="p">.</span><span class="n">text</span>
+        <span class="k">raise</span> <span class="nb">Exception</span><span class="p">(</span><span class="s">'Unexpected type of tagged object'</span><span class="p">)</span>
+</code></pre></div></div>
+<p>관계의 타겟이 중첩 된 표현을 필요로 하는 경우 <code class="language-plaintext highlighter-rouge">.to_representation()</code>메서드 내에서 필요한 serializer를 사용할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">def</span> <span class="nf">to_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="s">"""
+        Serialize bookmark instances using a bookmark serializer,
+        and note instances using a note serializer.
+        """</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Bookmark</span><span class="p">):</span>
+            <span class="n">serializer</span> <span class="o">=</span> <span class="n">BookmarkSerializer</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Note</span><span class="p">):</span>
+            <span class="n">serializer</span> <span class="o">=</span> <span class="n">NoteSerializer</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="nb">Exception</span><span class="p">(</span><span class="s">'Unexpected type of tagged object'</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">serializer</span><span class="p">.</span><span class="n">data</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">GenericRelation</code>필드를 사용하여 표현된 reverse generic key는 관계의 대상 유형이 항상 알려져 있으므로 일반 관계형 필드 유형을 사용하여 serializer화 할 수 있습니다.<br />
+더 자세한 정보는 <a href="https://docs.djangoproject.com/en/1.10/ref/contrib/contenttypes/#id1">the Django documentation on generic relations</a>를 참조하세요.</p>
+
+<h3 id="manytomanyfields-with-a-through-model">ManyToManyFields with a Through Model</h3>
+<p>기본적으로 지정된 <code class="language-plaintext highlighter-rouge">through</code> 모델을 사용하여 <code class="language-plaintext highlighter-rouge">ManyToManyField</code>를 대상으로하는 관계형 필드는 읽기전용으로 설정됩니다.<br />
+through 모델을 사용하여 <code class="language-plaintext highlighter-rouge">manyToManyField</code>를 가리키는 관계 필드를 명시적으로 지정하면 <code class="language-plaintext highlighter-rouge">read_only</code>를 <code class="language-plaintext highlighter-rouge">True</code>로 설정하세요.</p>
+
+<hr />
+
+<h2 id="third-party-packages">Third Party Packages</h2>
+<p>다음의 타사 패키지도 제공됩니다.</p>
+
+<h3 id="drf-nested-routers">DRF Nested Routers</h3>
+<p><a href="https://github.com/alanjds/drf-nested-routers">drf-nested-routers</a> 패키지는 중첩 된 리소스로 작업하기 위한 라우터 및 관계 필드를 제공합니다.</p>
+
+<h3 id="rest-framework-generic-relations">Rest Framework Generic Relations</h3>
+<p><a href="https://github.com/Ian-Foote/rest-framework-generic-relations">rest-framework-generic-relations</a> 라이브러리는 일반적인 foreign key에 대한 read/write serializer화를 제공합니다.</p>
+:ET

@@ -1,0 +1,32 @@
+I"
+<p>한국에서 django로 작업을 할때 timezone settings를 한국에 맞추어서 작업을 하게 된다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">LANGUAGE_CODE</span> <span class="o">=</span> <span class="s">'ko-kr'</span>
+
+<span class="n">TIME_ZONE</span> <span class="o">=</span> <span class="s">'Asia/Seoul'</span>
+
+<span class="n">USE_I18N</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">USE_L10N</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">USE_TZ</span> <span class="o">=</span> <span class="bp">True</span>
+</code></pre></div></div>
+
+<p>하지만 모델에서 <code class="language-plaintext highlighter-rouge">DateTimeField</code>를 사용하게 되었을때 <code class="language-plaintext highlighter-rouge">datetime</code> 라이브러리의 <code class="language-plaintext highlighter-rouge">datetime.now()</code>를 사용하면 문제점이 발생한다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>RuntimeWarning: DateTimeField [모델명].use_date received a naive datetime (2018-05-12 00:47:52.053876) while time zone support is active.
+</code></pre></div></div>
+
+<p>timezone을 서울로 입력하였기 때문에 DB에도 같은 시간대로 입력이 되어야 하지만, 실제로는 UTC 기준으로 입력이 된다. 그래서 위과 같은 경고를 띄웁니다.</p>
+
+<p>해결하기 위해서는 <code class="language-plaintext highlighter-rouge">USE_TZ = False</code>로 설정하면 된다.</p>
+
+<p>그리고 <code class="language-plaintext highlighter-rouge">import datetime</code> 대신 <code class="language-plaintext highlighter-rouge">from django.conf import timezone</code>을 사용하여 <code class="language-plaintext highlighter-rouge">datetime.now()</code>를 사용하면 된다.(라이브러리를 바꾸지 않고 사용해도 크게 오류가 일어나지 않았다. 아직 개발 서버인 sqlite라서 유연하게 넘어갔을 수도 있다. 다른 db에서 테스트해볼 필요가 있다.)</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 장고 내부적으로 인식하는 시간대를 사용
+</span><span class="n">USE_TZ</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="c1"># local time을 사용
+</span><span class="n">USE_TZ</span> <span class="o">=</span> <span class="bp">False</span>
+</code></pre></div></div>
+:ET

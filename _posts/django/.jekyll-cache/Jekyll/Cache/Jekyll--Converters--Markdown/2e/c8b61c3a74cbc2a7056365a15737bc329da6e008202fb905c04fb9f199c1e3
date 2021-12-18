@@ -1,0 +1,97 @@
+I"�*<p>ManyToManyField 로 모델간의 관계를 형성하고 migrations를 하면</p>
+
+<p>ManyToManyField를 선언한 쪽에서는 해당 필드가 테이블에 생성되지 않는다.
+(ManyToManyField와 같은 related 필드는 SQL문에서 CREATE가 아닌 것으로 추측된다.)</p>
+
+<p>해당 정보 및 추가 내용은 중간자모델이 생성되거나 정의한 중간자모델에 필드로 생성된다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">get_user_model</span>
+<span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">'Content'</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># User모델 가져오기
+</span><span class="n">User</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">Content</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">seq</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">start_date</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">DateField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">end_date</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">DateField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">place</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">realm_name</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">area</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">price</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">ticket_url</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">phone</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">thumbnail</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">gps_x</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">gps_y</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">place_url</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">place_addr</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">place_seq</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="c1"># 중간자 모델인 Bookmark를 이용해 User와 연결
+</span>    <span class="n">bookmarks</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">through</span><span class="o">=</span><span class="s">'Bookmark'</span><span class="p">)</span>
+
+    <span class="c1"># DRF에서 구체적인 공연명을 알기 위한 설정
+</span>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">title</span>
+
+    <span class="c1"># Comment는 추후에 구현
+</span>    <span class="n">comment_user</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ManyToManyField</span><span class="p">(</span>
+        <span class="n">User</span><span class="p">,</span>
+        <span class="n">through</span><span class="o">=</span><span class="s">'ContentComment'</span><span class="p">,</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s">'comment_relate'</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+
+<span class="k">class</span> <span class="nc">ContentComment</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">content_d</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Content</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">()</span>
+    <span class="n">created_date</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+</code></pre></div></div>
+
+<p>위의 코드들에서는 User, Content, ContentComment 3개의 클래스가 관계를 형성하고 있다.</p>
+
+<p>Content에서 MTM을 comment_uset(ContentComment가 뒤에 정의되고 ContentComment에서도 Content를 부르고 있기 때문에 서로 선언하면 선언 시점이 서로 어긋나서 오류가 발생한다. 그렇기 때문에 다른 앱의 모델(User)을 선언하였다.)으로 선언하였다.</p>
+<blockquote>
+  <p>아직 정의되지 않은 모델에서 관계를 작성해야하는 경우, 모델 오브젝트 자체가 아닌 모델 이름을 사용할 수 있습니다.</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>from django.db import models
+
+class Car(models.Model):
+    manufacturer = models.ForeignKey(
+        'Manufacturer',
+        on_delete=models.CASCADE,
+    )
+    # ...
+
+class Manufacturer(models.Model):
+    # ...
+    pass
+</code></pre></div></div>
+<blockquote>
+  <p><a href="https://docs.djangoproject.com/en/1.11/ref/models/fields/#model-field-types">장고 문서</a>
+(이 부분을 문서에서 늦게 봐서, 모델을 되돌려서 테스트하기엔 늦은것 같아 그대로 사용하였다.)</p>
+</blockquote>
+
+<p>ContentComment를 ForeignKey으로 Content와 User를 각각 연결하고 body라는 필드로 TextField를 선언하여 추가정보를 저장하는 중간자 모델로 구현하였다.</p>
+
+<p><img src="./images/mtm.png" alt="" /></p>
+
+<p>ForeignKey로 선언된 필드는 중간자 모델에서 필드명_id 으로 생성되며 관계된 모델의 id 값을 저장한다.</p>
+
+<p>MTM을 사용하면 중간자 모델은 직접 생성하지 않아도 기본적으로 생성이 된다.</p>
+
+<p>models.py 작성시 SQL문이 어떻게 실행되는지 더 공부해야 할 필요가 있다. (<a href="https://docs.djangoproject.com/en/1.11/topics/db/models/">Django Model Document</a>)</p>
+:ET

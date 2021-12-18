@@ -1,0 +1,53 @@
+I"{<p>하나의 앨범은 여러 사진을 갖게 되고, 하나의 사진은 하나의 앨범에 귀속되는 모델을 구현하였습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">django.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+
+<span class="k">class</span> <span class="nc">Photo</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">owner</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">settings</span><span class="p">.</span><span class="n">AUTH_USER_MODEL</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">photo</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ImageField</span><span class="p">()</span>
+    <span class="n">create_at</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="c1"># GPS 정보를 저장하기 위한 필드
+</span>    <span class="n">lat</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">FloatField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">lng</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">FloatField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="c1"># Album 외래키
+</span>    <span class="n">album</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">'Album'</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">PROTECT</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Album</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">settings</span><span class="p">.</span><span class="n">AUTH_USER_MODEL</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">CASCA</span>
+</code></pre></div></div>
+
+<p>Django Admin에서 확인하기 위해 admin.py 에 등록 합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">admin</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Photo</span><span class="p">,</span> <span class="n">Album</span>
+
+<span class="n">admin</span><span class="p">.</span><span class="n">site</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="n">Photo</span><span class="p">)</span>
+<span class="n">admin</span><span class="p">.</span><span class="n">site</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="n">Album</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>이렇게 등록하면 각 해당 모델을 어드민에서 확인이 가능합니다.</p>
+
+<p>하지만 문제는 각 사진 모델에서는 자신이 포함된 앨범을 확인 및 수정이 가능하지만,<br />
+앨범에서는 모델에 선언된 필드 외에는 외래키 관계를 확인 할 수 없습니다.(shell 에서는 <code class="language-plaintext highlighter-rouge">Album.objects.get(id=1).photo_set.all()</code>이런식으로 불러올 수 있습니다.)</p>
+
+<p>이와 같이 앨범에서 자신에게 포함된 사진들을 어드민에서 확인 및 수정을 하려면 약간의 작업이 필요합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">PhotoInline</span><span class="p">(</span><span class="n">admin</span><span class="p">.</span><span class="n">TabularInline</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Photo</span>
+
+<span class="k">class</span> <span class="nc">AlbumAdmin</span><span class="p">(</span><span class="n">admin</span><span class="p">.</span><span class="n">ModelAdmin</span><span class="p">):</span>
+    <span class="n">inlines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">PhotoInline</span><span class="p">,</span>
+    <span class="p">]</span>
+
+<span class="n">admin</span><span class="p">.</span><span class="n">site</span><span class="p">.</span><span class="n">register</span><span class="p">(</span><span class="n">Album</span><span class="p">,</span> <span class="n">AlbumAdmin</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">Inline</code> 작업을 해주면 앨범 모델에서도 자신에게 귀속된 사진들을 확인 및 편집이 가능합니다.</p>
+
+<p>더 자세한 내용은 <a href="https://docs.djangoproject.com/en/1.9/ref/contrib/admin/#django.contrib.admin.TabularInline">django document</a>을 읽어보세요.</p>
+:ET

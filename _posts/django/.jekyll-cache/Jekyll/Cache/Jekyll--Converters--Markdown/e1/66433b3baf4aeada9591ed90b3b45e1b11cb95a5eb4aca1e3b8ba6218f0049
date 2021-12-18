@@ -1,0 +1,310 @@
+I"�`<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<ul>
+  <li>Django View는 요청 객체를 받고, 응답 객체를 반환하는 내장 함수</li>
+  <li>FBV: View 함수 자체가 내장 함수</li>
+  <li>CBV: View 클래스가 내장 함수를 반환하는 <code class="language-plaintext highlighter-rouge">as_view()</code> 클래스 메서드를 제공</li>
+  <li>모든 CBV는 <code class="language-plaintext highlighter-rouge">django.views.generic.view</code>를 직간접적으로 상속바다야 합니다.</li>
+</ul>
+
+<p>Django는 GCBV(Generic class-based view)도 제공합니다.</p>
+
+<blockquote>
+  <p>Django는 django-braces 라이브러리를 통해 GCBV를 구현할 수 있습니다.</p>
+</blockquote>
+
+<h2 id="101-guidelines-when-working-with-cbvs">10.1 Guidelines When Working With CBVs</h2>
+
+<ul>
+  <li>뷰 코드의 양은 적을수록 좋다.</li>
+  <li>뷰 안에서 같은 코드를 반복하지 말자.</li>
+  <li>뷰는 프레젠테이션 로직에서 관리하자.</li>
+  <li>비즈니스 로직은 모델에서 처리하자. 특별한 경우는 폼에서 처리하자</li>
+  <li>뷰는 간단 명료해야 한다.</li>
+  <li><strong>믹스인</strong>은 간단해야 한다.</li>
+</ul>
+
+<h2 id="102-using-mixins-with-cbvs">10.2 Using Mixins With CBVs</h2>
+
+<ul>
+  <li>믹스인: 실체화된 클래스가 아닌, 상속해 줄 기능들을 제공하는 클래스</li>
+  <li>method resolution order
+    <ol>
+      <li>Django 가 제공하는 기본 뷰는 ‘항상’ 오른쪽으로 진행</li>
+      <li>믹스인은 기본 뷰에서부터 왼쪽으로 진행</li>
+      <li>믹스인은 파이썬 기본 객체 타입을 생속해야만 함</li>
+    </ol>
+
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">TemplateView</span>
+
+  <span class="k">class</span> <span class="nc">FreshFruitMixin</span><span class="p">:</span>
+      <span class="k">def</span> <span class="nf">get_context_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+          <span class="p">...</span>
+
+  <span class="k">class</span> <span class="nc">FruityFlavorView</span><span class="p">(</span><span class="n">FreshFruitMixin</span><span class="p">,</span> <span class="n">TemplateView</span><span class="p">):</span>
+      <span class="n">template_name</span> <span class="o">=</span> <span class="s">"fruity_flavor.html"</span>
+</code></pre></div>    </div>
+
+    <ul>
+      <li>TemplateView는 django의 기본 클래스이기 때문에 가장 오른쪽에 위치(규칙1)</li>
+      <li>FreshFruitMixin은 왼쪽에(규칙2)</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="103-which-django-gcbv-should-be-used-for-what-task">10.3 Which Django GCBV Should Be Used for What Task?</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>name</th>
+      <th>purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>View</td>
+      <td>어디서든 이용가능한 기본 뷰</td>
+    </tr>
+    <tr>
+      <td>RedirectView</td>
+      <td>사용자를 다른 URL로 리다이렉트</td>
+    </tr>
+    <tr>
+      <td>TemplateView</td>
+      <td>django HTML 템플릿을 보여줄 때</td>
+    </tr>
+    <tr>
+      <td>ListView</td>
+      <td>객체 목록</td>
+    </tr>
+    <tr>
+      <td>DetailView</td>
+      <td>객체를 보여줄때</td>
+    </tr>
+    <tr>
+      <td>FormView</td>
+      <td>폼 전송</td>
+    </tr>
+    <tr>
+      <td>CreateView</td>
+      <td>객체를 만들때</td>
+    </tr>
+    <tr>
+      <td>UpdateView</td>
+      <td>객체를 업데이트 할 때</td>
+    </tr>
+    <tr>
+      <td>DeleteView</td>
+      <td>객체를 삭제</td>
+    </tr>
+    <tr>
+      <td>Generic date views</td>
+      <td>시간 순서로 객체를 나열해 보여줄 때</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="104-general-tips-for-django-cbvs">10.4 General Tips for Django CBVs</h2>
+
+<p>django의 CBV, GCBV는 뷰, 템플릿 그리고 그에 대한 테스트를 빠르게 제작하는 것이 목적입니다.</p>
+
+<h3 id="1041-constraining-django-cbvgcbv-access-to-authenticated-users">10.4.1 Constraining Django CBV/GCBV Access to Authenticated Users</h3>
+
+<ul>
+  <li><a href="http://docs.djangoproject.com/en/3.2/topics/class-based-views/intro/#decorating-class-based-views">docs.djangoproject.com/en/3.2/topics/class-based-views/intro/</a></li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">django.contrib.auth.decorators.login_required</code> 데코레이터와 CBV를 이용하는데 도움이 되지만, 정형화된 틀에 박히는 문제가 있습니다.</p>
+
+<p>django의 <code class="language-plaintext highlighter-rouge">LoginRequiredMixin</code>으로 GCBV에 적용할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.mixins</span> <span class="kn">import</span> <span class="n">LoginRequiredMixin</span>
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">DetailView</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+
+<span class="k">class</span> <span class="nc">FlavorDetailView</span><span class="p">(</span><span class="n">LoginRequiredMixin</span><span class="p">,</span> <span class="n">DetailView</span><span class="p">):</span>
+       <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">LoginRequiredMixin</code>을 사용하고 <code class="language-plaintext highlighter-rouge">dispatch</code> 메서드를 재정의하는 경우, <code class="language-plaintext highlighter-rouge">super().dispatch(request, *args, **kwargs)</code>를 가장 먼저 호출한다. 사용자가 인증되지 않은 경우에도 <code class="language-plaintext highlighter-rouge">super()</code> 호출 이전의 모든 코드가 실행된다.</li>
+</ul>
+
+<h3 id="1042-performing-custom-actions-on-views-with-valid-forms">10.4.2 Performing Custom Actions on Views With Valid Forms</h3>
+
+<p>뷰에서 유효성 검사를 할때 커스텀 액션을 구현하려면 <code class="language-plaintext highlighter-rouge">form_valid()</code>는 GCBV가 요청을 보내는 곳에 위치하게 됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.mixins</span> <span class="kn">import</span> <span class="n">LoginRequiredMixin</span>
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">CreateView</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+
+<span class="k">class</span> <span class="nc">FlavorCreateView</span><span class="p">(</span><span class="n">LoginRequiredMixin</span><span class="p">,</span> <span class="n">CreateView</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s">'title'</span><span class="p">,</span> <span class="s">'slug'</span><span class="p">,</span> <span class="s">'scoops_remaining'</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">form_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">):</span>
+        <span class="c1"># Do custom logic here
+</span>        <span class="k">return</span> <span class="nb">super</span><span class="p">().</span><span class="n">form_valid</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>이미 체크된 폼에 커스텀 로직을 적용하고 싶다면 <code class="language-plaintext highlighter-rouge">form_valid()</code> 에 추가하면 됩니다.(return <code class="language-plaintext highlighter-rouge">django.http.HttpResponseRedirect</code>)</p>
+
+<h3 id="1043-performing-custom-actions-on-views-with-invalid-forms">10.4.3 Performing Custom Actions on Views With Invalid Forms</h3>
+
+<p>뷰에서 부적합성 검사에 커스텀 액션을 구현하려면, <code class="language-plaintext highlighter-rouge">form_invalid()</code> 는 GCBV가 요청을 보내는 곳에 위치하게 됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.mixins</span> <span class="kn">import</span> <span class="n">LoginRequiredMixin</span>
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">CreateView</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+
+<span class="k">class</span> <span class="nc">FlavorCreateView</span><span class="p">(</span><span class="n">LoginRequiredMixin</span><span class="p">,</span> <span class="n">CreateView</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+
+    <span class="k">def</span> <span class="nf">form_invalid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">):</span>
+        <span class="c1"># Do custom logic here
+</span>        <span class="k">return</span> <span class="nb">super</span><span class="p">().</span><span class="n">form_invalid</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="1044-using-the-view-object">10.4.4 Using the View Object</h3>
+
+<p>CBV로 콘텐츠를 렌더링한다면, 뷰 객체를 이용하여 다른 메서드나 속성(peroperties)를 호출하는 방법도 있습니다.</p>
+
+<p>해당 메서드나 속성은 템플릿에서도 호출할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.mixins</span> <span class="kn">import</span> <span class="n">LoginRequiredMixin</span> <span class="kn">from</span> <span class="nn">django.utils.functional</span> <span class="kn">import</span> <span class="n">cached_property</span>
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">UpdateView</span><span class="p">,</span> <span class="n">TemplateView</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+<span class="kn">from</span> <span class="nn">.tasks</span> <span class="kn">import</span> <span class="n">update_user_who_favorited</span>
+
+<span class="k">class</span> <span class="nc">FavoriteMixin</span><span class="p">:</span>
+
+    <span class="o">@</span><span class="n">cached_property</span>
+    <span class="k">def</span> <span class="nf">likes_and_favorites</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">likes</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="nb">object</span><span class="p">.</span><span class="n">likes</span><span class="p">()</span> <span class="n">favorites</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="nb">object</span><span class="p">.</span><span class="n">favorites</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+               <span class="s">"likes"</span><span class="p">:</span> <span class="n">likes</span><span class="p">,</span>
+               <span class="s">"favorites"</span><span class="p">:</span> <span class="n">favorites</span><span class="p">,</span>
+               <span class="s">"favorites_count"</span><span class="p">:</span> <span class="n">favorites</span><span class="p">.</span><span class="n">count</span><span class="p">(),</span>
+            <span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">FlavorUpdateView</span><span class="p">(</span><span class="n">LoginRequiredMixin</span><span class="p">,</span> <span class="n">FavoriteMixin</span><span class="p">,</span> <span class="n">UpdateView</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s">'title'</span><span class="p">,</span> <span class="s">'slug'</span><span class="p">,</span> <span class="s">'scoops_remaining'</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">form_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">):</span> <span class="n">update_user_who_favorited</span><span class="p">(</span>
+               <span class="n">instance</span><span class="o">=</span><span class="bp">self</span><span class="p">.</span><span class="nb">object</span><span class="p">,</span>
+               <span class="n">favorites</span><span class="o">=</span><span class="bp">self</span><span class="p">.</span><span class="n">likes_and_favorites</span><span class="p">[</span><span class="s">'favorites'</span><span class="p">]</span>
+           <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">super</span><span class="p">().</span><span class="n">form_valid</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">FlavorDetailView</span><span class="p">(</span><span class="n">LoginRequiredMixin</span><span class="p">,</span> <span class="n">FavoriteMixin</span><span class="p">,</span> <span class="n">TemplateView</span><span class="p">):</span>
+       <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+</code></pre></div></div>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{% extends "base.html" %}
+{% block likes_and_favorites %} <span class="nt">&lt;ul&gt;</span>
+     <span class="nt">&lt;li&gt;</span>Likes: {{ view.likes_and_favorites.likes }}<span class="nt">&lt;/li&gt;</span>
+     <span class="nt">&lt;li&gt;</span>Favorites: {{ view.likes_and_favorites.favorites_count }}<span class="nt">&lt;/li&gt;</span>
+<span class="nt">&lt;/ul&gt;</span>
+{% endblock likes_and_favorites %}
+</code></pre></div></div>
+
+<h2 id="105-how-gcbvs-and-forms-fit-together">10.5 How GCBVs and Forms Fit Together</h2>
+
+<h3 id="1051-views--modelform-example">10.5.1 Views + ModelForm Example</h3>
+
+<p><code class="language-plaintext highlighter-rouge">django.contrib.messages</code>으로 객체가 추가되거나 변경되었을때 다른 뷰(DetailView)에 알려줄 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">FlavorActionMixin</span><span class="p">:</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s">'title'</span><span class="p">,</span> <span class="s">'slug'</span><span class="p">,</span> <span class="s">'scoops_remaining'</span><span class="p">]</span>
+
+    <span class="o">@</span><span class="nb">property</span>
+    <span class="k">def</span> <span class="nf">success_msg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">NotImplemented</span>
+
+    <span class="k">def</span> <span class="nf">form_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">):</span>
+        <span class="n">messages</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">request</span><span class="p">,</span> <span class="bp">self</span><span class="p">.</span><span class="n">success_msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">().</span><span class="n">form_valid</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">FlavorCreateView</span><span class="p">(</span><span class="n">LoginRequiredMixin</span><span class="p">,</span> <span class="n">FlavorActionMixin</span><span class="p">,</span> <span class="n">CreateView</span><span class="p">):</span>
+       <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+       <span class="n">success_msg</span> <span class="o">=</span> <span class="s">"Flavor created!"</span>
+
+<span class="k">class</span> <span class="nc">FlavorUpdateView</span><span class="p">(</span><span class="n">LoginRequiredMixin</span><span class="p">,</span> <span class="n">FlavorActionMixin</span><span class="p">,</span> <span class="n">UpdateView</span><span class="p">):</span>
+       <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+       <span class="n">success_msg</span> <span class="o">=</span> <span class="s">"Flavor updated!"</span>
+
+<span class="k">class</span> <span class="nc">FlavorDetailView</span><span class="p">(</span><span class="n">DetailView</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+</code></pre></div></div>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+</code></pre></div></div>
+
+<h3 id="1052-views--form-example">10.5.2 Views + Form Example</h3>
+
+<p>모델 폼이 아니라 django 폼을 사용할 경우도 있습니다(ex. 검색 폼)</p>
+
+<p>검색 쿼리에 맞는 검색 결과를 가져오기 위해 <code class="language-plaintext highlighter-rouge">get_queryset()</code>을 오버라이드 할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">FlavorListView</span><span class="p">(</span><span class="n">ListView</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+
+    <span class="k">def</span> <span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">queryset</span> <span class="o">=</span> <span class="nb">super</span><span class="p">().</span><span class="n">get_queryset</span><span class="p">()</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">request</span><span class="p">.</span><span class="n">GET</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"q"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">q</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">queryset</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">title__icontains</span><span class="o">=</span><span class="n">q</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">queryset</span>
+</code></pre></div></div>
+
+<h2 id="106-using-just-djangoviewsgenericview">10.6 Using Just django.views.generic.View</h2>
+
+<p><code class="language-plaintext highlighter-rouge">django.views.generic.view</code> 클래스는 GET 메서드와 함께 json, pdf, etc.. 으로 서비스하려 할때 매우 유용합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.mixins</span> <span class="kn">import</span> <span class="n">LoginRequiredMixin</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponse</span>
+<span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">get_object_or_404</span>
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">View</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+<span class="kn">from</span> <span class="nn">.reports</span> <span class="kn">import</span> <span class="n">make_flavor_pdf</span>
+
+<span class="k">class</span> <span class="nc">FlavorPDFView</span><span class="p">(</span><span class="n">LoginRequiredMixin</span><span class="p">,</span> <span class="n">View</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">flavor</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Flavor</span><span class="p">,</span> <span class="n">slug</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s">'slug'</span><span class="p">])</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">content_type</span><span class="o">=</span><span class="s">'application/pdf'</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">make_flavor_pdf</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">response</span>
+</code></pre></div></div>
+
+<p>더 복잡한 로직과 더 많은 믹스인를 사용하더라도 <code class="language-plaintext highlighter-rouge">django.views.generic.views</code>가 제공하는 간단 명료함 덕분에 더 복잡한 로직과 많은 믹스인도 간단하게 구현할 수 있습니다.</p>
+
+<h2 id="107-additional-resources">10.7 Additional Resources</h2>
+
+<ul>
+  <li><a href="http://docs.djangoproject.com/en/3.2/topics/class-based-views/">class-based-views</a></li>
+  <li><a href="http://docs.djangoproject.com/en/3.2/topics/class-based-views/generic-display/">generic-display</a></li>
+  <li><a href="http://docs.djangoproject.com/en/3.2/topics/class-based-views/generic-editing/">generic-editing</a></li>
+  <li><a href="http://docs.djangoproject.com/en/3.2/topics/class-based-views/mixins/">mixins</a></li>
+  <li>The GCBV inspector at <a href="http://ccbv.co.uk/">ccbv.co.uk</a></li>
+  <li><a href="http://python.org/download/releases/2.3/mro/">For Python 2.3, nevertheless an excellent guide to how Python handles MRO.</a></li>
+  <li><a href="http://daniel.feldroy.com/tag/class-based-views.html">daniel.feldroy.com/tag/class-based-views.html</a></li>
+  <li><a href="http://spapas.github.io/2018/03/19/comprehensive-django-cbv-guide/">comprehensive-django-cbv-guide/</a> - Serafeim Papastefanos’ lovely deep dive into Django CBVs</li>
+  <li><a href="http://djangodeconstructed.com/2020/04/27/roll-your-own-class-based-views-in-djang">djangodeconstructed.com/2020/04/27/roll-your-own-class-based-views-in-djang</a> - Another deep dive into CBVs, this one illustrating how to create a RESTful API with DRF</li>
+</ul>
+
+<h2 id="108-summary">10.8 Summary</h2>
+
+<ul>
+  <li>mixin과 CBV를 이용하는 방법</li>
+  <li>어떤 작업에 django의 CBV가 이용되어야 하는가</li>
+  <li>CBV 의 일반적인 팁</li>
+  <li>CBV와 폼 연동</li>
+  <li><code class="language-plaintext highlighter-rouge">django.view.generic.view</code> 사용하기</li>
+</ul>
+:ET

@@ -1,0 +1,45 @@
+I"�<p><code class="language-plaintext highlighter-rouge">verbose_name</code>은 Django 모델을 admin 페이지에서 조회할 때, 필드명 대신 알아보기 쉬운 단어로 지정하는 것이다.</p>
+
+<p>일단적으로 사용법은 아래와 같다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">verbose_name</span><span class="o">=</span><span class="s">'이름'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Custom 모델을 구현할때 <code class="language-plaintext highlighter-rouge">AbstractUser</code>을 상속받으면, 기본적인 것은 Django가 구현해주고, 추가적인 필드들을 추가할 수 있다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">username</code>와 같은 Django가 기본적으로 구현해 주는 필드에 적용하려면, <code class="language-plaintext highlighter-rouge">AbstractBaseUser</code>을 상속하고 <code class="language-plaintext highlighter-rouge">USERNAME_FIELD</code>로 해당 필드를 지정해주어야 한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.models</span> <span class="kn">import</span> <span class="n">AbstractBaseUser</span>
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">AbstractBaseUser</span><span class="p">):</span>
+    <span class="n">custom_username</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">verbose_name</span><span class="o">=</span><span class="s">'이름'</span><span class="p">)</span>
+    <span class="n">USERNAME_FIELD</span> <span class="o">=</span> <span class="s">'custom_username'</span>
+</code></pre></div></div>
+
+<p>위처럼 구현하게 되면 migrate는 정상적으로 진행된다. 하지만 user나 superuser를 생성하려하
+<code class="language-plaintext highlighter-rouge">AttributeError: 'Manager' object has no attribute 'get_by_natural_key'</code> 에러가 발생한다.</p>
+
+<p>해당 모델의 커스텀 매니저를 구현하고, <code class="language-plaintext highlighter-rouge">objects</code>에 커스텀 매니저를 지정해주면 된다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.models</span> <span class="kn">import</span> <span class="n">UserManager</span>
+
+<span class="k">class</span> <span class="nc">CustomUserManager</span><span class="p">(</span><span class="n">UserManager</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">CustomUser</span><span class="p">(</span><span class="n">AbstractBaseUser</span><span class="p">):</span>
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">CustomUserManager</span><span class="p">()</span>
+    <span class="p">...</span>
+</code></pre></div></div>
+
+<p>이제 superuser를 생성해보자!</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>TypeError: create_superuser() missing 2 required positional arguments: 'username' and 'email'
+</code></pre></div></div>
+
+<p>마지막으로 create_user, create_superuser 메서드도 재정의해주면 됩니다.</p>
+
+<p>재정의 방법은 <a href="https://docs.djangoproject.com/ko/2.1/topics/auth/customizing/">Django Docs</a>으로 대신합니다. 씨익.</p>
+:ET

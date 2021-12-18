@@ -1,0 +1,420 @@
+I"��<h1 id="django-rest-framework---renderers">Django REST Framework - Renderers</h1>
+
+<hr />
+
+<p><em>“Before a TemplateResponse instance can be returned to the client, it must be rendered. The rendering process takes the intermediate representation of template and context, and turns it into the final byte stream that can be served to the client.”</em></p>
+
+<p><em>“TemplateResponse 인스턴스가 클라이언트에 반환되기 전에 렌더링 되어야 합니다. 렌더링 프로세스는 템플릿과 컨텍스트의 중간 표현을 가져 와서 클래이언트에 제공 할 수 있는 최종 바이트 스트림으로 바꿉니다.”</em></p>
+
+<p><em>— Django documentation</em></p>
+
+<hr />
+
+<h2 id="renderers">Renderers</h2>
+<p>REST 프레임워크에는 다양한 미디어 타입의 response를 반환할 수 있는 여러가지 <code class="language-plaintext highlighter-rouge">Renderer</code>클래스가 포함되어 있습니다. 또한 custom renderer를 정의할 수 있으므로 자신의 미디어 타입을 유연하게 디자인 할 수 있습니다.</p>
+
+<h3 id="how-the-renderer-is-determined">How the renderer is determined</h3>
+<p>뷰에 대한 유혀한 renderer set은 항상 클래스의 list로 정의됩니다. 뷰가 입력되면 REST 프레임워크는 들어오는 request에 대한 내용 협상을 수행하고, request를 만족시키는데 가장 적합한 renderer를 결정합니다.<br />
+콘텐츠 협상의 기본 프로세스는 request의 <code class="language-plaintext highlighter-rouge">Accept</code>헤더를 조사하여 response에서 예상하는 미디어 타입을 판별하는 것입니다. 선택적으로, URL의  form suffixes를 사용하여 명시적으로 특정 표현을 요청할 수 있습니다. 예를 들어 URL <code class="language-plaintext highlighter-rouge">http://example.com/api/users_count.json</code>은 항상 JSON 데이터를 반환하는 엔드포인트 일 수 있습니다.<br />
+더 자세한 내용은 <a href="http://www.django-rest-framework.org/api-guide/content-negotiation/">content negotiation</a>을 참조하세요.</p>
+
+<h3 id="setting-the-renderers">Setting the renderers</h3>
+<p>기본 renderer set은 <code class="language-plaintext highlighter-rouge">DEFAULT_RENDERER_CLASSES</code> 설정을 사용하여 전역으로 설정할 수 있습니다. 예를 들어, 다음 설정은 <code class="language-plaintext highlighter-rouge">JSON</code>을 기본 미디어 타입으로 사용하며 자체 기술 API도 포함됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'DEFAULT_RENDERER_CLASSES'</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s">'rest_framework.renderers.JSONRenderer'</span><span class="p">,</span>
+        <span class="s">'rest_framework.renderers.BrowsableAPIRenderer'</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">APIView</code> CBV를 사용하여 개별 view나 viewset에 사용되는 renderer를 설정할 수도 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.models</span> <span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">rest_framework.renderers</span> <span class="kn">import</span> <span class="n">JSONRenderer</span>
+<span class="kn">from</span> <span class="nn">rest_framework.response</span> <span class="kn">import</span> <span class="n">Response</span>
+<span class="kn">from</span> <span class="nn">rest_framework.views</span> <span class="kn">import</span> <span class="n">APIView</span>
+
+<span class="k">class</span> <span class="nc">UserCountView</span><span class="p">(</span><span class="n">APIView</span><span class="p">):</span>
+    <span class="s">"""
+    A view that returns the count of active users in JSON.
+    """</span>
+    <span class="n">renderer_classes</span> <span class="o">=</span> <span class="p">(</span><span class="n">JSONRenderer</span><span class="p">,</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">user_count</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="n">count</span><span class="p">()</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">{</span><span class="s">'user_count'</span><span class="p">:</span> <span class="n">user_count</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+</code></pre></div></div>
+<p>또는 FBV의 뷰와 함께 <code class="language-plaintext highlighter-rouge">@aip_view</code>데코레이터를 사용하는 경우</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">api_view</span><span class="p">([</span><span class="s">'GET'</span><span class="p">])</span>
+<span class="o">@</span><span class="n">renderer_classes</span><span class="p">((</span><span class="n">JSONRenderer</span><span class="p">,))</span>
+<span class="k">def</span> <span class="nf">user_count_view</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="s">"""
+    A view that returns the count of active users in JSON.
+    """</span>
+    <span class="n">user_count</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="n">count</span><span class="p">()</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="p">{</span><span class="s">'user_count'</span><span class="p">:</span> <span class="n">user_count</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="ordering-of-renderer-classes">Ordering of renderer classes</h3>
+<p>API의 Renderer 클래스를 지정하여 각 미디어 타입에 할당 할 우선 순위를 생각할 때 중요합니다. 클라이언트가 <code class="language-plaintext highlighter-rouge">Accept: */*</code> 헤더를 보내는 것과 <code class="language-plaintext highlighter-rouge">Accept</code> 헤더를 포함하지 않는 것과 같이 받아 들일 수 있는 표현은 클라이언트가 명시하지 않으면 REST 프레임워크는 list에서 response에 사용할 첫번째 renderer를 선택합니다.<br />
+예를 들어 API가 JSON response과 HTML browsable API를 제공하는 경우, <code class="language-plaintext highlighter-rouge">Accept</code> 헤더를 지정하지 않은 클라이언트에 <code class="language-plaintext highlighter-rouge">JSON</code> 응답을 보내려면 <code class="language-plaintext highlighter-rouge">JSONRenderer</code>를 기본 renderer로 설정하는 것이 좋습니다.<br />
+API에 요청에 따라 일반 웹 페이지와 API 응답을 모두 제공 할 수있는 view가 포함되어있는 경우, <a href="http://www.newmediacampaigns.com/blog/browser-rest-http-accept-headers">깨진 승인 헤더</a>를 보내는 오래된 브라우저에서 제대로 작동하려면 <code class="language-plaintext highlighter-rouge">TemplateHTMLRenderer</code>를 기본 렌더러로 설정하는 것이 좋습니다.</p>
+
+<hr />
+
+<h2 id="api-reference">API Reference</h2>
+
+<h3 id="jsonrenderer">JSONRenderer</h3>
+<p>utf-8 인코딩을 사용하여 request 데이터를 <code class="language-plaintext highlighter-rouge">JSON</code>으로 렌더링합니다.<br />
+기본 스타일은 유니코드 문자를 포함하고 불필요한 공백 없이 콤팩트 스타일을 사용하여 response를 렌더링하는 것입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="s">"unicode black star"</span><span class="p">:</span><span class="s">"★"</span><span class="p">,</span><span class="s">"value"</span><span class="p">:</span><span class="mi">999</span><span class="p">}</span>
+</code></pre></div></div>
+<p>클라이언트는 <code class="language-plaintext highlighter-rouge">indent</code>미디어 타입 parameter를 추가로 포함할 수 있습니다. 이 경우 반환 된 JSON은 들여쓰기 됩니다. 예: <code class="language-plaintext highlighter-rouge">Accept: application/json; indent=4</code></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+    <span class="s">"unicode black star"</span><span class="p">:</span> <span class="s">"★"</span><span class="p">,</span>
+    <span class="s">"value"</span><span class="p">:</span> <span class="mi">999</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>기본 JSON 인코딩 스타일은 <code class="language-plaintext highlighter-rouge">UNICODE_JSON</code>과 <code class="language-plaintext highlighter-rouge">COMPACT_JSON</code> 설정 키를 사용하여 변경할 수 있습니다.<br />
+<strong>.media_type</strong>: <code class="language-plaintext highlighter-rouge">application/json</code><br />
+<strong>.format</strong>: <code class="language-plaintext highlighter-rouge">'.json'</code><br />
+<strong>charset</strong>: <code class="language-plaintext highlighter-rouge">None</code></p>
+
+<h3 id="templatehtmlrenderer">TemplateHTMLRenderer</h3>
+<p>Django의 표준 템플릿 렌더링을 사용하여 데이터를 HTML으로 렌더링합니다. 다른 renderer와 달리 <code class="language-plaintext highlighter-rouge">Response</code>에 전달 된 데이터는 serializer 할 필요가 없습니다. 또한 다른 renderer와 달리 <code class="language-plaintext highlighter-rouge">Response</code>를 만들 때 <code class="language-plaintext highlighter-rouge">template_name</code>인수를 포함 할 수 있습니다.<br />
+TemplateHTMLRenderer는 <code class="language-plaintext highlighter-rouge">response,data</code>를 컨텍스트 dict로 사용하여 <code class="language-plaintext highlighter-rouge">RequestContext</code>를 만들고 컨텍스트를 렌더링하는데 사용할 템플릿 이름을 결정합니다.<br />
+템플릿 이름은 (우선 순위에 따라) 다음과 같이 결정됩니다:</p>
+<ol>
+  <li>명시적으로 <code class="language-plaintext highlighter-rouge">template_name</code>인수는 response에 전달됩니다.</li>
+  <li>이 클래스는 명시적인  <code class="language-plaintext highlighter-rouge">.template_name</code> 속성이 설정됩니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">view.get_template_names()</code>를 호출 한 결과를 반환합니다.</li>
+</ol>
+
+<p><code class="language-plaintext highlighter-rouge">TemplateHTMLRenderer</code>를 사용하는 view의 예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">UserDetail</span><span class="p">(</span><span class="n">generics</span><span class="p">.</span><span class="n">RetrieveAPIView</span><span class="p">):</span>
+    <span class="s">"""
+    A view that returns a templated HTML representation of a given user.
+    """</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span>
+    <span class="n">renderer_classes</span> <span class="o">=</span> <span class="p">(</span><span class="n">TemplateHTMLRenderer</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="nb">object</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">get_object</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">({</span><span class="s">'user'</span><span class="p">:</span> <span class="bp">self</span><span class="p">.</span><span class="nb">object</span><span class="p">},</span> <span class="n">template_name</span><span class="o">=</span><span class="s">'user_detail.html'</span><span class="p">)</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">TemplateHTMLRenderer</code>으로 REST 프레임워크를 사용하여 일반 HTML 페이지를 리턴하거나 HTML 및 API 응답을 단일 엔드포인트에서 리턴하도록 사용할 수 있습니다.<br />
+<code class="language-plaintext highlighter-rouge">TemplateHTMLRenderer</code>를 사용하는 웹 사이트를 구축하는 경우 <code class="language-plaintext highlighter-rouge">TemplateHTMLRenderer</code>를 <code class="language-plaintext highlighter-rouge">renderer_classes</code> 목록의 첫 번째 클래스로 나열하는 것이 좋습니다. 이렇게하면 잘못 형성된 <code class="language-plaintext highlighter-rouge">ACCEPT:</code> 헤더를 보내는 브라우저에 대해서도 우선 순위가 지정됩니다.<br />
+<code class="language-plaintext highlighter-rouge">TemplateHTMLRenderer</code>사용에 대한 추가 예제는 <a href="http://www.django-rest-framework.org/topics/html-and-forms/">HTML &amp; Forms Topic Page</a>를 참조하세요.</p>
+
+<p><strong>.media_type</strong>: <code class="language-plaintext highlighter-rouge">text/html</code><br />
+<strong>.format</strong>: <code class="language-plaintext highlighter-rouge">'.html'</code><br />
+<strong>.charset</strong>: <code class="language-plaintext highlighter-rouge">utf-8</code><br />
+참조 : <code class="language-plaintext highlighter-rouge">StaticHTMLRenderer</code></p>
+
+<h3 id="statichtmlrenderer">StaticHTMLRenderer</h3>
+<p>단순히 미리 렌더링 된 HTML을 반환하는 단순한 renderer입니다. 다른 렌더러와 달리 response 객체에 전달 된 데이터는 반환 할 내용을 나타내는 문자열이어야 합니다.<br />
+<code class="language-plaintext highlighter-rouge">StaticHTMLRenderer</code>를 사용하는 view의 예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">api_view</span><span class="p">((</span><span class="s">'GET'</span><span class="p">,))</span>
+<span class="o">@</span><span class="n">renderer_classes</span><span class="p">((</span><span class="n">StaticHTMLRenderer</span><span class="p">,))</span>
+<span class="k">def</span> <span class="nf">simple_html_view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="s">'&lt;html&gt;&lt;body&gt;&lt;h1&gt;Hello, world&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;'</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div></div>
+<p><code class="language-plaintext highlighter-rouge">StaticHTMLRenderer</code>는 REST 프레임워크를 사용하여 일반 HTML페이지를 리턴하거나 HTML및 API 응답을 단일 엔드포인트에서 리턴하도록 사용할 수 있습니다.</p>
+
+<p><strong>.media_type</strong>: <code class="language-plaintext highlighter-rouge">text/html</code><br />
+<strong>.format</strong>: <code class="language-plaintext highlighter-rouge">'.html'</code><br />
+<strong>.charset</strong>: <code class="language-plaintext highlighter-rouge">utf-8</code><br />
+참조 : <code class="language-plaintext highlighter-rouge">TemplateHTMLRenderer</code></p>
+
+<h3 id="browsableapirenderer">BrowsableAPIRenderer</h3>
+<p>Browsable API를 위해 데이터를 HTML으로 렌더링합니다.
+<img src="./images/BrowsableAPIRenderer.png" alt="" /><br />
+이 renderer는 가장 우선순위가 높은 다른 renderer를 셜정하고 이를 사용하여 HTML 페이지 내에 API 스타일 response를 표시합니다.</p>
+
+<p><strong>.media_type</strong>: <code class="language-plaintext highlighter-rouge">text/html</code><br />
+<strong>.format</strong>: <code class="language-plaintext highlighter-rouge">'.api'</code><br />
+<strong>.charset</strong>: <code class="language-plaintext highlighter-rouge">utf-8</code>
+<strong>.template</strong>: <code class="language-plaintext highlighter-rouge">'rest_framework/api.html'</code></p>
+
+<h4 id="customizing-browsableapirenderer">Customizing BrowsableAPIRenderer</h4>
+<p>기본적으로 response content는 <code class="language-plaintext highlighter-rouge">BrowsableAPIRenderer</code>와 별도로 우선 순위가 가장 높은 renderer로 렌더링 됩니다. 이 동작을 custom 해야하는 경우 (ex: HTML을 기본 리턴 형식으로 사용하고 browsable API에서 JSON을 사용하는 경우) <code class="language-plaintext highlighter-rouge">get_default_renderer()</code> 메서드를 대체하서 이를 수행 할 수 있습니다. 예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">CustomBrowsableAPIRenderer</span><span class="p">(</span><span class="n">BrowsableAPIRenderer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_default_renderer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">JSONRenderer</span><span class="p">()</span>
+</code></pre></div></div>
+
+<h3 id="adminrenderer">AdminRenderer</h3>
+<p>관리자와 같은 디스플레이를 위해 데이터를 HTML으로 렌더링합니다.
+<img src="./images/AdminRenderer.png" alt="" /></p>
+
+<p>이  renderer는 데이터 관리를 위한 사용자에게 친숙한 인터페이스를 제공해야하는 CRUD 스타일 웹 API에 적합합니다.</p>
+<blockquote>
+  <p>CRUD : Create(생성), Read(읽기), Update(갱신), Delete(삭제)</p>
+</blockquote>
+
+<p>HTML 폼이 제대로 지원하지 못하기 때문에 중첩 된 뷰 또는 입력을 위해 serializer를 나열한 뷰는 <code class="language-plaintext highlighter-rouge">AdminREnderer</code>와 잘 작동하지 않습니다.<br />
+<strong>Note</strong>: <code class="language-plaintext highlighter-rouge">AdminRenderer</code>는 올바르게 구성된 <code class="language-plaintext highlighter-rouge">URL_FIELD_NAME</code>(기본적으로 url)속성이 데이터에 있는 경우에만 detail 페이지에 대한 링크를 포함할 수 있습니다. <code class="language-plaintext highlighter-rouge">HyperlinkedModelSerializer</code>의 경우지만, <code class="language-plaintext highlighter-rouge">ModelSerializer</code> 또는 일반 Serializer 클래스의 경우 필드를 명시적으로 포함해야합니다. 예를 들어 여기서는 <code class="language-plaintext highlighter-rouge">get_absolute_url</code> 모델을 사용합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">AccountSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="p">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">serializers</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="s">'get_absolute_url'</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Account</span>
+</code></pre></div></div>
+<p><strong>.media_type</strong>: <code class="language-plaintext highlighter-rouge">text/html</code><br />
+<strong>.format</strong>: <code class="language-plaintext highlighter-rouge">'.admin'</code><br />
+<strong>.charset</strong>: <code class="language-plaintext highlighter-rouge">utf-8</code><br />
+<strong>.template</strong>: <code class="language-plaintext highlighter-rouge">'rest_framework/admin.html'</code></p>
+
+<h3 id="htmlformrenderer">HTMLFormRenderer</h3>
+<p>serializer에서 반환된 데이터를 HTML from으로 렌더링합니다. 이 renderer의 출력에는  포함된 <code class="language-plaintext highlighter-rouge">&lt;form&gt;</code>태크, 숨겨진 <code class="language-plaintext highlighter-rouge">CSRF</code>입력이나 <code class="language-plaintext highlighter-rouge">submit</code>버튼이 포함되지 않습니다.<br />
+이 renderer는 직접 사용하기 위한 것이 아니며, serializer 인스턴스를  <code class="language-plaintext highlighter-rouge">renderer_form</code> 템플릿 태그에 전달하여 템플릿에서 대신 사용할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="o">%</span> <span class="n">load</span> <span class="n">rest_framework</span> <span class="o">%</span><span class="p">}</span>
+
+<span class="o">&lt;</span><span class="n">form</span> <span class="n">action</span><span class="o">=</span><span class="s">"/submit-report/"</span> <span class="n">method</span><span class="o">=</span><span class="s">"post"</span><span class="o">&gt;</span>
+    <span class="p">{</span><span class="o">%</span> <span class="n">csrf_token</span> <span class="o">%</span><span class="p">}</span>
+    <span class="p">{</span><span class="o">%</span> <span class="n">render_form</span> <span class="n">serializer</span> <span class="o">%</span><span class="p">}</span>
+    <span class="o">&lt;</span><span class="nb">input</span> <span class="nb">type</span><span class="o">=</span><span class="s">"submit"</span> <span class="n">value</span><span class="o">=</span><span class="s">"Save"</span> <span class="o">/&gt;</span>
+<span class="o">&lt;/</span><span class="n">form</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<p>더 자세한 내용은 <a href="http://www.django-rest-framework.org/topics/html-and-forms/">HTML &amp; Forms</a>를 참조하세요.</p>
+
+<p><strong>.media_type</strong>: <code class="language-plaintext highlighter-rouge">text/html</code><br />
+<strong>.format</strong>: <code class="language-plaintext highlighter-rouge">'.form'</code><br />
+<strong>.charset</strong>: <code class="language-plaintext highlighter-rouge">utf-8</code><br />
+<strong>.template</strong>: <code class="language-plaintext highlighter-rouge">'rest_framework/horizontal/form.html'</code></p>
+
+<h3 id="multipartrenderer">MultiPartRenderer</h3>
+<p>이 renderer는 HTML 다중 파트 form 데이터를 렌더링하는데 사용됩니다. response renderer로는 적합하지 않지만 대신 REST 프레임워크의 <a href="http://www.django-rest-framework.org/api-guide/testing/">테스트 클라이언트 및 테스트 request 팩토리</a>를 사용하여 테스트 request를 만드는데 사용됩니다.</p>
+
+<p><strong>.media_type</strong>: <code class="language-plaintext highlighter-rouge">multipart/form-data; boundary=BoUnDaRyStRiNg</code><br />
+<strong>.format</strong>: <code class="language-plaintext highlighter-rouge">'.multipart'</code><br />
+<strong>.charset</strong>: <code class="language-plaintext highlighter-rouge">utf-8</code></p>
+
+<hr />
+
+<h2 id="custom-renderers">Custom renderers</h2>
+<p>custom renderer를 구현하려면 <code class="language-plaintext highlighter-rouge">BaseRenderer</code>를 재정의하고, <code class="language-plaintext highlighter-rouge">.media_type</code>와 <code class="language-plaintext highlighter-rouge">.format</code>속성을 설정하고 <code class="language-plaintext highlighter-rouge">.render(self, data, media_type=None, renderer_context=None)</code> 메서드를 구현해야 합니다.<br />
+메서드는 HTTP response의 본문으로 사용될 바이트 테스트를 반환해야합니다.<br />
+<code class="language-plaintext highlighter-rouge">render()</code>메서드에 전달 된 인수는 다음과 같습니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>date
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">response()</code> 인스턴스화에 의해 설정된 요청 데이터입니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>media_type=None
+</code></pre></div></div>
+
+<p>선택사항. 제공되는 경우 콘텐츠 협상 단계에서 결정한대로 허용되는 미디어 타입입니다.<br />
+클라이언트의 <code class="language-plaintext highlighter-rouge">Accept:</code> 헤더에 따라 renderer의 <code class="language-plaintext highlighter-rouge">media_type</code>속성보다 더 구체적 일 수 있으며, 미디어 타입 parameter가 포함될 수 있습니다. 예를 들어 <code class="language-plaintext highlighter-rouge">"application/json; neated=true"</code>와 같습니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>renderer_context=None
+</code></pre></div></div>
+<p>선택사항. 제공된 경우, 이는 뷰에서 제공하는 상황별 정보의 dict입니다.<br />
+기본적으로 이 키에는 <code class="language-plaintext highlighter-rouge">view</code>, <code class="language-plaintext highlighter-rouge">request</code>, <code class="language-plaintext highlighter-rouge">response</code>, <code class="language-plaintext highlighter-rouge">args</code>, <code class="language-plaintext highlighter-rouge">kwargs</code> 와 같은 키가 포함됩니다.</p>
+
+<h3 id="example">Example</h3>
+<p>다음은 <code class="language-plaintext highlighter-rouge">data</code> parameter가 포함된 response를 응답내용으로 반환하는 일반텍스트 렌더러의 예입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.utils.encoding</span> <span class="kn">import</span> <span class="n">smart_unicode</span>
+<span class="kn">from</span> <span class="nn">rest_framework</span> <span class="kn">import</span> <span class="n">renderers</span>
+
+
+<span class="k">class</span> <span class="nc">PlainTextRenderer</span><span class="p">(</span><span class="n">renderers</span><span class="p">.</span><span class="n">BaseRenderer</span><span class="p">):</span>
+    <span class="n">media_type</span> <span class="o">=</span> <span class="s">'text/plain'</span>
+    <span class="nb">format</span> <span class="o">=</span> <span class="s">'txt'</span>
+
+    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">media_type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">renderer_context</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">charset</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="setting-the-character-set">Setting the character set</h3>
+<p>기본적으로 renderer 클래스는 <code class="language-plaintext highlighter-rouge">UTF-8</code>인코딩을 사용한다고 가정합니다. 다른 인코딩을 사용하려면 renderer에서 <code class="language-plaintext highlighter-rouge">charset</code> 속성을 설정하세요.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">PlainTextRenderer</span><span class="p">(</span><span class="n">renderers</span><span class="p">.</span><span class="n">BaseRenderer</span><span class="p">):</span>
+    <span class="n">media_type</span> <span class="o">=</span> <span class="s">'text/plain'</span>
+    <span class="nb">format</span> <span class="o">=</span> <span class="s">'txt'</span>
+    <span class="n">charset</span> <span class="o">=</span> <span class="s">'iso-8859-1'</span>
+
+    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">media_type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">renderer_context</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">charset</span><span class="p">)</span>
+</code></pre></div></div>
+<p>renderer 클래스가 유니코드 문자열을 반환하면 인코딩을 결정하는데 사용되는 renderer의 <code class="language-plaintext highlighter-rouge">charset</code> 속성이 설정 된 <code class="language-plaintext highlighter-rouge">Response</code>클래스에 의해 응답 내용이 bytestring으로 강제 변환됩니다.<br />
+renderer가 기존 이진 내용을 나타내는 바이트 테스트를 반환하는 경우 response의 <code class="language-plaintext highlighter-rouge">charset</code>값을 <code class="language-plaintext highlighter-rouge">None</code>으로 설정해야 합니다.(response의 <code class="language-plaintext highlighter-rouge">Content-Type</code>헤더에 <code class="language-plaintext highlighter-rouge">charset</code>값이 설정되지 않도록 보장합니다.)<br />
+경우에 따라 <code class="language-plaintext highlighter-rouge">renderer_style</code>속성을 <code class="language-plaintext highlighter-rouge">binary</code>로 설정할 수도 있습니다. 그렇게 하면 browsable API가 이진 컨텐츠를 문자열로 표시하지 않게 됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">JPEGRenderer</span><span class="p">(</span><span class="n">renderers</span><span class="p">.</span><span class="n">BaseRenderer</span><span class="p">):</span>
+    <span class="n">media_type</span> <span class="o">=</span> <span class="s">'image/jpeg'</span>
+    <span class="nb">format</span> <span class="o">=</span> <span class="s">'jpg'</span>
+    <span class="n">charset</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">render_style</span> <span class="o">=</span> <span class="s">'binary'</span>
+
+    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">media_type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">renderer_context</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">data</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="advanced-renderer-usage">Advanced renderer usage</h2>
+<p>REST 프레임워크의 renderer를 사용하여 매우 유연한 작업을 수행 할 수 있습니다. 몇가지 예…</p>
+
+<ul>
+  <li>요청한 미디어 타입에 따라 같은 엔드포인트에서 플랫 또는 중첩된 표현을 제공하세요.</li>
+  <li>일반 HTML 웹 페이지와 JSON 기반의 API응답을 동일한 엔드포인트에서 제공하세요.</li>
+  <li>사용할 API 클라이언트에 대해 여러 타입의 HTML 표현을 지정하세요.</li>
+  <li><code class="language-plaintext highlighter-rouge">media_type = 'image/*'</code>을 사용하는 것과 같이 renderer의 미디어 타입을 지정하고 <code class="language-plaintext highlighter-rouge">Accept</code>헤더를 사용하여 response의 인코딩을 변경합니다.</li>
+</ul>
+
+<h3 id="varying-behaviour-by-media-type">Varying behaviour by media type</h3>
+<p>경우에 따라 view에서 허용되는 미디어 타입에 따라 다른 serializer 스타일을 사용하는 것이 좋습니다. 이 작업을 수행해야하는 경우 <code class="language-plaintext highlighter-rouge">request.accepted_renderer</code>에 액서스하여 response에 사용될 협상 된 renderer를 결정할 수 있습니다.</p>
+
+<p>예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">api_view</span><span class="p">((</span><span class="s">'GET'</span><span class="p">,))</span>
+<span class="o">@</span><span class="n">renderer_classes</span><span class="p">((</span><span class="n">TemplateHTMLRenderer</span><span class="p">,</span> <span class="n">JSONRenderer</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">list_users</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="s">"""
+    A view that can return JSON or HTML representations
+    of the users in the system.
+    """</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">Users</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">request</span><span class="p">.</span><span class="n">accepted_renderer</span><span class="p">.</span><span class="nb">format</span> <span class="o">==</span> <span class="s">'html'</span><span class="p">:</span>
+        <span class="c1"># TemplateHTMLRenderer takes a context dict,
+</span>        <span class="c1"># and additionally requires a 'template_name'.
+</span>        <span class="c1"># It does not require serialization.
+</span>        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s">'users'</span><span class="p">:</span> <span class="n">queryset</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">template_name</span><span class="o">=</span><span class="s">'list_users.html'</span><span class="p">)</span>
+
+    <span class="c1"># JSONRenderer requires serialized data as normal.
+</span>    <span class="n">serializer</span> <span class="o">=</span> <span class="n">UserSerializer</span><span class="p">(</span><span class="n">instance</span><span class="o">=</span><span class="n">queryset</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">serializer</span><span class="p">.</span><span class="n">data</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="underspecifying-the-media-type-미디어-타입을-지정하지-않음">Underspecifying the media type (미디어 타입을 지정하지 않음)</h3>
+<p>경우에 따라 renderer가 다양한 미디어타입을 제공해야 할 수도 있습니다. 이 경우 <code class="language-plaintext highlighter-rouge">image/*</code>이나 <code class="language-plaintext highlighter-rouge">*/*</code>과 같은 <code class="language-plaintext highlighter-rouge">media_type</code>값을 사용하여 미디어 타입을 명확하게 지정할 수 있습니다.<br />
+renderer의 미디어 타입을 명시하지 않은 경우 <code class="language-plaintext highlighter-rouge">content_type</code>속성을 사용하여 response을 반환 할 때 명시적으로 미디어타입을 지정해야합니다. 예:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">'image/png'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="designing-your-media-types">Designing your media types</h3>
+<p>많은 웹 API를 위해, 하이퍼링크 관계를 갖는 단순 <code class="language-plaintext highlighter-rouge">JSON</code> 응답은 충분할 수 있다. RESTful 디자인과 <a href="http://timelessrepo.com/haters-gonna-hateoas"><code class="language-plaintext highlighter-rouge">HATEOAS</code></a>를 완전히 포용하려면 미디어타입의 디자인과 사용법을 더 자세히 고려해야합니다.</p>
+
+<p><a href="http://roy.gbiv.com/untangled/2008/rest-apis-must-be-hypertext-driven">the words of Roy Fielding</a>에서는 <em>“REST API는 리소스를 표현하고 애플리케이션 상태를 유도하거나 기존 표준 미디어 타입에 대한 확장 관계 이름 및 <code class="language-plaintext highlighter-rouge">/</code> 또는 하이퍼 텍스트 사용 가능 마크 업을 정의하는 데 사용되는 미디어 유형을 정의하는데 필요한 모든 노력을 기울여야합니다.”</em><br />
+custom 미디어 타입의 좋은 예는 GitHub의 custom <a href="https://developer.github.com/v3/media/">application/vnd.github+json</a> 미디어 타입 사용과 Mike Amundsen의 IANA 승인 <a href="http://www.amundsen.com/media-types/collection/">application/vnd.collection+json</a>기반 하이퍼 미디어를 참조하십시오.</p>
+
+<h3 id="html-error-views">HTML error views</h3>
+<p>일반적으로, renderer는 <code class="language-plaintext highlighter-rouge">Http404</code>나 <code class="language-plaintext highlighter-rouge">PermissionDenied</code>예외 또는 <code class="language-plaintext highlighter-rouge">APIException</code>의 서브 클래스와 같이 일반 response를 처리하는지 또는 예외가 발생하여 response가 발생하는지에 관계없이 동일하게 동작합니다.<br />
+<code class="language-plaintext highlighter-rouge">TemplateHTMLRenderer</code> 또는 <code class="language-plaintext highlighter-rouge">StaticHTMLRenderer</code>를 사용중이고 예외가 발생하면 동작이 약간 다르며 <a href="https://docs.djangoproject.com/en/1.10/topics/http/views/#customizing-error-views">Django’s default handling of error views</a>가 그대로 반영됩니다.<br />
+HTML renderer에 의해 발생되고 처리되는 예외는 우선 순위에 따라 다음 방법 중 하나를 사용하여 렌더링을 시도합니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">{status_code}.html</code>이라는 템플릿을 로드하고 렌더링합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">api_exception.html</code>이라는 템플릿을 로드하고 렌더링합니다.</li>
+  <li>HTTP 상태 코드와 텍스트를 렌더링합니다.(ex. <code class="language-plaintext highlighter-rouge">"404 Not Found"</code>)</li>
+</ul>
+
+<p>템플릿은 <code class="language-plaintext highlighter-rouge">status_code</code>와 <code class="language-plaintext highlighter-rouge">detail</code> 키를 포함하는 <code class="language-plaintext highlighter-rouge">RequestContext</code>로 렌더링됩니다.</p>
+
+<p><strong>Note</strong>: <code class="language-plaintext highlighter-rouge">DEBUG=True</code>이면 Django의 표준 추적 오류 페이지가 HTTP 상태 코드와 텍스트를 렌더링하는 대신 표시됩니다.</p>
+
+<hr />
+
+<h2 id="third-party-packages">Third party packages</h2>
+<p>다음의 타사 패키지도 제공됩니다.</p>
+
+<h3 id="yaml">YAML</h3>
+<p><a href="http://jpadilla.github.io/django-rest-framework-yaml/">REST framework YAML</a>은 <a href="http://www.yaml.org/">YAML</a> 파싱 및 렌더링 지원을 제공합니다. 이전에 REST 프레임 워크 패키지에 직접 포함되어 있었으며 이제는 타사 패키지로 대신 지원됩니다.</p>
+
+<h4 id="설치-및-구성">설치 및 구성</h4>
+<p>pip을 사용해 설치합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ pip install djangorestframework-yaml
+</code></pre></div></div>
+<p>REST 프레임워크 설정을 수정합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'DEFAULT_PARSER_CLASSES'</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s">'rest_framework_yaml.parsers.YAMLParser'</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s">'DEFAULT_RENDERER_CLASSES'</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s">'rest_framework_yaml.renderers.YAMLRenderer'</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="xml">XML</h3>
+<p><a href="http://jpadilla.github.io/django-rest-framework-xml/">REST Framework XML</a>은 간단한 비공식 XML 형식을 제공합니다. 이전에 REST 프레임 워크 패키지에 직접 포함되어 있었으며 이제는 타사 패키지로 대신 지원됩니다.</p>
+
+<h4 id="설치와-구성">설치와 구성</h4>
+<p>pip를 사용하여 설치합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ pip install djangorestframework-xml
+</code></pre></div></div>
+<p>REST 프레임워크 설정을 수정합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'DEFAULT_PARSER_CLASSES'</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s">'rest_framework_xml.parsers.XMLParser'</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s">'DEFAULT_RENDERER_CLASSES'</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s">'rest_framework_xml.renderers.XMLRenderer'</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="jsonp">JSONP</h3>
+<p><a href="http://jpadilla.github.io/django-rest-framework-jsonp/">REST framework JSONP</a>는 JSONP 렌더링을 지원합니다. 이전에 REST 프레임워크 패키지에 직접 포함되어 있었으며 이제는 타사 패키지로 대신 지원됩니다.</p>
+
+<hr />
+<p><strong>Warning</strong>: 도메인 간 AJAX 요청이 필요한 경우 일반적으로 <code class="language-plaintext highlighter-rouge">JSONP</code> 대신 CORS의 최신 접근 방식을 사용해야합니다. 자세한 내용은 <a href="http://www.django-rest-framework.org/topics/ajax-csrf-cors/">CORS 설명서</a>를 참조하십시오.<br />
+<code class="language-plaintext highlighter-rouge">jsonp</code> 접근법은 본질적으로 브라우저 해킹이며 <code class="language-plaintext highlighter-rouge">GET</code> 요청이 인증되지 않고 사용자 권한이 필요하지 않은 <a href="http://stackoverflow.com/questions/613962/is-jsonp-safe-to-use">전 세계적으로 읽을 수 있는 API 엔드포인트</a>에만 적합합니다.</p>
+
+<hr />
+
+<h4 id="설치와-구성-1">설치와 구성</h4>
+<p>pip를 사용하여 설치합니다.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ pip install djangorestframework-jsonp
+</code></pre></div></div>
+<p>REST 프레임워크 설정을 수정합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'DEFAULT_RENDERER_CLASSES'</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s">'rest_framework_jsonp.renderers.JSONPRenderer'</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="messagepack">MessagePack</h3>
+<p><a href="">MessagePack</a>은 빠르고 효율적인 바이너리 serializer 형식입니다. <a href="">Juan Riaza</a>는 MessagePack 렌더러와 REST 프레임 워크에 대한 파서 지원을 제공하는 <a href="">djangorestframework-msgpack 패키지</a>를 유지 관리합니다.</p>
+<h3 id="csv">CSV</h3>
+<p>쉼표로 구분 된 값은 스프레드 시트 응용 프로그램으로 쉽게 가져올 수 있는 일반 텍스트 형식의 데이터 형식입니다. <a href="https://github.com/mjumbewu">Mjumbe Poe</a>는 REST 프레임 워크에 대한 CSV 렌더러 지원을 제공하는 <a href="https://github.com/mjumbewu/django-rest-framework-csv">djangorestframework-csv</a> 패키지를 유지 관리합니다.</p>
+
+<h3 id="ultrajson">UltraJSON</h3>
+<p><a href="https://github.com/esnme/ultrajson">UltraJSON</a>은 상당히 빠른 JSON 렌더링을 제공 할 수 있는 최적화 된 C JSON 인코더입니다. <a href="https://github.com/hzy">Jacob Haslehurst</a>는 UJSON 패키지를 사용하여 JSON 렌더링을 구현하는 <a href="https://github.com/gizmag/drf-ujson-renderer">drf-ujson-renderer</a> 패키지를 유지 관리합니다.</p>
+
+<h3 id="camelcase-json">CamelCase JSON</h3>
+<p><a href="https://github.com/vbabiy/djangorestframework-camel-case">djangorestframework-camel-case</a>는 REST 프레임워크를 위한 parser와 camel-case JSON 렌더러를 제공합니다. 이를 통해 serializer는 파이썬 스타일의 underscored 필드 이름을 사용할 수 있지만, 자바 스크립트 스타일의 camel case field names으로 API에 표시됩니다. 그것은 <a href="https://github.com/vbabiy">Vitaly Babiy</a>에 의해 관리됩니다.</p>
+
+<h3 id="pandas-csv-excel-png">Pandas (CSV, Excel, PNG)</h3>
+<p><a href="https://github.com/wq/django-rest-pandas">Django REST Pandas</a>는 Pandas DataFrame API를 통해 추가 데이터 처리 및 출력을 지원하는 serializer 및 렌더러를 제공합니다. Django REST Pandas에는 판다 스타일 CSV 파일, Excel 통합 문서 (<code class="language-plaintext highlighter-rouge">.xls</code> 및 <code class="language-plaintext highlighter-rouge">.xlsx</code>) 및 <a href="https://github.com/wq/django-rest-pandas#supported-formats">기타 다양한 형식</a>의 렌더러가 포함되어 있습니다. <a href="https://github.com/wq">wq 프로젝트</a>의 일환으로 <a href="https://github.com/sheppard">S. Andrew Sheppard</a>에 의해 유지 관리됩니다.</p>
+
+<h3 id="latex">LaTeX</h3>
+<p><a href="https://github.com/mypebble/rest-framework-latex">Rest Framework Latex는 Laulatex</a>를 사용하여 PDF를 출력하는 렌더러를 제공합니다. 이것은 <a href="https://github.com/mypebble">Pebble (S/F Software)</a>에서 관리합니다.</p>
+:ET

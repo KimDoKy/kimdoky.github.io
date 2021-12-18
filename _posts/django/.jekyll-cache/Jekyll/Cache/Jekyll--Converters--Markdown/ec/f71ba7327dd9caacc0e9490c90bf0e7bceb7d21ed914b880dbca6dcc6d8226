@@ -1,0 +1,43 @@
+I"�<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<h2 id="111-notes-from-analyzing-django-31a-pre-release-async-views">11.1 Notes from Analyzing Django 3.1a Pre-Release Async Views</h2>
+
+<ul>
+  <li>Django를 사용자에게 제공하기 위한 간단한 데이터 읽기를 위해 사용하지 마세요.
+    <ul>
+      <li>데이터는 일반적으로 HTML이나 JSON 렌더링 전에 가져옵니다.</li>
+    </ul>
+  </li>
+  <li>CBV는 가능한 단순하게 유지하세요.
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">django.views.generic.view</code>를 상속하는 것을 고려하세요.
+        <ul>
+          <li>Django의 비동기 스토리가 진행됨에 따라 변경될 수도 있습니다.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="112-resources">11.2 Resources</h2>
+
+<ul>
+  <li><a href="https://docs.djangoproject.com/en/dev/topics/async/">django doc</a></li>
+</ul>
+
+<h3 id="더-추가로-공부해야-할-것">더 추가로 공부해야 할 것</h3>
+
+<ul>
+  <li><a href="https://docs.djangoproject.com/en/3.2/howto/deployment/asgi/">How to deploy with ASGI</a></li>
+  <li><a href="https://docs.djangoproject.com/en/3.2/topics/async/">Asynchronous support</a></li>
+  <li><a href="https://testdriven.io/blog/django-async-views/">Async Views Tutorial</a>
+    <ul>
+      <li>경준님 ㄱㅅ</li>
+    </ul>
+  </li>
+</ul>
+:ET

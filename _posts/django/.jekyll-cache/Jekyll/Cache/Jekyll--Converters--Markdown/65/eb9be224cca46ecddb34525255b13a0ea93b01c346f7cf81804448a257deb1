@@ -1,0 +1,250 @@
+I"�<<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<ul>
+  <li>Django 템플릿 시스템에서 지원하는 백엔드
+    <ul>
+      <li>Django Template Language(DTL)</li>
+      <li>Jinja2</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="161-whats-the-syntactical-difference">16.1 What’s the Syntactical Difference?</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Subject</th>
+      <th>DTL</th>
+      <th>Jinja2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>메서드 호출</td>
+      <td><code class="language-plaintext highlighter-rouge">{{ user.get_favorites }}</code></td>
+      <td><code class="language-plaintext highlighter-rouge">{{ user.get_favorites() }}</code></td>
+    </tr>
+    <tr>
+      <td>인자 필터</td>
+      <td><code class="language-plaintext highlighter-rouge">{{ toppings|join:', ' }}</code></td>
+      <td><code class="language-plaintext highlighter-rouge">{{ toppings|join(', ') }}</code></td>
+    </tr>
+    <tr>
+      <td>인자가 없는 루프</td>
+      <td><code class="language-plaintext highlighter-rouge">{% empty %}</code></td>
+      <td><code class="language-plaintext highlighter-rouge">{% else %}</code></td>
+    </tr>
+    <tr>
+      <td>루프 변수</td>
+      <td><code class="language-plaintext highlighter-rouge">{{ forloop }}</code></td>
+      <td><code class="language-plaintext highlighter-rouge">{{ loop }}</code></td>
+    </tr>
+    <tr>
+      <td>사이클</td>
+      <td><code class="language-plaintext highlighter-rouge">{% cycle 'odd' 'even' %}</code></td>
+      <td><code class="language-plaintext highlighter-rouge">{{ loop.cycle('odd, even' ) }}</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="162-should-i-switch">16.2 Should I Switch?</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">settings.TEMPLATES</code>를 설정하여 특정 디렉터리마다 DTL, Jinja2를 각각 설정할 수 있습니다.
+    <ul>
+      <li>DTL: 사이트의 대부분을 렌더링</li>
+      <li>Jinja2: 많은 컨텐츠를 담고 있는 페이지</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="1621-advantages-of-dtl">16.2.1 Advantages of DTL</h3>
+
+<ul>
+  <li>이미 Django에 DTL이 포함되어 있음
+    <ul>
+      <li>Django의 공식문서에 문서화 되어 있음</li>
+    </ul>
+  </li>
+  <li>대부분의 서드 파티 장고 패키지에서 DTL을 이용
+    <ul>
+      <li>Jinja2로 변경하려면 추가작업이 필요</li>
+    </ul>
+  </li>
+  <li>DTL 코드들을 Jinja2로 변경하는건 작은 일이 아님</li>
+</ul>
+
+<h3 id="1622-advantages-of-jinja2">16.2.2 Advantages of Jinja2</h3>
+
+<ul>
+  <li>Django와 독립적으로 사용 가능</li>
+  <li>Python 문법에 좀 더 가까움</li>
+  <li>Jinja2가 좀 더 명시적이고 명확함
+    <ul>
+      <li>ex. 템플릿상에서 함수 호출시 괄호를 사용</li>
+    </ul>
+  </li>
+  <li>로직상의 임의적 제약이 덜함
+    <ul>
+      <li>ex. Jinja2에서는 필터에 무한대의 인사 사용가능 / DTL은 한 개만 가능</li>
+    </ul>
+  </li>
+  <li>벤치마크 결과 Jinja2가 일반적으로 더 빠름
+    <ul>
+      <li>템플릿에서 데이터베이스 최적화 이슈보다 심각한 성능상의 병목 문제가 발생할 수 있음
+        <ul>
+          <li><a href="">chap24. Finding and Reducing Bottlenecks</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="1623-which-one-wins">16.2.3 Which One Wins?</h3>
+
+<ul>
+  <li>Django를 처음 접했다면 DTL</li>
+  <li>이미 많이 진행된 프로젝트라면, 특별히 성능 향상을 필요한 몇 페이지를 제외하고는 DTL을 유지</li>
+  <li>Django 경험이 어느 정도 있다면 DTL과 Jinja2 모두 경험하고 결정할 수 있음</li>
+  <li>여러 템플릿 언어를 혼합하여 사용하면 정신적 부하가 가중됨. 하나만 선택하여 사용하자</li>
+</ul>
+
+<h2 id="163-considerations-when-using-jinja2-with-django">16.3 Considerations When Using Jinja2 With Django</h2>
+
+<h3 id="1631-csrf-and-jinja2">16.3.1 CSRF and Jinja2</h3>
+
+<ul>
+  <li>Jinja2 템플릿에 CSRF를 포함시키기 위해 아래와 같이 작성</li>
+</ul>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;div</span> <span class="na">style=</span><span class="s">"display:none"</span><span class="nt">&gt;</span>
+       <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">"hidden"</span> <span class="na">name=</span><span class="s">"csrfmiddlewaretoken"</span> <span class="na">value=</span><span class="s">"{{csrf_token}}"</span><span class="nt">&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+</code></pre></div></div>
+
+<h3 id="1632-using-template-tags-in-jinja2-templates">16.3.2 Using Template Tags in Jinja2 Templates</h3>
+
+<ul>
+  <li>Django 스타일의 템플릿 태그는 Jinja2에서 불가능
+    <ul>
+      <li>특정 템플릿 태그 기능이 필요하다면 다음 기술을 이용하여 변환해야 함
+        <ul>
+          <li>해당 기능을 함수로 변환</li>
+          <li>Jinja2 extension 을 작성 <a href="[https://jinja.palletsprojects.com/en/latest/extensions/](https://jinja.palletsprojects.com/en/latest/extensions/)">jinja2 doc</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="1633-using-django-style-template-filters-in-jinja2-templates">16.3.3 Using Django-Style Template Filters in Jinja2 Templates</h3>
+
+<ul>
+  <li>필터들은 기본적으로 함수이기 때문에, 커스텀 Jinja2 환경에 템플릿 필터들을 쉽게 포함시킬 수 있음</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># core/jinja2.py
+</span><span class="kn">from</span> <span class="nn">django.contrib.staticfiles.storage</span> <span class="kn">import</span> <span class="n">staticfiles_storage</span>
+<span class="kn">from</span> <span class="nn">django.template</span> <span class="kn">import</span> <span class="n">defaultfilters</span>
+<span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">reverse</span>
+<span class="kn">from</span> <span class="nn">jinja2</span> <span class="kn">import</span> <span class="n">Environment</span>
+
+<span class="k">def</span> <span class="nf">environment</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">):</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">)</span>
+    <span class="n">env</span><span class="p">.</span><span class="nb">globals</span><span class="p">.</span><span class="n">update</span><span class="p">({</span>
+        <span class="s">'static'</span><span class="p">:</span> <span class="n">staticfiles_storage</span><span class="p">.</span><span class="n">url</span><span class="p">,</span>
+        <span class="s">'url'</span><span class="p">:</span> <span class="n">reverse</span><span class="p">,</span>
+        <span class="s">'dj'</span><span class="p">:</span> <span class="n">defaultfilters</span>
+    <span class="p">})</span>
+    <span class="k">return</span> <span class="n">env</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Django 템플릿 필터를 Jinja2 템플릿에서 함수로 이용하는 예</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&lt;</span><span class="n">table</span><span class="o">&gt;&lt;</span><span class="n">tbody</span><span class="o">&gt;</span>
+<span class="p">{</span><span class="o">%</span> <span class="k">for</span> <span class="n">purchase</span> <span class="ow">in</span> <span class="n">purchase_list</span> <span class="o">%</span><span class="p">}</span>
+  <span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s">"{{ url('purchase:detail', pk=purchase.pk) }}"</span><span class="o">&gt;</span>
+      <span class="p">{{</span> <span class="n">purchase</span><span class="p">.</span><span class="n">title</span> <span class="p">}}</span>
+    <span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;</span>
+  <span class="o">&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
+  <span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;</span><span class="p">{{</span> <span class="n">dj</span><span class="p">.</span><span class="n">date</span><span class="p">(</span><span class="n">purchase</span><span class="p">.</span><span class="n">created</span><span class="p">,</span> <span class="s">'SHORT_DATE_FORMAT'</span><span class="p">)</span> <span class="p">}}</span><span class="o">&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
+  <span class="o">&lt;</span><span class="n">tr</span><span class="o">&gt;</span><span class="p">{{</span> <span class="n">dj</span><span class="p">.</span><span class="n">floatformat</span><span class="p">(</span><span class="n">purchase</span><span class="p">.</span><span class="n">amount</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="p">}}</span><span class="o">&lt;/</span><span class="n">tr</span><span class="o">&gt;</span>
+<span class="p">{</span><span class="o">%</span> <span class="n">endfor</span> <span class="o">%</span><span class="p">}</span>
+<span class="o">&lt;/</span><span class="n">tbody</span><span class="o">&gt;&lt;/</span><span class="n">table</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>뷰에서 속성으로 Django 템플릿 필터를 추가하기 위한 믹스인을 생성</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># core/mixins.py
+</span><span class="kn">from</span> <span class="nn">django.template</span> <span class="kn">import</span> <span class="n">defaultfilters</span>
+
+<span class="k">class</span> <span class="nc">DjFilterMixin</span><span class="p">:</span>
+    <span class="n">dj</span> <span class="o">=</span> <span class="n">defaultfilters</span>
+</code></pre></div></div>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;table&gt;&lt;tbody&gt;</span>
+{% for purchase in purchase_list %}
+  <span class="nt">&lt;tr&gt;</span>
+    <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"{{ url('purchase:detail', pk=purchase.pk) }}"</span><span class="nt">&gt;</span>
+      {{ purchase.title }}
+    <span class="nt">&lt;/a&gt;</span>
+  <span class="nt">&lt;/tr&gt;</span>
+  <span class="c">&lt;!-- Call the django.template.defaultfilters functions from the 􏰁→ view--&gt;</span>
+  <span class="nt">&lt;tr&gt;</span>{{ view.dj.date(purchase.created, 'SHORT_DATE_FORMAT') 􏰁→ }}<span class="nt">&lt;/tr&gt;</span>
+  <span class="nt">&lt;tr&gt;</span>{{ view.dj.floatformat(purchase.amount, 2) }}<span class="nt">&lt;/tr&gt;</span> {% endfor %}
+<span class="nt">&lt;/tbody&gt;&lt;/table&gt;</span>
+</code></pre></div></div>
+
+<blockquote>
+  <p><strong>Jinja2 템플릿과 함께 컨텍스트 프로세서를 사용하는 것은 권장되지 않습니다.</strong> <a href="[https://docs.djangoproject.com/en/3.2/topics/templates/#django.template.backends.jinja2.Jinja2](https://docs.djangoproject.com/en/3.2/topics/templates/#django.template.backends.jinja2.Jinja2)">Django doc</a> 컨텍스트 프로세서는 Django 템플릿이 인수가 있는 호출 함수를 지원하지 않기 때문에 Django 템플릿에 유용합니다. Jinja2는 그런 제한이 없기 때문에 템플릿에서 사용할 수 있는 전역 변수에 컨텍스트 프로세서로 사용할 함수를 아래와 같이 넣는 것을 권장 <strong><code class="language-plaintext highlighter-rouge">jinja2.Environment</code></strong>합니다. 그런 다음 템플릿에서 해당 함수를 호출할 수 있습니다.</p>
+
+</blockquote>
+
+<h3 id="1634-the-jinja2-environment-object-should-be-considered-static">16.3.4 The Jinja2 Environment Object Should Be Considered Static</h3>
+
+<p>15.1에서 Jinja2의 코어 컴포넌트 <code class="language-plaintext highlighter-rouge">jinja2.Environment</code> 클래스를 이용하였습니다. 이 객체는 Jinja2가 설정들과 필터, 테스트, 전역값 등을 공유하는 공간입니다. 프로젝트에서 첫 템플릿이 로드될 때 이 클래스의 정적 객체처럼 실체화하여 이용합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># core/jinja2.py
+</span><span class="kn">from</span> <span class="nn">jinja2</span> <span class="kn">import</span> <span class="n">Environment</span>
+<span class="kn">import</span> <span class="nn">random</span>
+
+<span class="k">def</span> <span class="nf">environment</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">):</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">)</span>
+    <span class="n">env</span><span class="p">.</span><span class="nb">globals</span><span class="p">.</span><span class="n">update</span><span class="p">({</span>
+        <span class="c1"># 오로지 첫 템플릿이 로드될 때만 실행.
+</span>        <span class="c1"># 다음 3 화면에서는 같은 번호를 보여 줌
+</span>        <span class="c1"># {{ random_once }} {{ random_once }} {{ random_once }}
+</span>        <span class="s">'random_once'</span><span class="p">:</span> <span class="n">random</span><span class="p">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="c1"># 템플릿상의 함수처럼 반복되어 호출
+</span>        <span class="c1"># 매번 호출에서 각 다른 랜점 번호를 반환
+</span>        <span class="c1"># {{ random() }} {{ random() }} {{ random() }}
+</span>        <span class="s">'random'</span><span class="p">:</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">random</span><span class="p">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+    <span class="p">})</span>
+    <span class="k">return</span> <span class="n">env</span>
+</code></pre></div></div>
+
+<blockquote>
+  <p><strong>일단 실체화되고 난 후에는 jinja.Environment를 변형하지 말자.</strong> “첫 템플릿이 로드된 후 환경 설정을 변경하는 것은 예상치 못한 상황과 알 수 없는 결과를 초래할 것이다.” - Jinja2 API Doc</p>
+
+</blockquote>
+
+<h2 id="164-resources">16.4 Resources</h2>
+
+<ul>
+  <li><a href="[https://jinja.palletsprojects.com/en/3.0.x/](https://jinja.palletsprojects.com/en/3.0.x/)">jinja</a></li>
+  <li><a href="[https://docs.djangoproject.com/en/3.2/topics/templates/#django.template.backends.jinja2.Jinja2](https://docs.djangoproject.com/en/3.2/topics/templates/#django.template.backends.jinja2.Jinja2)">django doc</a></li>
+</ul>
+
+:ET

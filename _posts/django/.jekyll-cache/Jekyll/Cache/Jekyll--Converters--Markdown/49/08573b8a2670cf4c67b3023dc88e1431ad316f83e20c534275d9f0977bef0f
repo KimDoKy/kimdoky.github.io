@@ -1,0 +1,45 @@
+I"�<p>django template에서 model을 검색하는 search form을 만들때</p>
+
+<p>model의 field를 contains를 이용해서 지정하게 된다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">q</span> <span class="o">=</span> <span class="n">request</span><span class="p">.</span><span class="n">GET</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'q'</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">q</span><span class="p">:</span>
+    <span class="n">qs</span> <span class="o">=</span> <span class="n">qs</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">order__icontains</span><span class="o">=</span><span class="n">q</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>멀티 search form을 구현하려면 아래와 같이 <code class="language-plaintext highlighter-rouge">Q</code>를 이용하면 된다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="n">Q</span>
+
+<span class="p">...</span>
+
+    <span class="n">qs</span> <span class="o">=</span> <span class="n">qs</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span>
+        <span class="n">Q</span><span class="p">(</span><span class="n">order__icontains</span><span class="o">=</span><span class="n">q</span><span class="p">)</span><span class="o">|</span>
+        <span class="n">Q</span><span class="p">(</span><span class="n">order_date__icontains</span><span class="o">=</span><span class="n">q</span><span class="p">)</span><span class="o">|</span>
+        <span class="p">....)</span>
+</code></pre></div></div>
+
+<p>하지만 field가 ForeignKey로 다른 모델과 관계를 맺고 있다면 `Login  Register</p>
+
+<p>Related Field has invalid lookup: icontains` 라는 에러메시지를 만나게 된다.</p>
+<blockquote>
+  <p>해당 오류는 대부분 어드민에서 많이 접하고는 한다.</p>
+</blockquote>
+
+<p>에러의 이유는 관계를 맺고 있는 필드는 다른 모델이고,
+그 해당 모델에도 여러 필드들이 있기 때문에
+관계된 모델의 어떤 필드인지를 지정하지 않았기 때문에 발생한다.</p>
+
+<p>해결법은 당연히 관계 모델의 필드를 지정해주면 된다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   <span class="c1"># field__model's field__icontains=q
+</span>   <span class="n">order__icontains</span><span class="o">=</span><span class="n">q</span>
+</code></pre></div></div>
+
+<blockquote>
+  <p>related name은 상관없다.</p>
+</blockquote>
+
+<h4 id="주의점">주의점</h4>
+<p>더블언더바(<code class="language-plaintext highlighter-rouge">__</code>)는 꼭 지켜줘야 한다. 의외로 이거 때문에 오류나는 경우가 많다.</p>
+:ET

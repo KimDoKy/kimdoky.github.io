@@ -1,0 +1,300 @@
+I"�<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<h2 id="121-pattern-1-simple-modelform-with-default-validators">12.1 Pattern 1: Simple ModelForm With Default VAlidators</h2>
+
+<p>Django의 기본 데이터 유효성 검사기를 활용하는 패턴입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.mixins</span> <span class="kn">import</span> <span class="n">LoginRequiredMixin</span> 
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">CreateView</span><span class="p">,</span> <span class="n">UpdateView</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+
+<span class="k">class</span> <span class="nc">FlavorCreateView</span><span class="p">(</span><span class="n">LoginRequiredMixin</span><span class="p">,</span> <span class="n">CreateView</span><span class="p">):</span> <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+       <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s">'title'</span><span class="p">,</span> <span class="s">'slug'</span><span class="p">,</span> <span class="s">'scoops_remaining'</span><span class="p">]</span>
+
+<span class="k">class</span> <span class="nc">FlavorUpdateView</span><span class="p">(</span><span class="n">LoginRequiredMixin</span><span class="p">,</span> <span class="n">UpdateView</span><span class="p">):</span> <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+       <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s">'title'</span><span class="p">,</span> <span class="s">'slug'</span><span class="p">,</span> <span class="s">'scoops_remaining'</span><span class="p">]</span>
+</code></pre></div></div>
+
+<h2 id="122-pattern-2-custom-form-field-validators-in-modelform">12.2 Pattern 2: Custom Form Field Validators in ModelForm</h2>
+
+<p>커스텀 단일 필드 유효성 검사기 생성, 추상화 모델과 폼을 추가하는 패턴입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># core/validators.py
+</span><span class="kn">from</span> <span class="nn">django.core.exceptions</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+
+<span class="k">def</span> <span class="nf">validate_tasty</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">'Tasty'</span><span class="p">):</span> 
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">'Must start with Tasty'</span> 
+        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+
+<span class="c1"># core/models.py
+</span><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">.validators</span> <span class="kn">import</span> <span class="n">validate_tasty</span>
+
+<span class="k">class</span> <span class="nc">TastyTitleAbstractModel</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">validators</span><span class="o">=</span><span class="p">[</span><span class="n">validate_tasty</span><span class="p">])</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="c1"># flavors/models.py
+</span><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">reverse</span>
+<span class="kn">from</span> <span class="nn">core.models</span> <span class="kn">import</span> <span class="n">TastyTitleAbstractModel</span>
+
+<span class="k">class</span> <span class="nc">Flavor</span><span class="p">(</span><span class="n">TastyTitleAbstractModel</span><span class="p">):</span>
+    <span class="n">slug</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">SlugField</span><span class="p">()</span>
+    <span class="n">scoops_remaining</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_absolute_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">reverse</span><span class="p">(</span><span class="s">'flavors:detail'</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">'slug'</span><span class="p">:</span> <span class="bp">self</span><span class="p">.</span><span class="n">slug</span><span class="p">})</span>
+</code></pre></div></div>
+
+<ul>
+  <li>단지 폼에만 <code class="language-plaintext highlighter-rouge">validate_tasty()</code>를 이용하려면?</li>
+  <li>title 말고 다른 필드에 적용하려면?</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 커스텀 필드 유효성 검사기를 이용하는 커스텀 FlavorForm
+# flavors/forms.py
+</span><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span> 
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+<span class="kn">from</span> <span class="nn">core.validators</span> <span class="kn">import</span> <span class="n">validate_tasty</span>
+
+<span class="k">class</span> <span class="nc">FlavorForm</span><span class="p">(</span><span class="n">forms</span><span class="p">.</span><span class="n">ModelForm</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+       <span class="nb">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+       <span class="bp">self</span><span class="p">.</span><span class="n">fields</span><span class="p">[</span><span class="s">'title'</span><span class="p">].</span><span class="n">validators</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">validate_tasty</span><span class="p">)</span>
+       <span class="bp">self</span><span class="p">.</span><span class="n">fields</span><span class="p">[</span><span class="s">'slug'</span><span class="p">].</span><span class="n">validators</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">validate_tasty</span><span class="p">)</span>
+       
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+
+
+<span class="c1"># 커스텀폼을 뷰에 추가
+# flavors/views.py
+</span><span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">messages</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth.mixins</span> <span class="kn">import</span> <span class="n">LoginRequiredMixin</span>
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">CreateView</span><span class="p">,</span> <span class="n">DetailView</span><span class="p">,</span> <span class="n">UpdateView</span>
+
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+<span class="kn">from</span> <span class="nn">.forms</span> <span class="kn">import</span> <span class="n">FlavorForm</span>
+
+<span class="k">class</span> <span class="nc">FlavorActionMixin</span><span class="p">:</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s">'title'</span><span class="p">,</span> <span class="s">'slug'</span><span class="p">,</span> <span class="s">'scoops_remaining'</span><span class="p">]</span>
+
+    <span class="o">@</span><span class="nb">property</span>
+    <span class="k">def</span> <span class="nf">success_msg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">NotImplemented</span>
+
+    <span class="k">def</span> <span class="nf">form_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">):</span> 
+        <span class="n">messages</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">request</span><span class="p">,</span> <span class="bp">self</span><span class="p">.</span><span class="n">success_msg</span><span class="p">)</span> 
+        <span class="k">return</span> <span class="nb">super</span><span class="p">().</span><span class="n">form_valid</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">FlavorCreateView</span><span class="p">(</span><span class="n">LoginRequiredMixin</span><span class="p">,</span> <span class="n">FlavorActionMixin</span><span class="p">,</span> <span class="n">CreateView</span><span class="p">):</span>
+       <span class="n">success_msg</span> <span class="o">=</span> <span class="s">'created'</span>
+       <span class="n">form_class</span> <span class="o">=</span> <span class="n">FlavorForm</span>
+
+<span class="k">class</span> <span class="nc">FlavorUpdateView</span><span class="p">(</span><span class="n">LoginRequiredMixin</span><span class="p">,</span> <span class="n">FlavorActionMixin</span><span class="p">,</span> <span class="n">UpdateView</span><span class="p">):</span>
+       <span class="n">success_msg</span> <span class="o">=</span> <span class="s">'updated'</span>
+       <span class="n">form_class</span> <span class="o">=</span> <span class="n">FlavorForm</span>
+
+<span class="k">class</span> <span class="nc">FlavorDetailView</span><span class="p">(</span><span class="n">DetailView</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+</code></pre></div></div>
+
+<h2 id="123-pattern-3-overriding-the-clean-stage-of-validation">12.3 Pattern 3: Overriding the Clean Stage of Validation</h2>
+
+<ul>
+  <li>다중 필드에 대한 유효성 검사</li>
+  <li>이미 유효성 검사가 끝난 데이터베이스의 데이터가 포함된 유효성 검사</li>
+  <li>위 두가지 경우 모두 커스텀 로직으로 <code class="language-plaintext highlighter-rouge">clean()</code>, <code class="language-plaintext highlighter-rouge">clean_&lt;field_name&gt;()</code> 메서드를 오버라이딩 할 수 있는 최적의 경우
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">clean()</code> 메서드는 어떤 특별한 필드에 대한 정의도 가지고 있지 않기 때문에 두 개이상의 필드들에 대해 서로 간의 유효성을 검사하는 공간이 됨</li>
+      <li>클린 유효성 검사 상태는 영속 데이터(persistent data)에 대해 유효성을 검사하기 좋은 장소. 이미 유효성 검사를 진행한 일부 데이터에 대해 불필요한 데이터 연동을 줄여줌</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># flavors/forms.py
+</span><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+<span class="kn">from</span> <span class="nn">flavors.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+
+<span class="k">class</span> <span class="nc">IceCreamOrderForm</span><span class="p">(</span><span class="n">forms</span><span class="p">.</span><span class="n">Form</span><span class="p">):</span>
+    <span class="s">"""
+    일반적으로 forms.ModelForm을 사용하면 됨
+    모든 종류의 폼에서 적용할 수 있음을 보이기 위해
+    forms.Form을 사용
+    """</span>
+    <span class="n">slug</span> <span class="o">=</span> <span class="n">forms</span><span class="p">.</span><span class="n">ChoiceField</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s">'Flavor'</span><span class="p">)</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">forms</span><span class="p">.</span><span class="n">CharField</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># 폼의 설정 상태는 서버를 재시작해야 적용됨
+</span>        <span class="bp">self</span><span class="p">.</span><span class="n">fields</span><span class="p">[</span><span class="s">'slug'</span><span class="p">].</span><span class="n">choices</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">slug</span><span class="p">,</span> <span class="n">x</span><span class="p">.</span><span class="n">title</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">Flavor</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">all</span><span class="p">()</span> 
+        <span class="p">]</span>
+    <span class="c1"># 이 기능은 filter()로도 가능하나 clean_slug을 이용하는 예
+</span>        
+    <span class="k">def</span> <span class="nf">clean_slug</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">slug</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">cleaned_data</span><span class="p">[</span><span class="s">'slug'</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">Flavor</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">slug</span><span class="o">=</span><span class="n">slug</span><span class="p">).</span><span class="n">scoops_remaining</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+           <span class="n">msg</span> <span class="o">=</span> <span class="s">'Sorry, we are out of that flavor.'</span>
+            <span class="k">raise</span> <span class="n">forms</span><span class="p">.</span><span class="n">ValidationError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">slug</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">cleaned_data</span> <span class="o">=</span> <span class="nb">super</span><span class="p">().</span><span class="n">clean</span><span class="p">()</span>
+    <span class="n">slug</span> <span class="o">=</span> <span class="n">cleaned_data</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'slug'</span><span class="p">,</span> <span class="s">''</span><span class="p">)</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">cleaned_data</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'toppings'</span><span class="p">,</span> <span class="s">''</span><span class="p">)</span>
+
+    <span class="n">in_slug</span> <span class="o">=</span> <span class="s">'chocolate'</span> <span class="ow">in</span> <span class="n">slug</span><span class="p">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">in_toppings</span> <span class="o">=</span> <span class="s">'chocolate'</span> <span class="ow">in</span> <span class="n">toppings</span><span class="p">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">in_slug</span> <span class="ow">and</span> <span class="n">in_toppings</span><span class="p">:</span>
+       <span class="n">msg</span> <span class="o">=</span> <span class="s">'Your order has too much chocolate.'</span>
+        <span class="k">raise</span> <span class="n">forms</span><span class="p">.</span><span class="n">ValidationError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cleaned_data</span>
+</code></pre></div></div>
+
+<h2 id="124-pattern-4-hacking-form-fields-2-cbvs-2-forms-1-model">12.4 Pattern 4: Hacking Form Fields (2 CBVs, 2 Forms, 1 Model)</h2>
+
+<ul>
+  <li>하나의 모델에 두 개의 뷰와 폼이 엮여 있는 경우</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="c1"># stores/models.py
+</span><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="k">class</span> <span class="nc">IceCreamStore</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span> 
+    <span class="n">block_address</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">()</span>
+    <span class="n">phone</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> 
+    <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>phone과 description은 추후에 업데이트하려고 하는 경우입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 잘못된 예
+# stores/forms.py
+</span><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">IceCreamStore</span>
+
+<span class="k">class</span> <span class="nc">IceCreamStoreUpdateForm</span><span class="p">(</span><span class="n">forms</span><span class="p">.</span><span class="n">ModelForm</span><span class="p">):</span>
+    <span class="n">phone</span> <span class="o">=</span> <span class="n">forms</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">forms</span><span class="p">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+       <span class="n">model</span> <span class="o">=</span> <span class="n">IceCreamStore</span>
+</code></pre></div></div>
+
+<ul>
+  <li>필드가 많다면 관리가 복잡해짐</li>
+  <li>DRY 규칙에 어긋남</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 해결
+# stores/forms.py
+# 실체화된 폼 객체는 fields 속성안에 필드들을 저장함
+</span><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">IceCreamStore</span>
+
+<span class="k">class</span> <span class="nc">IceCreamStoreUpdateForm</span><span class="p">(</span><span class="n">forms</span><span class="p">.</span><span class="n">ModelForm</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">IceCreamStore</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="p">.</span><span class="n">fields</span><span class="p">[</span><span class="s">'phone'</span><span class="p">].</span><span class="n">required</span> <span class="o">=</span> <span class="bp">True</span> 
+        <span class="bp">self</span><span class="p">.</span><span class="n">fields</span><span class="p">[</span><span class="s">'description'</span><span class="p">].</span><span class="n">required</span> <span class="o">=</span> <span class="bp">True</span>
+</code></pre></div></div>
+
+<p>Django의 폼도 파이썬 클래스이기 때문에, 상속을 통해 코드를 줄일 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># stores/forms.py
+</span><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">IceCreamStore</span>
+
+<span class="k">class</span> <span class="nc">IceCreamStoreCreateForm</span><span class="p">(</span><span class="n">forms</span><span class="p">.</span><span class="n">ModelForm</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">IceCreamStore</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s">'title'</span><span class="p">,</span> <span class="s">'block_address'</span><span class="p">,</span> <span class="p">]</span>
+        <span class="c1"># exclude보다는 fields로 각 필드를 명시하도록 하자.
+</span>
+<span class="k">class</span> <span class="nc">IceCreamStoreUpdateForm</span><span class="p">(</span><span class="n">IceCreamStoreCreateForm</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span> 
+        <span class="nb">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="p">.</span><span class="n">fields</span><span class="p">[</span><span class="s">'phone'</span><span class="p">].</span><span class="n">required</span> <span class="o">=</span> <span class="bp">True</span> 
+        <span class="bp">self</span><span class="p">.</span><span class="n">fields</span><span class="p">[</span><span class="s">'description'</span><span class="p">].</span><span class="n">required</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">(</span><span class="n">IceCreamStoreCreateForm</span><span class="p">.</span><span class="n">Meta</span><span class="p">):</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s">'title'</span><span class="p">,</span> <span class="s">'block_address'</span><span class="p">,</span> <span class="s">'phone'</span><span class="p">,</span> <span class="s">'description'</span><span class="p">,]</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># stores/views
+</span><span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">CreateView</span><span class="p">,</span> <span class="n">UpdateView</span>
+<span class="kn">from</span> <span class="nn">.forms</span> <span class="kn">import</span> <span class="n">IceCreamStoreCreateForm</span><span class="p">,</span> <span class="n">IceCreamStoreUpdateForm</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">IceCreamStore</span>
+
+<span class="k">class</span> <span class="nc">IceCreamCreateView</span><span class="p">(</span><span class="n">CreateView</span><span class="p">):</span> 
+    <span class="n">model</span> <span class="o">=</span> <span class="n">IceCreamStore</span>
+    <span class="n">form_class</span> <span class="o">=</span> <span class="n">IceCreamStoreCreateForm</span>
+
+<span class="k">class</span> <span class="nc">IceCreamUpdateView</span><span class="p">(</span><span class="n">UpdateView</span><span class="p">):</span> 
+    <span class="n">model</span> <span class="o">=</span> <span class="n">IceCreamStore</span>
+    <span class="n">form_class</span> <span class="o">=</span> <span class="n">IceCreamStoreUpdateForm</span>
+</code></pre></div></div>
+
+<p>목표한대로 2개의 뷰와 2개의 폼, 1개의 모델을 연동할 수 있습니다.</p>
+
+<h2 id="125-pattern-5-reusable-search-mixin-view">12.5 Pattern 5: Reusable Search Mixin View</h2>
+
+<p>두 개의 모델에 연동되는 2개의 뷰에 1개의 폼을 재사용하는 패턴입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 간단한 검색 믹스인 구현
+# core/views.py
+</span><span class="k">class</span> <span class="nc">TitleSearchMixin</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># 부모 클래스로부터 queryset 가져오기
+</span>        <span class="n">queryset</span> <span class="o">=</span> <span class="nb">super</span><span class="p">().</span><span class="n">get_queryset</span><span class="p">()</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">request</span><span class="p">.</span><span class="n">GET</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'q'</span><span class="p">)</span> 
+        <span class="k">if</span> <span class="n">q</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">queryset</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="n">title__icontains</span><span class="o">=</span><span class="n">q</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">queryset</span>
+</code></pre></div></div>
+
+<ul>
+  <li>첫 번째 flavors의 뷰</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># flavors/views.py
+</span><span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">ListView</span> 
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+<span class="kn">from</span> <span class="nn">core.views</span> <span class="kn">import</span> <span class="n">TitleSearchMixin</span>
+
+<span class="k">class</span> <span class="nc">FlavorListView</span><span class="p">(</span><span class="n">TitleSearchMixin</span><span class="p">,</span> <span class="n">ListView</span><span class="p">):</span>
+       <span class="n">model</span> <span class="o">=</span> <span class="n">Flavor</span>
+</code></pre></div></div>
+
+<ul>
+  <li>두 번째 stores의 뷰</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># add to stores/views.py
+</span><span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">ListView</span> 
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Store</span>
+<span class="kn">from</span> <span class="nn">core.views</span> <span class="kn">import</span> <span class="n">TitleSearchMixin</span>
+
+<span class="k">class</span> <span class="nc">IceCreamStoreListView</span><span class="p">(</span><span class="n">TitleSearchMixin</span><span class="p">,</span> <span class="n">ListView</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Store</span>
+</code></pre></div></div>
+
+<p>믹스인은 코드를 재사용하는 좋은 방법이지만, 단일 클래스에 너무 많은 믹스인을 사용하면 보수가 어려워지기 때문에, 가능한한 단순하게 코드를 유지해야 합니다.</p>
+:ET

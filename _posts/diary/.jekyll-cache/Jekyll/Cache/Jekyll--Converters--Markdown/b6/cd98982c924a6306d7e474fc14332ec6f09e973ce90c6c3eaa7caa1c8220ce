@@ -1,0 +1,84 @@
+I"<h2 id="개요">개요</h2>
+
+<p>이번 프로젝트에서 객체가 시간에 흐름에 따라 상태를 변경하고 FCM을 발송하고 포인트를 계산하는 등의 비동기 작업이 필요하게 되었다.</p>
+
+<p>처음 생각한 구상은 Redis나 RabbitMQ에 Queue로 처리해야 할 객체를 추가하고, Queue가 추가되면 Celery으로 비동기 작업을 수행하는 것이였다.</p>
+
+<p>하지만 위 구성은 기능에 비해 오버 스팩이라 판단하여 좀 더 작게 구성하려고 고민하였고, python으로 스크립트로 처리하기로 하였다.</p>
+
+<h2 id="진행">진행</h2>
+
+<p>해당 작업을 30초마다 반복하고, 비동기로 처리하기 위해 <code class="language-plaintext highlighter-rouge">schedule</code>과 <code class="language-plaintext highlighter-rouge">Thread</code>를 사용하기로 하였다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
+<span class="kn">import</span> <span class="nn">schedule</span>
+
+<span class="k">class</span> <span class="nc">Command</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+     <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+         <span class="k">try</span><span class="p">:</span>
+<span class="o">-</span>            <span class="n">schedule</span><span class="p">.</span><span class="n">every</span><span class="p">(</span><span class="mi">30</span><span class="p">).</span><span class="n">seconds</span><span class="p">.</span><span class="n">do</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">thread_run</span><span class="p">)</span>
+<span class="o">-</span>            <span class="n">schedule</span><span class="p">.</span><span class="n">run_pending</span><span class="p">()</span>
+<span class="o">-</span>            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+<span class="o">-</span>                <span class="n">schedule</span><span class="p">.</span><span class="n">run_pending</span><span class="p">()</span>
+<span class="o">+</span>            <span class="bp">self</span><span class="p">.</span><span class="n">thread_run</span><span class="p">()</span>
+         <span class="k">except</span><span class="p">:</span>
+             <span class="k">print</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">exc_info</span><span class="p">())</span>
+</code></pre></div></div>
+
+<p>해당 객체의 상태에 따라 잘 동작하고, DB에도 잘 적용되었다.</p>
+
+<p>하지만 해당 스크립트를 실행하면 맥북이 뜨거워짐을 느꼈고, 테스트 서버에 배포후 cpu 상태를 점검해보니 99% 까지 사용량이 치솟았다.</p>
+
+<h2 id="개선">개선</h2>
+
+<p>그래서 더 가벼운 방법을 고민하였고, crontab 으로 처리하기로 하였다.</p>
+
+<p>crontab 의 최소 실행주기는 1분이였다. 그래서 crontab에 바로 등록하는게 아니라, 간단한 쉘 스크립트를 작성하여 crontab에 등록하기로 하였다.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/bash</span>
+<span class="nv">SLEEP</span><span class="o">=</span>30
+<span class="nv">SHELL_PATH</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span> <span class="nt">-P</span><span class="sb">`</span>
+
+<span class="k">for </span>i <span class="k">in</span> <span class="si">$(</span><span class="nb">seq</span> <span class="k">$((</span><span class="m">60</span><span class="o">/</span><span class="nv">$SLEEP</span><span class="k">))</span><span class="si">)</span><span class="p">;</span> <span class="k">do
+    </span>python3 <span class="k">${</span><span class="nv">SHELL_PATH</span><span class="k">}</span>/manage.py reserv_thread
+    <span class="nb">sleep</span> <span class="k">${</span><span class="nv">SLEEP</span><span class="k">}</span><span class="p">;</span>
+<span class="k">done</span>
+</code></pre></div></div>
+
+<blockquote>
+  <p>python3 의 명령어는 가상환경때문에 세부 경로를 지정하였었는데 정상 동작하지 않았다.</p>
+</blockquote>
+
+<h4 id="crontab의-간단-사용법">crontab의 간단 사용법</h4>
+
+<h5 id="서비스-등록">서비스 등록</h5>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># /etc/crontab</span>
+
+<span class="c"># 추가할 작업 추가</span>
+<span class="c"># 분 - 시 - 일 - 월 - 요일 - 사용자 - 실행명령</span>
+<span class="k">*</span> <span class="k">*</span> <span class="k">*</span> <span class="k">*</span> <span class="k">*</span> zen /bin/sh /home/zen/Documents/Server/thread.sh
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># crontab 실행</span>
+<span class="nv">$ </span>service cron start
+
+<span class="c"># crontab 이 실행중이라면 리로드</span>
+<span class="nv">$ </span>systemctl status cron.service
+<span class="nv">$ </span>service cron status  <span class="o">(</span>같은 명령<span class="o">)</span>
+</code></pre></div></div>
+
+<blockquote>
+  <p>service는 Centos 6 이전, systemctl은 Centos 7 이후에서 제어한다. 어떤걸 사용해도 무방</p>
+</blockquote>
+
+<h2 id="결과">결과</h2>
+
+<p>모니터링은 아이패드의 ServerCat 이라는 어플을 사용하고 있는데, 인터페이스도 심플해서 애용하고 있다.</p>
+
+<p><img src="/img/post/diary/other/servercat.jpg" alt="" /></p>
+
+<p>위 사진처림 cpu 사용량이 2% 까지 내려가게 되었다.</p>
+
+<p>crontab 애용하자….ㅋㅋ</p>
+:ET

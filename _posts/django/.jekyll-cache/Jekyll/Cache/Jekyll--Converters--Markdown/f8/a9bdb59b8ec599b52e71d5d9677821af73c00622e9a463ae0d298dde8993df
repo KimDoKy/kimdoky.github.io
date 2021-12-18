@@ -1,0 +1,274 @@
+I"�Y<blockquote>
+  <p><a href="https://docs.djangoproject.com/en/2.2/ref/models/options/">Django Model Meta options</a></p>
+</blockquote>
+
+<hr />
+
+<h1 id="meta-options">Meta options</h1>
+
+<h3 id="abstract"><code class="language-plaintext highlighter-rouge">abstract</code></h3>
+
+<p><code class="language-plaintext highlighter-rouge">abstract=True</code>이면 해당 모델을 추상 기본 클래스가 됩니다.</p>
+
+<h3 id="app_label"><code class="language-plaintext highlighter-rouge">app_label</code></h3>
+
+<p>모델이 <code class="language-plaintext highlighter-rouge">INSTALLED_APPS</code>에서 앱 외부에 정의된 경우, 모델이 속한 앱을 선언해야 합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">app_label</span> <span class="o">=</span> <span class="s">'myapp'</span>
+</code></pre></div></div>
+
+<h3 id="base_manager_name"><code class="language-plaintext highlighter-rouge">base_manager_name</code></h3>
+
+<p>모델의 <code class="language-plaintext highlighter-rouge">_base_manager</code>에 사용할 매니저의 이름 속성을 지정합니다.(<code class="language-plaintext highlighter-rouge">objects</code>가 기본값)</p>
+
+<p>기본적으로 <code class="language-plaintext highlighter-rouge">django.db.models</code>에 지정된 매니저를 재지정할때 사용합니다.<br />
+기본 매니저가 적합하지 않은 경우에 사용합니다.</p>
+
+<h3 id="db_table"><code class="language-plaintext highlighter-rouge">db_table</code></h3>
+
+<p>Django는 모델 클래스이름과 해당 클래스가 포함된 앱이름을 기준으로 DB 테이블 이름을 자동으로 생성합니다.</p>
+
+<p>예를 들어, ‘bookstore’라는 앱에 ‘Book’ 모델이 정의되면, ‘bookstore_book’으로 DB 테이블 이름을 정합니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">db_table</code>으로 DB 테이블 이름을 지정할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">db_table</span> <span class="o">=</span> <span class="s">'music_ablbum'</span>
+</code></pre></div></div>
+
+<p>MySQL 백엔드의 경우 테이블 이름은 소문자로 지정해야 합니다.<br />
+Oracle은 테이블 이름에 30자 제한이 있습니다.</p>
+
+<h3 id="db_tablespace"><code class="language-plaintext highlighter-rouge">db_tablespace</code></h3>
+
+<ul>
+  <li><a href="http://www.dbguide.net/db.db?cmd=view&amp;boardUid=26445&amp;boardConfigUid=9&amp;boardIdx=21&amp;boardStep=1">테이블 스페이스?</a></li>
+</ul>
+
+<p>DB 테이블 스페이스명을 지정합니다. 기본값은 프로젝트의 <code class="language-plaintext highlighter-rouge">DEFAULT_TABLESPACE</code>입니다. 백엔드가 테이블 스페이스를 지원하지 않으면 무시됩니다.</p>
+
+<h3 id="default_manager_name"><code class="language-plaintext highlighter-rouge">default_manager_name</code></h3>
+
+<p>모델의 <code class="language-plaintext highlighter-rouge">_default_manager</code>에 사용할 매니저의 이름을 지정합니다.</p>
+
+<p>모델에 여러 모델 매니저가 있고, 기본 관리자를 지정해야 하는 경우에 사용합니다.</p>
+
+<h3 id="default_related_name"><code class="language-plaintext highlighter-rouge">default_related_name</code></h3>
+
+<p>필드의 역관계 이름은 유일해야 합니다. 기본적으로 <code class="language-plaintext highlighter-rouge">&lt;model_name&gt;_set</code>으로 지정됩니다.</p>
+
+<h3 id="get_latest_by"><code class="language-plaintext highlighter-rouge">get_latest_by</code></h3>
+
+<p>매니저의 <code class="language-plaintext highlighter-rouge">latest()</code>, <code class="language-plaintext highlighter-rouge">earliest()</code> 메소드에서 사용할 기본 필드를 지정합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Latest by ascending order_date.
+</span><span class="n">get_latest_by</span> <span class="o">=</span> <span class="s">"order_date"</span>
+
+<span class="c1"># Latest by priority descending, order_date ascending.
+</span><span class="n">get_latest_by</span> <span class="o">=</span> <span class="p">[</span><span class="s">'-priority'</span><span class="p">,</span> <span class="s">'order_date'</span><span class="p">]</span>
+</code></pre></div></div>
+
+<h3 id="managed"><code class="language-plaintext highlighter-rouge">managed</code></h3>
+
+<p>기본값은 True으로, Django는 마이그레이션 혹은 마이그레이션의 일부로 DB 테이블을 생성하고 flush 관리 명령으로 제거합니다. 즉, DB 테이블의 수명주기를 관리합니다.</p>
+
+<p>만약 False라면, 이 모델의 DB에 대해 테이블 작석이나 삭제를 수행하지 않습니다.<br />
+이는 모델이 다른 방법으로 작성된 테이블이나 DB 뷰를 작성할 경우에 유용합니다. 그외의 모델 처리는 기존과 동일합니다.</p>
+
+<ul>
+  <li>기본 키 필드를 자동으로 선언하지 않으면, 모델링 중인 DB 테이블의 모든 열을 지정하는 것이 좋습니다.</li>
+  <li>ManyToManyField를 사용하고 있다면 하나의 관리 모델과 하나의 비관리 모델 사이의 중간 테이블이 생성되지만, 조인이 되지는 않습니다. 이 기본 동작을 변경하려면 중간 테이블을 명시적으로 모델로 작성하고 ManyToManyField.through 속성으로 연결해야 합니다.</li>
+  <li>테스트의 경우 올바른 테이블을 작성해야 합니다.</li>
+</ul>
+
+<h3 id="order_with_respect_to"><code class="language-plaintext highlighter-rouge">order_with_respect_to</code></h3>
+
+<p>주어진 필드(보통 ForeignKey)과 관련해서 객체를 정렬 할 수 있게 합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Question에 둘 이상의 Answer이 있고, 답변 순서가 중요한 경우
+</span><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="k">class</span> <span class="nc">Question</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">TextField</span><span class="p">()</span>
+    <span class="c1"># ...
+</span>
+<span class="k">class</span> <span class="nc">Answer</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">question</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Question</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="c1"># ...
+</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">order_with_respect_to</span> <span class="o">=</span> <span class="s">'question'</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">order_with_respect_to</code>를 설정하면 두 개의 추가 메서드(<code class="language-plaintext highlighter-rouge">get_RELATED_order()</code>, <code class="language-plaintext highlighter-rouge">set_RELATED_order()</code>)가 제공됩니다. REKATED는 소문자로 된 모델 이름입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Question 객체에 여러 개의 Answer 관련 객체가 있다면
+# 반환된 목록에는 Answer 관련 객체의 기본 키가 포함됩니다.
+</span><span class="o">&gt;&gt;&gt;</span> <span class="n">question</span> <span class="o">=</span> <span class="n">Question</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">question</span><span class="p">.</span><span class="n">get_answer_order</span><span class="p">()</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+
+<span class="c1"># Answer 기본 키 리스트를 전달하여 Question 객체의 Answer 관련 객체의 순서를 설정할 수 있습니다.
+</span><span class="o">&gt;&gt;&gt;</span> <span class="n">question</span><span class="p">.</span><span class="n">set_answer_order</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+
+
+<span class="c1"># 관련 객체는 get_next_in_order(), get_previous_in_order()를 가져온다.
+# 이 메서드는 적절한 순서로 객체에 액세스할 때 사용합니다.
+# Answer 객체는 id로 정렬되었다고 가정
+</span><span class="o">&gt;&gt;&gt;</span> <span class="n">answer</span> <span class="o">=</span> <span class="n">Answer</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">answer</span><span class="p">.</span><span class="n">get_next_in_order</span><span class="p">()</span>
+<span class="o">&lt;</span><span class="n">Answer</span><span class="p">:</span> <span class="mi">3</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">answer</span><span class="p">.</span><span class="n">get_previous_in_order</span><span class="p">()</span>
+<span class="o">&lt;</span><span class="n">Answer</span><span class="p">:</span> <span class="mi">1</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">order_with_respect_to</code>와 <code class="language-plaintext highlighter-rouge">ordering</code>은 함께 사용할 수 없고, 이 모델의 객체 리스트를 얻을때마다 <code class="language-plaintext highlighter-rouge">order_with_respect_to</code>가 적용됩니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">order_with_respect_to</code>는 새 DB 열을 추가하기 때문에 추가하거나 변경하려면 마이그레이션을 수행하고 적용해야 합니다.</p>
+
+<h3 id="ordering"><code class="language-plaintext highlighter-rouge">ordering</code></h3>
+
+<p>객체 리스트를 가져올때 사용하기 위한 기본 순서를 지정합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># pug_date 역순으로 정렬
+</span><span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s">'-pub_date'</span><span class="p">]</span>
+
+<span class="c1"># 무작위 정렬
+</span><span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s">'?'</span><span class="p">]</span>
+
+<span class="c1"># pub_date를 내림차순으로 정렬한 후, author를 오름차순으로 정렬
+</span><span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s">'-pub_date'</span><span class="p">,</span> <span class="s">'author'</span><span class="p">]</span>
+
+<span class="c1"># 쿼리식도 사용가능
+# author을 오름차순으로 정렬하고 null 값을 마지막으로 정렬
+</span><span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="n">F</span><span class="p">(</span><span class="s">'author'</span><span class="p">).</span><span class="n">asc</span><span class="p">(</span><span class="n">nulls_last</span><span class="o">=</span><span class="bp">True</span><span class="p">)]</span>
+</code></pre></div></div>
+
+<p>ordering은 DB 비용이 발생합니다. 추가한 외래키는 모든 기본 ordering도 암시적으로 포함됩니다.</p>
+
+<h3 id="permissions"><code class="language-plaintext highlighter-rouge">permissions</code></h3>
+
+<p>이 객체를 생성할 때 permissions 테이블에 추가 권한을 생성합니다.</p>
+
+<p>각 모델은 add, change, delete, view permissions이 자동으로 생성됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># can_deliver_pizzas라는 권한을 추가합니다.
+# 형식 // (permission_code, permission_name)의 리스트나 튜플
+</span><span class="n">permissions</span> <span class="o">=</span> <span class="p">[(</span><span class="s">'can_deliver_pizzas'</span><span class="p">,</span> <span class="s">'Can deliver pizzas'</span><span class="p">)]</span>
+</code></pre></div></div>
+
+<h3 id="default_permissions"><code class="language-plaintext highlighter-rouge">default_permissions</code></h3>
+
+<p>기본 권한(‘add’, ‘change’, ‘delete’, ‘view’) 권한을 수정합니다. 기본 권한이 필요 없는 경우 빈 리스트를 설정합니다.</p>
+
+<p>이 옵션은 모델이 마이그레이션을 하기 전에 해야합니다.</p>
+
+<h3 id="proxy"><code class="language-plaintext highlighter-rouge">proxy</code></h3>
+
+<p><code class="language-plaintext highlighter-rouge">proxy = True</code>이면 다른 모델을 서브 클래싱하는 모델이 <a href="https://himanmengit.github.io/django/2018/02/09/DjangoModels-13-Proxy.html">프록시 모델</a>로 처리됩니다.</p>
+
+<h3 id="required_db_features"><code class="language-plaintext highlighter-rouge">required_db_features</code></h3>
+
+<p>마이그레이션 단계에서 연결에 있어야하는 DB 기능 리스트입니다.<br />
+예를 들어 <code class="language-plaintext highlighter-rouge">['gis_enabled']</code>으로 설정하면 모델은 GIS-enabled DB에서만 동기화됩니다.</p>
+
+<p>여러 DB 백엔드로 테스트할때 일부 모델을 건너뛸때도 유용합니다.</p>
+
+<h3 id="required_db_vendor"><code class="language-plaintext highlighter-rouge">required_db_vendor</code></h3>
+
+<p>이 모델이 지원하는 DB 업체의 이름입니다. 현재는 ‘sqlite’, ‘postgresql’, ‘mysql’ 혹은 ‘oracle’입니다. 이 속성이 현재 연결 업체와 일치하지 않으면 모델은 동기화되지 않습니다.</p>
+
+<h3 id="select_on_save"><code class="language-plaintext highlighter-rouge">select_on_save</code></h3>
+
+<p>Django 1.6 이전의 <code class="language-plaintext highlighter-rouge">django.db.models.Model.save()</code> 알고리즘의 사용 여부를 결정합니다. 기존의 알고리즘은 SELECT를 사용하여 업데이트할 기존 행이 있는지 확인합니다. 새로운 알고리즘은 UPDATE를 직접 시도합니다. 간혹 기존 행의 업데이트가 Django에 표시되지 않습니다.</p>
+
+<p>예로 NULL을 반환하는 PostgreSQL ‘ON UPDATE’라는 트리거가 있는데, 새 알고리즘은 DB에 행이 존재하더라고 INSERT를 수행합니다.</p>
+
+<p>기본값은 False이고 일반적으로 이 속성은 설정할 필요가 없습니다.</p>
+
+<h3 id="indexes"><code class="language-plaintext highlighter-rouge">indexes</code></h3>
+
+<p>모델에서 정의하려는 필드의 색인 리스트</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="k">class</span> <span class="nc">Customer</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">first_name</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">last_name</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">indexes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">models</span><span class="p">.</span><span class="n">Index</span><span class="p">(</span><span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s">'last_name'</span><span class="p">,</span> <span class="s">'first_name'</span><span class="p">]),</span>
+            <span class="n">models</span><span class="p">.</span><span class="n">Index</span><span class="p">(</span><span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s">'first_name'</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s">'first_name_idx'</span><span class="p">),</span>
+        <span class="p">]</span>
+</code></pre></div></div>
+
+<h3 id="unique_together"><code class="language-plaintext highlighter-rouge">unique_together</code></h3>
+
+<p>함께 사용되는 필드 이름 셋은 고유해야합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">unique_together</span> <span class="o">=</span> <span class="p">[[</span><span class="s">'driver'</span><span class="p">,</span> <span class="s">'restaurant'</span><span class="p">]]</span>
+
+<span class="c1"># 편의상 단일 리스트도 가능합니다.
+</span><span class="n">unique_together</span> <span class="o">=</span> <span class="p">[</span><span class="s">'driver'</span><span class="p">,</span> <span class="s">'restaurant'</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>Django admin에서 사용되며, DB 수준에서 적용됩니다. (적절한 UNIQUE 문이 CREATE TABLE 문에 포함됨)</p>
+
+<p>ManyToManyField는 <code class="language-plaintext highlighter-rouge">unique_together</code>에 포함될 수 없습니다.<br />
+제약 조건을 위반하면 ‘ValidationError’가 발생합니다.</p>
+
+<h3 id="index_together"><code class="language-plaintext highlighter-rouge">index_together</code></h3>
+
+<p>함께 색인 될 필드 이름 셋</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">index_together</span> <span class="o">=</span> <span class="p">[[</span><span class="s">"pub_date"</span><span class="p">,</span> <span class="s">"deadline"</span><span class="p">]]</span>
+
+<span class="c1"># 편의상 이렇게도 가능
+</span><span class="n">index_together</span> <span class="o">=</span> <span class="p">[</span><span class="s">"pub_date"</span><span class="p">,</span> <span class="s">"deadline"</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>이 필드 리스트는 함께 색인됩니다.(적절한 CREATE INDEX 문이 실행됩니다.)</p>
+
+<h3 id="constraints"><code class="language-plaintext highlighter-rouge">constraints</code></h3>
+
+<p>모델에서 정의하려는 제약 조건 리스트</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="k">class</span> <span class="nc">Customer</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">age</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">IntegerField</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">constraints</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">models</span><span class="p">.</span><span class="n">CheckConstraint</span><span class="p">(</span><span class="n">check</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">Q</span><span class="p">(</span><span class="n">age__gte</span><span class="o">=</span><span class="mi">18</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s">'age_gte_18'</span><span class="p">),</span>
+        <span class="p">]</span>
+</code></pre></div></div>
+
+<h3 id="verbose_name"><code class="language-plaintext highlighter-rouge">verbose_name</code></h3>
+
+<p>사람이 읽기 쉽게 이름을 지정합니다. (어드민에서)</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">verbose_name</span> <span class="o">=</span> <span class="s">"pizza"</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">verbose_name</code>을 지정하지 않으면 Django는 CamelCase로 이름을 지정합니다.</p>
+
+<h3 id="verbose_name_plural"><code class="language-plaintext highlighter-rouge">verbose_name_plural</code></h3>
+
+<p><code class="language-plaintext highlighter-rouge">verbose_name</code>의 복수형</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="s">"stories"</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">verbose_name_plural</code>을 지정하지 않으면 Django는 <code class="language-plaintext highlighter-rouge">verbose_name</code> + ‘s’을 사용합니다.</p>
+
+<h2 id="read-only-meta-attributes">Read-only Meta attributes</h2>
+
+<h3 id="label"><code class="language-plaintext highlighter-rouge">label</code></h3>
+
+<p>객체의 표현은 <code class="language-plaintext highlighter-rouge">app_label.object_name</code>을 반환합니다. (ex. ‘polls.Question’)</p>
+
+<h3 id="label_lower"><code class="language-plaintext highlighter-rouge">label_lower</code></h3>
+
+<p>모델을 나타내는 <code class="language-plaintext highlighter-rouge">app_label.model_name</code>을 반환합니다.(ex. ‘polls.question’)</p>
+:ET
