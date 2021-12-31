@@ -108,16 +108,16 @@ TEMPLATES = [
 
 실제로 TDD를 사용하려면 템플릿과 static 폴더를 설정 하기 전에 테스트를 작성하야 합니다만, 먼저 설정 파일 편집을 끝내고 싶었습니다.(원작자가
 
-먼저, 'function_tests'폴더를 '__init__.py'라는 빈 파일을 포함시켜 패키지로 변환합니다.
+먼저, 'functional_tests'폴더를 '__init__.py'라는 빈 파일을 포함시켜 패키지로 변환합니다.
 
 ```
-$ touch function_tests/__init__.py
+$ touch functional_tests/__init__.py
 ```
 
 이렇게 하면 다음과 같이 기능 테스트를 실행할 수 있습니다.
 
 ```
-$ python manage.py test function_tests
+$ python manage.py test functional_tests
 ```
 
 테스트 러너는 'test'로 시작하는 파일을 찾기 때문에, 'all_users.py'를 'test_all_users.py'로 변경합니다.
@@ -232,7 +232,7 @@ def home(request):
 
 Unittest는 개발자의 관점에서 코드의 작은 조각을 테스트하기 위한 것입니다. 예를 들어 홈페이지 템플릿이 내용을 표시하는 다른 템플릿에서 상속되는지 여부를 사용자는 신경쓰지 않습니다. 그러나 개발자는 관심을 가지고 있으며, 그래서 우리는 unittest를 작성해야 합니다. 더욱이 테스트를 생각할 떄 코드를 보다 명확하게 작성한다는 사실을 깨달았습니다. 테스트를 정의해야만 코드가 원하는 것을 **정확히** 생각할 수 있기 때문입니다. 그리고 그것은 우리의 불안감을 없애줍니다.
 
-'teskbuster' 폴더안의 'test.py' 파일을 작성합니다.
+'taskbuster' 폴더안의 'test.py' 파일을 작성합니다.
 
 ```python
 # -*- coding: utf-8 -*-
@@ -334,7 +334,7 @@ $ python manage.py test functional_tests
 그런 다음 'base.html'의 시작부분에 추가하세요.(`<!DOCTIPE html`부분)
 
 ```html
-{% load staticfiles %}
+{% load staticfiles %} # Django 3.0 이후로 staticfiles -> static 으로 변경됨 
 ```
 그런다음 JavaScript의 정적 파일과 스크립트에 대한 모든 링크를 찾습니다.
 

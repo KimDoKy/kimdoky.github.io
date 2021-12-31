@@ -84,7 +84,7 @@ MIDDLEWARE_CLASSES = (
 다음으로 사용할 언어를 지정하세요.
 
 ```
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _ # Django 4.0에서 ugettext_lazy -> gettext_lazy으로 변경됨 
 LANGUAGES = (
     ('en', _('English')),
     ('ca', _('Catalan')),
