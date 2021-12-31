@@ -66,8 +66,11 @@ echo "selenium==3.14.0" >> test.txt
 
 다음으로, 그 프로그래머는 각 환경을 활성화하고 각 requirements 파일에 저장된 패키지를 설치하기만 하면 됩니다.
 
+> 오랫만에 해보니 헷갈려서... 그냥 virtualenv로 다시 진행했습니다.
+
 ```
 $ pyenv local tb_dev
+$ sv  # source virtualenv으로 .zshrc에 alias한 명령어. 뒤에서 다룸 
 $ pip install -r requirements/dev.txt
 
 $ pyenv local tb_test
@@ -121,14 +124,14 @@ $ mv ../settings.py base.py
 개발자 가상환경인 tb_dev 에서는
 
 ```
-# $VIRTUAL_ENV/bin/activate애 입력합니다.
+# $VIRTUAL_ENV/bin/activate의 마지막 라인에 추가합니다.
 export DJANGO_SETTINGS_MODULE='taskbuster.settings.dev'
 ```
 
 테스트 가상환경인 tb_test에서는
 
 ```
-# $VIRTUAL_ENV/bin/activate애 입력합니다.
+# $VIRTUAL_ENV/bin/activate의 마지막 라인에 추가합니다.
 export DJANGO_SETTINGS_MODULE='taskbuster.settings.test'
 ```
 
