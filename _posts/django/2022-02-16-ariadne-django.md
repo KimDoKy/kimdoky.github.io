@@ -151,11 +151,15 @@ def resolve_schools(*_):
 Query와 마찬가지로 데이터베이스에 레코드를 생성할 mutation resolver를 설정합니다.
 
 ```python
+
 mutation = MutationType()
 
 @mutation.field('add_school')
 def resolve_add_school(_,info, input):
-    school = School.objects.create(school_name=input['school_name'], school_population=input['school_population'])      
+    school = School.objects.create( \
+        school_name=input['school_name'], \
+        school_population=input['school_population'] \
+        )      
     return {'created': True, 'school': school, 'err': None}
 ```
 
@@ -198,7 +202,7 @@ urlpatterns = [
 
 모든 설정을 마친 후, 변경사항을 마이그레이트하고 서버를 실행해야 합니다.  
 
-```
+```bash
 $ python manage.py makemigrations
 
 $ python manage.py migrate
