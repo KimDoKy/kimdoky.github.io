@@ -1,4 +1,4 @@
-I"�=<h1 id="settings-files-and-version-control"><a href="http://www.marinamele.com/taskbuster-django-tutorial/settings-different-environments-version-control">Settings files and Version Control</a></h1>
+I"�><h1 id="settings-files-and-version-control"><a href="http://www.marinamele.com/taskbuster-django-tutorial/settings-different-environments-version-control">Settings files and Version Control</a></h1>
 
 <p>이제 테스트, 개발, 프로덕션 환경을 구성하고 다른 Django 설정 파일을 편집합니다.</p>
 
@@ -55,7 +55,12 @@ $ echo "Django==2.1" &gt;&gt; base.txt
 
 <p>다음으로, 그 프로그래머는 각 환경을 활성화하고 각 requirements 파일에 저장된 패키지를 설치하기만 하면 됩니다.</p>
 
+<blockquote>
+  <p>오랫만에 해보니 헷갈려서… 그냥 virtualenv로 다시 진행했습니다.</p>
+</blockquote>
+
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ pyenv local tb_dev
+$ sv  # source virtualenv으로 .zshrc에 alias한 명령어. 뒤에서 다룸 
 $ pip install -r requirements/dev.txt
 
 $ pyenv local tb_test
@@ -106,13 +111,13 @@ $ echo "from .base import *" | tee -a dev.py test.py prod.py staging.py
 
 <p>개발자 가상환경인 tb_dev 에서는</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># $VIRTUAL_ENV/bin/activate애 입력합니다.
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># $VIRTUAL_ENV/bin/activate의 마지막 라인에 추가합니다.
 export DJANGO_SETTINGS_MODULE='taskbuster.settings.dev'
 </code></pre></div></div>
 
 <p>테스트 가상환경인 tb_test에서는</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># $VIRTUAL_ENV/bin/activate애 입력합니다.
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># $VIRTUAL_ENV/bin/activate의 마지막 라인에 추가합니다.
 export DJANGO_SETTINGS_MODULE='taskbuster.settings.test'
 </code></pre></div></div>
 

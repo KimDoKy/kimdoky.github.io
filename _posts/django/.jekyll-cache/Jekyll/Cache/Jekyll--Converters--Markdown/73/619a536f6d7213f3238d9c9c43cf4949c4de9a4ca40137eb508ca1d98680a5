@@ -1,0 +1,319 @@
+I"�t<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<h1 id="django의-사용자-모델-다루기">Django의 사용자 모델 다루기</h1>
+
+<h2 id="221-use-djangos-tools-for-finding-the-usermodel">22.1 Use Django’s Tools for Finding the UserModel</h2>
+
+<p>사용자 클래스를 찾는 방법</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 기존 사용자 모델의 정의
+</span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">get_user_model</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">get_user_model</span><span class="p">()</span>
+<span class="o">&lt;</span><span class="k">class</span> <span class="nc">django</span><span class="p">.</span><span class="n">contrib</span><span class="p">.</span><span class="n">auth</span><span class="p">.</span><span class="n">models</span><span class="p">.</span><span class="n">User</span><span class="o">&gt;</span>
+
+<span class="c1"># 프로젝트에서 커스텀 사용자 모델 정의를 이용할 때
+</span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">get_user_model</span> 
+<span class="o">&gt;&gt;&gt;</span> <span class="n">get_user_model</span><span class="p">()</span>
+<span class="o">&lt;</span><span class="k">class</span> <span class="nc">profiles</span><span class="p">.</span><span class="n">models</span><span class="p">.</span><span class="n">UserProfile</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<p>프로젝트설정에 따라 다른 두 개의 User 모델이 존재할 수 있고, User 모델은 커스터마이징이 가능하다는 의미입니다.</p>
+
+<h3 id="2211-use-settingsauth_user_model-for-foreign-keys-to-user">22.1.1 Use <code class="language-plaintext highlighter-rouge">settings.AUTH_USER_MODEL</code> for Foreign Keys to User</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="k">class</span> <span class="nc">IceCreamStore</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">owner</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">OneToOneField</span><span class="p">(</span><span class="n">settings</span><span class="p">.</span><span class="n">AUTH_USER_MODEL</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">SET_NULL</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>프로젝트가 셋팅되었다면 <code class="language-plaintext highlighter-rouge">settings.AUTH_USER_MODEL</code>을 수정하지 말자.</p>
+
+<p>수정하려면 DB 스키마를 아에 맞게 수정해야만 합니다.</p>
+
+<h3 id="2212-dont-use-get_user_model-for-foreign-keys-to-user">22.1.2 Don’t Use <code class="language-plaintext highlighter-rouge">get_user_model()</code> for Foreign Keys to User</h3>
+
+<p>외래키에 <code class="language-plaintext highlighter-rouge">get_user_model()</code>을 사용하면 임포트 루프가 발생할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Don't Do This!!
+</span><span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">get_user_model</span>
+<span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="k">class</span> <span class="nc">IceCreamStore</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">owner</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">OneToOneField</span><span class="p">(</span><span class="n">get_user_model</span><span class="p">(),</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">SET_NULL</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">get_user_model</code>은 User 모델이 이미 앱 캐시에 로드되었다는걸 보장할 수 없으며, 일부 설정(<code class="language-plaintext highlighter-rouge">INSTALLED_APPS</code>)이 변경되면 import 되지 않을 수도 있습니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">settings.AUTH_USER_MODEL</code>은 모델 이름을 문자열로 리턴하고, 모델 클래스 검색에 실패하면 모든 모델 클래스가 로드될 때까지 검색이 지연됩니다.</p>
+
+<blockquote>
+  <p><a href="https://stackoverflow.com/questions/24629705/django-using-get-user-model-vs-settings-auth-user-model">stackoverflow</a></p>
+</blockquote>
+
+<h2 id="222-custom-user-fields-for-django-projects">22.2 Custom User Fields for Django Projects</h2>
+
+<p>규칙에 맞게 필요한 메서드와 속성을 구현하여 커스텀 유저 모댈을 생성할 수 있습니다.</p>
+
+<p><a href="https://github.com/fusionbox/django-authtools"><code class="language-plaintext highlighter-rouge">django-authtools</code></a>는 커스텀 사용자 모델을 더 쉽게 정의하는 라이브러리입니다. <code class="language-plaintext highlighter-rouge">AbstractEmailUser</code>, <code class="language-plaintext highlighter-rouge">AbsteactNameUser</code> 모델을 이용합니다. Django 3.x에서는 지원하지 않지만, 한 번 살펴볼 가치는 있습니다.</p>
+
+<h3 id="2221-option1-subclass-abstractuser">22.2.1 Option1: Subclass AbstractUser</h3>
+
+<p>Django의 User 모델을 그대로 유지하면서 몇몇 필드를 추가할때 사용합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># profiles/models.py
+</span><span class="kn">from</span> <span class="nn">django.contrib.auth.models</span> <span class="kn">import</span> <span class="n">AbstractUser</span>
+<span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+<span class="k">class</span> <span class="nc">KarmaUser</span><span class="p">(</span><span class="n">AbstractUser</span><span class="p">):</span>
+    <span class="n">karma</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">PositiveIntegerField</span><span class="p">(</span><span class="n">verbose_name</span><span class="o">=</span><span class="s">'karma'</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>해당 모델을 사용하려면 settings에 추가 설정을 해주어야 합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">AUTH_USER_MODEL</span> <span class="o">=</span> <span class="s">'profiles.KarmaUser'</span>
+</code></pre></div></div>
+
+<h3 id="2222-option2-subclass-abstactbaseuser">22.2.2 Option2: Subclass AbstactBaseUser</h3>
+
+<p><code class="language-plaintext highlighter-rouge">password</code>, <code class="language-plaintext highlighter-rouge">last_login</code> 필드만 가진 기본 형태의 옵션입니다.</p>
+
+<ul>
+  <li>User 모델이 기본으로 제공하는 필드(<code class="language-plaintext highlighter-rouge">first_name</code>, <code class="language-plaintext highlighter-rouge">last_name</code>)에 만족하지 못할 때</li>
+  <li>기본 형태만 가진 가벼운 상태로부터 새로 서브 클래스를 생성하면서, 패스워드를 저장하기 위해 <code class="language-plaintext highlighter-rouge">AbstractBaseUser</code>의 기본 환경의 장점을 이용하고 싶을 때</li>
+  <li><a href="https://docs.djangoproject.com/en/3.2/topics/auth/customizing/#a-full-example">https://docs.djangoproject.com/en/3.2/topics/auth/customizing/#a-full-example</a></li>
+  <li>https://github.com/fusionbox/django-authtools</li>
+</ul>
+
+<h3 id="2223-option3-linking-back-form-a-related-model">22.2.3 Option3: Linking Back Form a Related Model</h3>
+<p>관련 모델로부터 역으로 링크하기</p>
+
+<ul>
+  <li>이용사례: 서드 파티 패키지 제작
+    <ul>
+      <li>PyPI에 올릴 서드 파티 애플리케이션을 제작할 때</li>
+      <li>사용자당 추가로 저장해야 할 정보가 있을 때</li>
+      <li>최대한 느슨한 연관된 관계를 원할 때</li>
+    </ul>
+  </li>
+  <li>이용사례: 내부적으로 필요한 경우
+    <ul>
+      <li>우리만의 Django 프로젝트를 작업할 때</li>
+      <li>각기 다른 필드를 가진 전혀 다른 사용자 타입을 원할 때</li>
+      <li>사용자 중 일부가 다른 사용자 타입을 가지는 사용자들과 섞여 있을 때</li>
+      <li>다른 레벨단이 아닌 모델 레벨에서 모든 것을 처리하고 싶을 때</li>
+      <li>옵션1, 2애서 다룬 커스텀 사용자 모델과 결합하여 이용하고 싶을 때</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># profiles/models.py
+</span><span class="kn">from</span> <span class="nn">django.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">flavors.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+
+<span class="k">class</span> <span class="nc">EaterProfile</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="c1"># 기존 사용자 프로필
+</span>    <span class="c1"># 이러한 방식을 이용한다면 post_save 시그널이나
+</span>    <span class="c1"># 최초 로그인시 profile_edit 뷰로 리다이렉트하는 절차가 필요하다.
+</span>    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">OneToOneField</span><span class="p">(</span><span class="n">settings</span><span class="p">.</span><span class="n">AUTH_USER_MODEL</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">SET_NULL</span><span class="p">)</span>
+    <span class="n">favorite_ice_cream</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Flavor</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">ScooperProfile</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">OneToOneField</span><span class="p">(</span><span class="n">settings</span><span class="p">.</span><span class="n">AUTH_USER_MODEL</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">SET_NULL</span><span class="p">)</span>
+    <span class="n">scoops_scooped</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">InventorProfile</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">OneToOneField</span><span class="p">(</span><span class="n">settings</span><span class="p">.</span><span class="n">AUTH_USER_MODEL</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="p">.</span><span class="n">SET_NULL</span><span class="p">)</span>
+    <span class="n">flavors_invented</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Flavor</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>ORM(<code class="language-plaintext highlighter-rouge">user.eaterprofile.favorite_ice_cream</code>)을 통해 손쉽게 역으로 정보를 가져올 수 있습니다.<br />
+Scooper, Inventor 역시 해당 사용자에게만 해당하는 개인 데이터를 제공할 수 있습니다.<br />
+이렇게 구성하면 사용자 모델과는 독립된 정보이기 때문에 사용자 타입 사이에서 문제가 발행될 확률이 <strong>매우 낮아진다.</strong></p>
+
+<p>프로파일이나 그와 관련된 파일들이 너무 단순해져버릴 수 있지만, 코드를 단순하게 유지하는 것이 꼭 단점이자 장점이 될 수도 있습니다.</p>
+
+<h2 id="223-handling-multiple-user-types">22.3 Handling Multiple User Types</h2>
+
+<p>여러 사용자 유형(직원, 관리자, 일반 사용자 등)을 처리할 때는, 하나의 모델을 사용하고 적절히 표시만 해주면 됩니다.</p>
+
+<h3 id="2231-add-a-user-type-field">22.3.1 Add a User Type Field</h3>
+
+<p>User 모델에 사용자 유형을 구분하는 필드를 추가합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">AbstractUser</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Types</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">TextChoices</span><span class="p">):</span>
+        <span class="n">EATER</span> <span class="o">=</span> <span class="s">"EATER"</span><span class="p">,</span> <span class="s">"Eater"</span>
+        <span class="n">SCOOPER</span> <span class="o">=</span> <span class="s">"SCOOPER"</span><span class="p">,</span> <span class="s">"Scooper"</span>
+        <span class="n">INVENTOR</span> <span class="o">=</span> <span class="s">"INVENTOR"</span><span class="p">,</span> <span class="s">"Inventor"</span>
+
+    <span class="nb">type</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">_</span><span class="p">(</span><span class="s">"Type"</span><span class="p">),</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="n">Types</span><span class="p">.</span><span class="n">choices</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">Types</span><span class="p">.</span><span class="n">EATER</span>
+        <span class="p">)</span>
+</code></pre></div></div>
+
+<p>시간의 지남에 따라 사이트의 크기와 복잡성의 증가하기 때문에 유형 구분을 위한 필드에 boolean보다는 char의 단일 필드를 상하는 것이 좋습니다.</p>
+
+<p>사용자가 여러 역할을 가져야 한다면 <code class="language-plaintext highlighter-rouge">ManyToManyField</code>를 이용하거나 Django의 내장 그룹 시스템을 이용하세요.</p>
+
+<h3 id="2232-add-a-user-type-field-plus-proxy-models">22.3.2 Add a User Type Field Plus Proxy Models</h3>
+
+<p>다른 유형의 사용자는 다른 메서드와 속성을 가집니다.</p>
+
+<p>프록시 모델을 사용하면 쉽게 구현할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">AbstractUser</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Types</span><span class="p">(</span><span class="n">models</span><span class="p">.</span><span class="n">TextChoices</span><span class="p">):</span>
+        <span class="n">EATER</span> <span class="o">=</span> <span class="s">"EATER"</span><span class="p">,</span> <span class="s">"Eater"</span>
+        <span class="n">SCOOPER</span> <span class="o">=</span> <span class="s">"SCOOPER"</span><span class="p">,</span> <span class="s">"Scooper"</span>
+        <span class="n">INVENTOR</span> <span class="o">=</span> <span class="s">"INVENTOR"</span><span class="p">,</span> <span class="s">"Inventor"</span>
+
+    <span class="c1"># 프록시 모델을 통해 새로운 사용자가 생성되는지 확인
+</span>    <span class="n">base_type</span> <span class="o">=</span> <span class="n">Types</span><span class="p">.</span><span class="n">EATER</span>
+
+    <span class="nb">type</span> <span class="o">=</span> <span class="n">models</span><span class="p">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">_</span><span class="p">(</span><span class="s">"Type"</span><span class="p">),</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="n">Types</span><span class="p">.</span><span class="n">choices</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">Types</span><span class="p">.</span><span class="n">EATER</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># 신규 사용자라면, base_type을 기반으로 유형을 지정
+</span>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="p">.</span><span class="n">pk</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">.</span><span class="nb">type</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">base_type</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">().</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># users/models.py
+</span><span class="k">class</span> <span class="nc">InventorManager</span><span class="p">(</span><span class="n">BaseUserManager</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="nb">super</span><span class="p">().</span><span class="n">get_queryset</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">User</span><span class="p">.</span><span class="n">Types</span><span class="p">.</span><span class="n">INVENTOR</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Inventor</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="c1"># 사용자 유형을 INVENTOR으로 설정
+</span>    <span class="n">base_type</span> <span class="o">=</span> <span class="n">User</span><span class="p">.</span><span class="n">Types</span><span class="p">.</span><span class="n">INVENTOR</span>
+    <span class="c1"># Inventor 모델에 대한 쿼리가 Inventors만 반환하는지 확인
+</span>    <span class="n">objects</span> <span class="o">=</span> <span class="n">InventorManager</span><span class="p">()</span>
+
+    <span class="c1"># True이면 이 레코드에 대한 테이블을 생성하지 않음
+</span>    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">proxy</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">invent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">"Delicious!"</span>
+</code></pre></div></div>
+
+<p>프록시 모델은 필드를 추가하지 않습니다.</p>
+
+<p>프록시 모델은 커스텀 매니저, 메서드, 속성을 걸 수 있는 모델 개체에 대한 참조입니다.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> from users.models import User, Inventor
+<span class="o">&gt;&gt;&gt;</span> User.objects.count<span class="o">()</span> <span class="c"># Over 300 million users! 323482357</span>
+<span class="o">&gt;&gt;&gt;</span> Inventor.objects.count<span class="o">()</span> <span class="c"># But only 3 inventors 3</span>
+
+<span class="c"># Calling someone as both a User and an Inventor</span>
+<span class="o">&gt;&gt;&gt;</span> user <span class="o">=</span> User.objects.get<span class="o">(</span><span class="nv">username</span><span class="o">=</span><span class="s1">'uma'</span><span class="o">)</span>
+<span class="o">&gt;&gt;&gt;</span> user
+&lt;User: uma&gt;
+<span class="o">&gt;&gt;&gt;</span> inventor <span class="o">=</span> Inventor.objects.get<span class="o">(</span><span class="nv">username</span><span class="o">=</span><span class="s1">'uma'</span><span class="o">)</span>
+<span class="o">&gt;&gt;&gt;</span> inventor
+&lt;Inventor: uma&gt;
+
+<span class="c"># Calling a method that's only for inventors</span>
+<span class="o">&gt;&gt;&gt;</span> user.invent<span class="o">()</span>
+AttributeError
+<span class="o">&gt;&gt;&gt;</span> inventor.invent<span class="o">()</span>
+<span class="s1">'Delicious'</span>
+</code></pre></div></div>
+
+<p>프록시 접근 방식은 <code class="language-plaintext highlighter-rouge">django.contrib.auth</code> 를 극적으로 확장하지 않고, 새로운 사용자 테이블을 생성하거나 타사 라이브러리를 사용하지 않고도 여러 유형의 사용자를 제공합니다.</p>
+
+<p>프록시 모델이 자체 모델 매니저를 가질수 있다는 것은 더 많은 명시적 쿼리를 가질 수 있다는 것을 의미합니다.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> User.objects.filter<span class="o">(</span><span class="nb">type</span><span class="o">=</span>User.Types.INVENTOR<span class="o">)</span>
+<span class="o">&gt;&gt;&gt;</span> Inventor.objects.filter<span class="o">()</span>  <span class="c"># Our preference</span>
+</code></pre></div></div>
+
+<h3 id="2233-adding-extra-data-fields">22.3.3 Adding Extra Data Fields</h3>
+
+<p>다양한 유형의 사용자의 추가 데이터 필드를 처리하는 방법입니다.</p>
+
+<ol>
+  <li><code class="language-plaintext highlighter-rouge">OneToOneField</code> 관계를 프로파일 모델에 사용
+    <ul>
+      <li><a href="">Chap22.2.3: Option 3: Linking Back From a Related Model</a></li>
+    </ul>
+  </li>
+  <li>모든 필드에 기본 User 모델을 넣습니다.
+    <ul>
+      <li>User 테이블이 느려질 수 있음</li>
+      <li>사용하지도 않는 데이터들을 보관하게 될 수도 있음</li>
+    </ul>
+  </li>
+</ol>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Inventor</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">InventorManager</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">proxy</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="o">@</span><span class="nb">property</span>
+    <span class="k">def</span> <span class="nf">extra</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">inventorprofile</span>
+
+<span class="k">class</span> <span class="nc">Scooper</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">ScooperManager</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">proxy</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="o">@</span><span class="nb">property</span>
+    <span class="k">def</span> <span class="nf">extra</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">scooperprofile</span>
+
+<span class="k">class</span> <span class="nc">Eater</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">EaterManager</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">proxy</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="o">@</span><span class="nb">property</span>
+    <span class="k">def</span> <span class="nf">extra</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">eaterprofile</span>
+</code></pre></div></div>
+
+<p>User 유형에 관계없이 일대일 관계의 프로필에 액세스할 수 있습니다.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">invented.extra.flavors_invented</code></li>
+  <li><code class="language-plaintext highlighter-rouge">scooper.extra.scoops_scooped</code></li>
+  <li><code class="language-plaintext highlighter-rouge">eater.extra.favorite_ice_cream</code></li>
+</ul>
+
+<h3 id="2234-additional-resources-on-multiple-user-types">22.3.4 Additional Resources on Multiple User Types</h3>
+
+<ul>
+  <li><a href="https://www.youtube.com/watch?v=f0hdXr2MOEA">https://www.youtube.com/watch?v=f0hdXr2MOEA</a></li>
+  <li><a href="https://docs.djangoproject.com/en/3.1/topics/db/models/#proxy-models">https://docs.djangoproject.com/en/3.1/topics/db/models/#proxy-models</a></li>
+  <li><a href="https://simpleisbetterthancomplex.com/tutorial/2018/01/18/how-to-implement-multiple-user-types-with-django.html">https://simpleisbetterthancomplex.com/tutorial/2018/01/18/how-to-implement-multiple-user-types-with-django.html</a></li>
+</ul>
+
+<h2 id="224-summary">22.4 Summary</h2>
+
+<ul>
+  <li>Custom User Model을 정의하는 방법</li>
+  <li>프록시 모델</li>
+</ul>
+:ET

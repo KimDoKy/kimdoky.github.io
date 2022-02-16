@@ -1,4 +1,4 @@
-I"��<h1 id="internationalization-and-localization-languages-and-time-zones"><a href="http://www.marinamele.com/taskbuster-django-tutorial/internationalization-localization-languages-time-zones">Internationalization and Localization. Languages and Time zones</a></h1>
+I"�<h1 id="internationalization-and-localization-languages-and-time-zones"><a href="http://www.marinamele.com/taskbuster-django-tutorial/internationalization-localization-languages-time-zones">Internationalization and Localization. Languages and Time zones</a></h1>
 
 <p>이번 파트에서는 국제화(Internationalization), 현지화(Localization), 표준 시간대(Time Zones)에 대해 다룹니다.</p>
 
@@ -72,7 +72,7 @@
 
 <p>다음으로 사용할 언어를 지정하세요.</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>from django.utils.translation import ugettext_lazy as _
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>from django.utils.translation import ugettext_lazy as _ # Django 4.0에서 ugettext_lazy -&gt; gettext_lazy으로 변경됨 
 LANGUAGES = (
     ('en', _('English')),
     ('ca', _('Catalan')),

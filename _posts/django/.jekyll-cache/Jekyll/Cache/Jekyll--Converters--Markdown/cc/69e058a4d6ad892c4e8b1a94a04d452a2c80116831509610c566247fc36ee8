@@ -1,4 +1,4 @@
-I"Μ<blockquote>
+I"ڜ<blockquote>
   <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
 </blockquote>
 
@@ -82,7 +82,9 @@
   <li>read-write API: 최소한 POST. PUT과 DELETE도 고려해야 함</li>
   <li>GET, POST만 구현하여 단순화하기도 함</li>
   <li>GET, PUT, DELETE는 멱등 관계이고, POST, PATCH는 그렇지 않음</li>
-  <li>PUT 요청을 지원한다면 PATCH을 구현하는 것이 좋음</li>
+  <li>
+    <p>PUT 요청을 지원한다면 PATCH을 구현하는 것이 좋음</p>
+  </li>
   <li>HTTP 상태코드</li>
 </ul>
 
@@ -263,9 +265,9 @@
   </thead>
   <tbody>
     <tr>
-      <td>/flavors/api/ FlavorListCreateAPIView</td>
+      <td>/flavors/api/</td>
+      <td>FlavorListCreateAPIView</td>
       <td><code class="language-plaintext highlighter-rouge">flavor_rest_api</code></td>
-      <td> </td>
     </tr>
     <tr>
       <td>/flavors/api/:uuid/</td>

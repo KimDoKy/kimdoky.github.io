@@ -1,0 +1,536 @@
+I"��<blockquote>
+  <p><a href="https://www.feldroy.com/books/two-scoops-of-django-3-x">Two Scoops of Django 3.x</a></p>
+</blockquote>
+
+<hr />
+
+<h2 id="241-testing-saves-money-jobs-and-lives">24.1 Testing Saves Money, Jobs, and Lives</h2>
+
+<p>돈, 직장, 심지어 생명과도 연관되어 있는 테스팅</p>
+
+<ul>
+  <li>NASA의 ‘smoke test’ 예
+    <ul>
+      <li>테스트는 막대한 예산, 연관된 회사 직원들의 직장, 과학자들과 우주인의 생명까지도 지킵니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>테스트는 NASA 뿐만 아니라 Django에서도 중요합니다.</p>
+
+<ul>
+  <li>coverage.py
+    <ul>
+      <li>테스팅을 위한 라이브러리</li>
+      <li>코드의 어떤 부분이 테스트되었고, 어떤 라인들이 테스트되지 않았는지 명확히 알려줌</li>
+      <li>물론 커버리지가 100%라고 해서 버그가 없는 것은 아니지만, 도움이 되는 것은 확실</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="242-how-to-structure-tests">24.2 How to Structure Tests</h2>
+
+<p>어떻게 테스트를 구축할 것인가</p>
+
+<p>우선 불필요한 <a href="http://test.py">test.py</a> 모듈들을 지웁니다.</p>
+
+<p>그 후 대부분의 앱에서 필요로 하는 <code class="language-plaintext highlighter-rouge">test_form.py</code>, <code class="language-plaintext highlighter-rouge">test_models.py</code>, <code class="language-plaintext highlighter-rouge">test_views.py</code>와 같은 모듈들을 직접 새로 생성합니다.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>popsicles/
+    __init__.py
+    admin.py
+    forms.py
+    models.py
+    tests/
+        __init__.py
+        test_forms.py
+        test_models.py
+        test_views.py
+				...
+		views.py
+</code></pre></div></div>
+
+<p>테스트 모듈들은 반드시 <code class="language-plaintext highlighter-rouge">test_</code> 접두어를 붙여야만 합니다. 그래야만 Django의 테스트 러너가 테스트 파일을 인지할 수 있습니다.</p>
+
+<h2 id="243-how-to-write-unit-tests">24.3 How to Write Unit Tests</h2>
+
+<p>단위 테스트 작성하기</p>
+
+<p>최소한의 시간에 가장 의미있는 테스트를 작성하는 방법입니다.</p>
+
+<h3 id="2431-each-test-method-tests-one-thing">24.3.1 Each Test Method Tests One Thing</h3>
+
+<p>각 테스트 메서드는 테스트를 한가지씩 수행해야 한다.</p>
+
+<p>테스트 메서드는 테스트 범위가 좁아야 합니다.</p>
+
+<p>하나의 단위 테스트는 여러 개의 뷰나 모델 폼 혹은 한 클래스 안의 여러 메서드에 대한 테스트를 수행하면 안됩니다.</p>
+
+<p>하나의 테스트는 view면 view, model이면 model 식으로 하나의 기능에 대해서만 테스트를 해야 합니다.</p>
+
+<p>하지만 view 하나 만으로도 모델, 폼, 메서드 등 줄줄이 연관되어 호출되어집니다.</p>
+
+<p>이러한 경우, 테스트에 대한 환경을 완전히 최소한으로 구성해야 합니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># flavors/tests/test_api.py
+</span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">django.test</span> <span class="kn">import</span> <span class="n">TestCase</span> 
+<span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">reverse</span>
+<span class="kn">from</span> <span class="nn">flavors.models</span> <span class="kn">import</span> <span class="n">Flavor</span> 
+
+<span class="k">class</span> <span class="nc">FlavorAPITests</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
+        <span class="n">Flavor</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">'A Title'</span><span class="p">,</span> <span class="n">slug</span><span class="o">=</span><span class="s">'a-slug'</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">test_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">reverse</span><span class="p">(</span><span class="s">'flavors:flavor_object_api'</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">status_code</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span> 
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">content</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>최소한의 레코드를 <code class="language-plaintext highlighter-rouge">setUp()</code> 메서드를 이용하여 생성하였습니다.</p>
+
+<p>다음은 REST API 기반의 테스트입니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># flavors/tests/test_api.py
+</span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">django.test</span> <span class="kn">import</span> <span class="n">TestCase</span>
+<span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">reverse</span>
+<span class="kn">from</span> <span class="nn">flavors.models</span> <span class="kn">import</span> <span class="n">Flavor</span>
+
+<span class="k">class</span> <span class="nc">DjangoRestFrameworkTests</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">Flavor</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">'title1'</span><span class="p">,</span> <span class="n">slug</span><span class="o">=</span><span class="s">'slug1'</span><span class="p">)</span>
+        <span class="n">Flavor</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">'title2'</span><span class="p">,</span> <span class="n">slug</span><span class="o">=</span><span class="s">'slug2'</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="p">.</span><span class="n">create_read_url</span> <span class="o">=</span> <span class="n">reverse</span><span class="p">(</span><span class="s">'flavors:flavor_rest_api'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">read_update_delete_url</span> <span class="o">=</span> <span class="n">reverse</span><span class="p">(</span><span class="s">'flavors:flavor_rest_api'</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">'slug'</span><span class="p">:</span><span class="s">'slug1'</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">test_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">create_read_url</span><span class="p">)</span>
+
+        <span class="c1"># Are both titles in the content?
+</span>        <span class="bp">self</span><span class="p">.</span><span class="n">assertContains</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s">'title1'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertContains</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s">'title2'</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">test_detail</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">read_update_delete_url</span><span class="p">)</span> 
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">{</span><span class="s">'id'</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s">'title'</span><span class="p">:</span> <span class="s">'title1'</span><span class="p">,</span> <span class="s">'slug'</span><span class="p">:</span> <span class="s">'slug1'</span><span class="p">,</span> <span class="s">'scoops_remaining'</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">test_create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">post</span> <span class="o">=</span> <span class="p">{</span><span class="s">'title'</span><span class="p">:</span> <span class="s">'title3'</span><span class="p">,</span> <span class="s">'slug'</span><span class="p">:</span> <span class="s">'slug3'</span><span class="p">}</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">create_read_url</span><span class="p">,</span> <span class="n">post</span><span class="p">)</span> 
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">content</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">status_code</span><span class="p">,</span> <span class="mi">201</span><span class="p">)</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">{</span><span class="s">'id'</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s">'title'</span><span class="p">:</span> <span class="s">'title3'</span><span class="p">,</span> <span class="s">'slug'</span><span class="p">:</span> <span class="s">'slug3'</span><span class="p">,</span> <span class="s">'scoops_remaining'</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="n">Flavor</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">count</span><span class="p">(),</span> <span class="mi">3</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">test_delete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">read_update_delete_url</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">status_code</span><span class="p">,</span> <span class="mi">204</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="n">Flavor</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">count</span><span class="p">(),</span> <span class="mi">1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="2432-for-views-when-possible-use-the-request-factory">24.3.2 For Views, When Possible Use the Request Factory</h3>
+
+<p>뷰에 대해서는 가능하면 요청 팩터리를 이용하자</p>
+
+<p><code class="language-plaintext highlighter-rouge">django.test.client.RequestFactory</code> 는 모든 뷰에 대해 해당 뷰의 첫 번째 인자로 이용할 수 있는 요청 인스턴스를 제공합니다. 이는 일반 Django 테스트 클라이언트보다 독립된 환경을 제공합니다.</p>
+
+<p>생성된 요청은 세션과 인증을 포함한 미들웨어를 지원하지 않기 때문에, 테스트 작성시 약간의 추가작업이 필요합니다. (<a href="[https://docs.djangoproject.com/en/3.2/topics/testing/advanced/](https://docs.djangoproject.com/en/3.2/topics/testing/advanced/)">Advanced testing topics</a> 참고)</p>
+
+<p>싱글 미들웨어 클래스로 wrap된 뷰를 테스트하는 경우, 뷰가 세션을 필요로 할 때는 다음과 같이 작성할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">django.contrib.auth.models</span> <span class="kn">import</span> <span class="n">AnonymousUser</span>
+<span class="kn">from</span> <span class="nn">django.contrib.sessions.middleware</span> <span class="kn">import</span> <span class="n">SessionMiddleware</span>
+<span class="kn">from</span> <span class="nn">django.test</span> <span class="kn">import</span> <span class="n">TestCase</span><span class="p">,</span> <span class="n">RequestFactory</span>
+
+<span class="kn">from</span> <span class="nn">.views</span> <span class="kn">import</span> <span class="n">cheese_flavors</span>
+
+<span class="k">def</span> <span class="nf">add_middleware_to_request</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">middleware_class</span><span class="p">):</span>
+    <span class="n">middleware</span> <span class="o">=</span> <span class="n">middleware_class</span><span class="p">()</span>
+    <span class="n">middleware</span><span class="p">.</span><span class="n">process_request</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">request</span>
+
+<span class="k">def</span> <span class="nf">add_middleware_to_response</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">middleware_class</span><span class="p">):</span>
+    <span class="n">middleware</span> <span class="o">=</span> <span class="n">middleware_class</span><span class="p">()</span>
+    <span class="n">middleware</span><span class="p">.</span><span class="n">process_response</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">request</span>
+
+<span class="k">class</span> <span class="nc">SavoryIceCreamTest</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># 모든 테스트는 request factory에 접근할 수 있어야 합니다.
+</span>        <span class="bp">self</span><span class="p">.</span><span class="n">factory</span> <span class="o">=</span> <span class="n">RequestFactory</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">test_cheese_flavors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">factory</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'/cheesy/broccoli/'</span><span class="p">)</span>
+        <span class="n">request</span><span class="p">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">AnonymousUser</span><span class="p">()</span>
+        <span class="c1"># 세션으로 request object에 표식을 추가합니다.
+</span>        <span class="n">request</span> <span class="o">=</span> <span class="n">add_middleware_to_request</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">SessionMiddleware</span><span class="p">)</span>
+        <span class="n">request</span><span class="p">.</span><span class="n">session</span><span class="p">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="c1"># request를 처리하고 테스트를 합니다.
+</span>        <span class="n">response</span> <span class="o">=</span> <span class="n">cheese_flavors</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertContains</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s">'bleah!'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="2433-dont-write-tests-that-have-to-be-tested">24.3.3 Don’t Write Tests That Have to Be Tested</h3>
+
+<p>테스트가 필요한 테스트 코드를 작성하지 말자</p>
+
+<p>테스트는 가능한 한 단순해야 합니다.</p>
+
+<p>테스트 케이스 안에 코드(테스트를 실행하기 위해 필요로 하는 코드)가 복잡하거나 추상적이라면 문제가 있습니다.</p>
+
+<h3 id="2434-dont-repeat-yourself-doesnt-apply-to-writing-tests">24.3.4 Don’t Repeat Yourself Doesn’t Apply to Writing Tests</h3>
+
+<p>같은 일을 반복하지 말라는 법칙은 테스트 케이스를 쓰는 데는 적용되지 않는다</p>
+
+<p>setUp() 은 테스트 클래스의 모든 테스트 메서드에 대해 재사용이 가능한 데이터를 만듭니다.</p>
+
+<p>하지만 비슷하지만 각 테스트 메서드마다 각기 다른 데이터가 필요로 하기도 합니다.</p>
+
+<p>이런 경우 인자를 추가해서 모든 경우를 만족시키는 하나의 메서드를 만들기도 하는데 이는 나쁜 신호입니다.</p>
+
+<p>차라리 비슷한 코드를 여러번 반복해서 작성하세요.(테스트에 한해 복붙 허용)</p>
+
+<h3 id="2435-dont-rely-on-fixtures">24.3.5 Don’t Rely on Fixtures</h3>
+
+<p>픽스처를 너무 신뢰하지 말자</p>
+
+<p>프로젝트의 데이터가 바뀜에 따라 Fixture를 유지하기가 매우 어렵습니다.</p>
+
+<p>최신 데이터 마이그레이션에 맞추어서 JSON 파일을 수정하는 것 자체가 어려운 작업입니다.</p>
+
+<p>(JSON 파일이 손상되었거나 데이터베이스를 제대로 반영하고 있지 않는 등)</p>
+
+<p>이댄 Fixture보다는 ORM에 의존하는 코드를 제작하는 것이 훨씬 효율적입니다.</p>
+
+<p>서드 파티 패키지를 이용하는 방법도 있습니다.</p>
+
+<ul>
+  <li>테스트 데이터를 생성해 주는 패키지
+    <ul>
+      <li>factory boy: 모델 테스트 데이터를 생성해 주는 패키지</li>
+      <li>faker: 테스트 데이터를 생성하지만 무작위로 생성하지는 않습니다. factory boy와 통합하는 방법도 제공합니다.
+        <ul>
+          <li><a href="[https://faker.readthedocs.io/en/master/](https://faker.readthedocs.io/en/master/)">Faker’s documentation</a></li>
+          <li><a href="[https://faker.readthedocs.io/en/master/#how-to-use-with-factory-boy](https://faker.readthedocs.io/en/master/#how-to-use-with-factory-boy)">How to use with Factory Boy</a></li>
+        </ul>
+      </li>
+      <li>model bakery: 모델 테스트 데이터를 생성해 주는 패키지</li>
+      <li>mock: Django 뿐만 아니라 다른 환경에서도 이용 가능한 시스템의 일부를 대체할 수 있는 mock 객체를 생성해 줌</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="2436-things-that-should-be-tested">24.3.6 Things That Should Be Tested</h3>
+
+<p>테스트해야 할 대상들</p>
+
+<p>물론 ‘<strong>전부 다</strong>’ 테스트해야 할 대상입니다.</p>
+
+<ul>
+  <li>Views: 데이터의 뷰ㅜ, 데이터 변경, 커스텀 클래스에 기반을 둔 뷰 메서드</li>
+  <li>Models: 모델의 생성/수정/삭제, 모델의 메서드, 모델 관리 메서드</li>
+  <li>Forms: 폼 메서드, <code class="language-plaintext highlighter-rouge">clear()</code> 메서드, 커스텀 필드</li>
+  <li>Validators: 직접 작성한 커스텀 유효성 검사기에 대해 심도 깊은 케이스를 작성해야 함</li>
+  <li>Signals: 원격에서 작동하기 때문에 테스트를 하지 않으면 무제가 되기 쉬움</li>
+  <li>Filters: 필터들은 보통 1~2개의 인자를 넘겨받기 때문에 테스트 작성이 어렵지 않음</li>
+  <li>Template Tags: 템플릿 테그는 막강한 기능과 템플릿 켄텍스트를 허용하기 때문에 테스트 케이스 작성이 매우 까다로움(즉, 꼭 테스트해야 할 대상이라는 뜻)</li>
+  <li>기타: 컨텍스트 프로세스, 미들웨어, 이메일, 그 외 모든 것</li>
+  <li>Failure: 위 테스트들 중 하나라도 실패한다면? 시스템 오류 테스트는 시스템 성공 테스트를 위해 매우 중요함</li>
+</ul>
+
+<p>테스트가 필요 없는 부분은 Django core 부분과 서드 파티 패미지에서 이미 테스트되어 있는 부분 정도</p>
+
+<p>그러나 Django에서 기본으로 제공하는 것 외의 새로운 필드 타입을 생성한다면, 해당 필드에 의해 문제가 생길 수 잇는 모든 부분을 테스트해야 합니다.</p>
+
+<h3 id="2437-test-for-faulure">24.3.7 Test for Faulure</h3>
+
+<p>테스트의 목적은 테스트의 실패를 찾는 것입니다.</p>
+
+<ul>
+  <li>실패를 미리 인지하지 못한 케이스의 예
+    <ul>
+      <li>[uniittest -assertRaises]<strong>(</strong><a href="https://docs.python.org/2/library/unittest.html#unittest.TestCase.assertRaises">https://docs.python.org/2/library/unittest.html#unittest.TestCase.assertRaises</a>)</li>
+      <li><a href="[https://docs.pytest.org/en/latest/how-to/assert.html#assertions-about-expected-exceptions](https://docs.pytest.org/en/latest/how-to/assert.html#assertions-about-expected-exceptions)">Assertions about expected exceptions</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="2438-use-mock-to-keep-unit-tests-from-touching-the-world">24.3.8 Use Mock to Keep Unit Tests From Touching the World</h3>
+
+<p>Mock을 이용하여 실제 데이터에 문제를 일으키지 않고 단위 테스트 하기</p>
+
+<p>단위 테스트는 단위 테스트 자체가 호출하는 함수/메서드 외에는 테스트하지 않습니다.</p>
+
+<p>즉, 외부 API 접속, 이메일 수신, 웹훅과 같은 테스트 작업에 포함되지 않은 작업을 수신하면 안됩니다.</p>
+
+<p>이로 인해 외부 API를 이용하는 기능들에 대한 단위 테스트는 2가지 방법을 사용할 수 있습니다.</p>
+
+<ul>
+  <li>단위 테스트 자체를 통합 테스트로 변경한다.</li>
+  <li>Mock 라이브러리를 이용하여 외부 API에 대한 가짜 응답을 만든다.</li>
+</ul>
+
+<p>Mock 라이브러리로 테스트를 외부 API에 대한 유효성이 아닌 코드의 로직을 검사할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">unittest</span> <span class="kn">import</span> <span class="n">mock</span><span class="p">,</span> <span class="n">TestCase</span> 
+<span class="kn">import</span> <span class="nn">icecreamapi</span>
+
+<span class="kn">from</span> <span class="nn">flavors.exceptions</span> <span class="kn">import</span> <span class="n">CantListFlavors</span> 
+<span class="kn">from</span> <span class="nn">flavors.utils</span> <span class="kn">import</span> <span class="n">list_flavors_sorted</span>
+
+<span class="k">class</span> <span class="nc">TestIceCreamSorting</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+
+    <span class="c1"># Set up monkeypatch of icecreamapi.get_flavors()
+</span>    <span class="o">@</span><span class="n">mock</span><span class="p">.</span><span class="n">patch</span><span class="p">.</span><span class="nb">object</span><span class="p">(</span><span class="n">icecreamapi</span><span class="p">,</span> <span class="s">'get_flavors'</span><span class="p">)</span> 
+    <span class="k">def</span> <span class="nf">test_flavor_sort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">get_flavors</span><span class="p">):</span>
+        <span class="c1"># icecreamapi.get_flavors()가 정렬되지 않은 리스트를 생성하도록 설정
+</span>        <span class="n">get_flavors</span><span class="p">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="p">[</span><span class="s">'chocolate'</span><span class="p">,</span> <span class="s">'vanilla'</span><span class="p">,</span> <span class="s">'strawberry'</span><span class="p">,]</span>
+        <span class="c1"># list_flavors_sorted()가 icecreamapi.get_flavors()를 호출
+</span>        <span class="c1"># monkeypatched는 항상 ['chocolate', 'strawberry', 'vanilla', ]를 반환
+</span>        <span class="c1"># ['chocolate', 'vanilla', 'strawberry',] 아닌가...?
+</span>        <span class="c1"># list_flavors_sorted()가 자동으로 정렬
+</span>        <span class="n">flavors</span> <span class="o">=</span> <span class="n">list_flavors_sorted</span><span class="p">()</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="n">flavors</span><span class="p">,</span>
+            <span class="p">[</span><span class="s">'chocolate'</span><span class="p">,</span> <span class="s">'strawberry'</span><span class="p">,</span> <span class="s">'vanilla'</span><span class="p">,</span> <span class="p">]</span>
+        <span class="p">)</span>
+</code></pre></div></div>
+
+<p>아이스크림 API에 접근이 불가능할 경우 <code class="language-plaintext highlighter-rouge">list_flavors_sorted()</code> 함수에 대한 테스트</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">mock</span><span class="p">.</span><span class="n">patch</span><span class="p">.</span><span class="nb">object</span><span class="p">(</span><span class="n">icecreamapi</span><span class="p">,</span> <span class="s">'get_flavors'</span><span class="p">)</span> 
+<span class="k">def</span> <span class="nf">test_flavor_sort_failure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">get_flavors</span><span class="p">):</span>
+	<span class="c1"># icecreamapi.get_flavors()가 FlavorError를 발생하도록 설정
+</span>	<span class="n">get_flavors</span><span class="p">.</span><span class="n">side_effect</span> <span class="o">=</span> <span class="n">icecreamapi</span><span class="p">.</span><span class="n">FlavorError</span><span class="p">()</span>
+	<span class="c1"># list_flavors_sorted()가 icecreamapi.FlavorError()를 받아서
+</span>	<span class="c1"># CantListFlavors 예외를 발생시킴
+</span>	<span class="k">with</span> <span class="bp">self</span><span class="p">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">CantListFlavors</span><span class="p">):</span>
+	    <span class="n">list_flavors_sorted</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>python-requests 연결에 문제가 생기는 2가지 경우에 대한 테스트</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">mock</span><span class="p">.</span><span class="n">patch</span><span class="p">.</span><span class="nb">object</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span> <span class="s">'get'</span><span class="p">)</span> 
+<span class="k">def</span> <span class="nf">test_request_failure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">get</span><span class="p">):</span>
+	<span class="s">"""타겟 사이트에 접근이 안 될 때 테스트 실행"""</span>
+	<span class="n">get</span><span class="p">.</span><span class="n">side_effect</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">exception</span><span class="p">.</span><span class="nb">ConnectionError</span><span class="p">()</span> 
+
+	<span class="k">with</span> <span class="bp">self</span><span class="p">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">CantListFlavors</span><span class="p">):</span>
+		<span class="n">list_flavors_sorted</span><span class="p">()</span>
+
+<span class="o">@</span><span class="n">mock</span><span class="p">.</span><span class="n">patch</span><span class="p">.</span><span class="nb">object</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span> <span class="s">'get'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">test_request_failure_ssl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">get</span><span class="p">):</span>
+	<span class="s">"""SSL 문제에 대해 이슈가 없을 때 테스트 실행"""</span>
+	<span class="n">get</span><span class="p">.</span><span class="n">side_effect</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">exception</span><span class="p">.</span><span class="n">SSLError</span><span class="p">()</span> 
+
+	<span class="k">with</span> <span class="bp">self</span><span class="p">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">CantListFlavors</span><span class="p">):</span>
+        <span class="n">list_flavors_sorted</span><span class="p">()</span>
+</code></pre></div></div>
+
+<h3 id="2439-use-fancier-assertion-methods">24.3.9 Use Fancier Assertion Methods</h3>
+
+<p>좀 더 고급스러운 단언 메서드 사용하기</p>
+
+<ul>
+  <li>유용한 assertion 메서드들
+    <ul>
+      <li><a href="[https://docs.python.org/3/library/unittest.html#assert-methods](https://docs.python.org/3/library/unittest.html#assert-methods)">Python#assert-methods</a></li>
+      <li><a href="[https://docs.djangoproject.com/en/3.2/topics/testing/tools/#assertions](https://docs.djangoproject.com/en/3.2/topics/testing/tools/#assertions)">Django#assertions</a></li>
+    </ul>
+  </li>
+  <li>assertRaises</li>
+  <li>assertRaisesMessage()</li>
+  <li>assertCountEqual()</li>
+  <li>assertDictEqual():</li>
+  <li>assertFormError(): Form 양식을 확인</li>
+  <li>assertContains(): response.content를 체크하여 status 200을 확인</li>
+  <li>assertHTMLEqual(): 빈 칸을 무시하고 비교</li>
+  <li>assertInHTML(): 큰 HTML 페이지에서 html 조각이 있는 확인</li>
+</ul>
+
+<h3 id="24310-document-the-purpose-of-each-test">24.3.10 Document the Purpose of Each Test</h3>
+
+<p>각 테스트 목적은 문서화하라.</p>
+
+<p>문서화되지 않은 테스트 코드는 테스트가 불가능 할 수도 있습니다.</p>
+
+<p>약간의 독스트링은 큰 도움이 될 것입니다.</p>
+
+<p>테스트는 문서화함으로써 디버그가 불가능한 문제를 해결할 수도 있고,</p>
+
+<p>문서화 과정에서 문제점을 발견할 수도 있고, 적어도 문서는 남길 수 있습니다.</p>
+
+<ul>
+  <li><a href="https://hynek.me/articles/document-your-tests/">https://hynek.me/articles/document-your-tests/</a></li>
+  <li><a href="https://interrogate.readthedocs.io/en/latest/">https://interrogate.readthedocs.io/en/latest/</a></li>
+</ul>
+
+<h2 id="244-what-about-integration-tests">24.4 What About Integration Tests?</h2>
+
+<p>통합 테스트란?</p>
+
+<p>개별적인 소프트웨어 모듈이 하나의 그룹으로 조합되어 테스트 되는 것</p>
+
+<p>단위 테스트가 끝난 후에 행하는 것이 가장 이상적입니다.</p>
+
+<ul>
+  <li>ex
+    <ul>
+      <li>애플리케이션이 브라우저에서 잘 작동하는지 확인하는 Selenium 테스트</li>
+      <li>서드파티 API에 대한 가상의 mock 응답을 대신하는 실제 테스팅
+        <ul>
+          <li>깃헙, PyPI API를 이용한 주기적인 테스트하는 Django 패키지이니 경우 해당 시스템들과의 연동이 문제가 없는지에 대한 실제 테스트</li>
+        </ul>
+      </li>
+      <li>외부로 나가는 요청에 대한 유효성을 검사하기 위해 <a href="http://httpbin.org/">http://httpbin.org/</a> 와 연동하는 경우</li>
+      <li>API가 기대대로 잘 작동하는지 확인하기 위해 <a href="https://www.runscope.com/">https://www.runscope.com/</a> 나 <a href="https://www.postman.com/">https://www.postman.com/</a> 을 이용하는 경우</li>
+    </ul>
+  </li>
+  <li>통합 테스트의 문제점
+    <ul>
+      <li>통합 테스트 세팅에 많은 시간이 소요될 수 있음</li>
+      <li>단위 테스트와 비교하면 테스트 속도가 느림
+        <ul>
+          <li>최소 단위 컴포넌트(단위테스트)가 아닌 시스템 전체에 대한 테스트이기 때문</li>
+        </ul>
+      </li>
+      <li>에러가 발생할 경우 단위 테스트보다 에러의 원인을 찾기 어려움
+        <ul>
+          <li>ex. 데이터베이스 레벨에서 벌어진 유니코드 변환 문제가 브라우저처럼 보일 수도 있음</li>
+        </ul>
+      </li>
+      <li>단위 테스트에 비해 좀 더 많은 주의가 요구됨
+        <ul>
+          <li>컴포넌트나 작은 세팅 변경만으로도 통합 테스트 전체에 영향을 미칠 수 있음</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<p>그럼에도 불구하고 통합 테스트는 충분히 유용합니다.</p>
+
+<h2 id="245-continuous-integration">24.5 Continuous Integration</h2>
+
+<p>지속적 통합</p>
+
+<p>크기와 상관없이 새로운 커밋이 repo에 푸시될 때마다 프로젝트의 테스트를 실행할 수 있는 CI 서버를 설정하길 추천</p>
+
+<ul>
+  <li><a href="">Chapter 34: Continuous Integration</a></li>
+</ul>
+
+<h2 id="246-who-cares-we-dont-have-time-for-tests">24.6 Who Cares? We Don’t Have Time for Tests!</h2>
+
+<p>알 게 뭐람? 테스트할 시간이 어디 있다고!</p>
+
+<p>테스트를 세팅하고 작성하는데는 시간이 소요됩니다.</p>
+
+<p>하지만 이런 수고는 추후에 많은 시간을 세이브 시켜줄 것입니다.</p>
+
+<ul>
+  <li>ex. Django 프로젝트의 버전 업그레이드</li>
+</ul>
+
+<h2 id="247-the-game-of-test-coverage">24.7 The Game of Test Coverage</h2>
+
+<p>테스트 범위 게임</p>
+
+<p>최대한 많은 범위의 테스트를 하는 게임을 해 보길 추천합니다.</p>
+
+<p>테스트 범위가 넓어지는 것이 이기는 게임입니다.</p>
+
+<h2 id="248-setting-up-the-test-coverage-game">24.8 Setting Up the Test Coverage Game</h2>
+
+<p>테스트 범위 게임 셋팅하기</p>
+
+<p>테스트 범위는 개발자 스스로에게 자극을 주기도 하고,</p>
+
+<p>고객, 고용자, 투자자 등에게 프로젝트 상태를 보여주는 유용한 도구가 될 수 있습니다.</p>
+
+<p>테스트 범위에 서드 파티 라이브러리는 제외하세요.</p>
+
+<p>대부분의 서드 파티 라이브러리들은 이미 테스트된 결과물들입니다.</p>
+
+<h3 id="2481-step1-start-writing-tests">24.8.1 Step1: Start Writing Tests</h3>
+
+<p>테스트 작성 시작하기</p>
+
+<h3 id="2482-step2-run-tests-and-generate-coverage-report">24.8.2 Step2: Run Tests and Generate Coverage Report</h3>
+
+<p>테스트 실행하기 그리고 커버리지 리포트 작성하기</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">$</span> <span class="n">coverage</span> <span class="n">run</span> <span class="n">manage</span><span class="p">.</span><span class="n">py</span> <span class="n">test</span> <span class="o">--</span><span class="n">settings</span><span class="o">=</span><span class="n">twoscoops</span><span class="p">.</span><span class="n">settings</span><span class="p">.</span><span class="n">test</span>
+
+<span class="n">Creating</span> <span class="n">test</span> <span class="n">database</span> <span class="k">for</span> <span class="n">alias</span> <span class="s">"default"</span><span class="p">...</span>
+<span class="p">..</span>
+<span class="o">-----------------------------------------------</span>
+<span class="n">Ran</span> <span class="mi">2</span> <span class="n">tests</span> <span class="ow">in</span> <span class="mf">0.008</span><span class="n">s</span>
+
+<span class="n">OK</span>
+   <span class="n">Destroying</span> <span class="n">test</span> <span class="n">database</span> <span class="k">for</span> <span class="n">alias</span> <span class="s">"default"</span><span class="p">...</span>
+</code></pre></div></div>
+
+<h3 id="2483-step3-generate-the-report">24.8.3 Step3: Generate the Report!</h3>
+
+<p>리포트 생성하기</p>
+
+<p>coverage.py는 HTML 보고서를 생성해주는데, 퍼센트로 커버리지를 제공하고, 테스트되지 않은 장소까지 보여줍니다.</p>
+
+<p>프로젝트의 루트에서 실행하면 됩니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">$</span> <span class="n">coverage</span> <span class="n">html</span> <span class="o">--</span><span class="n">omit</span><span class="o">=</span><span class="s">"admin.py"</span>
+</code></pre></div></div>
+
+<p>실행후에 htmlcov/ 라는 디렉터리가 생성된 것을 볼 수 있는데, index.html를 실행하면 테스트 결과를 볼 수 있습니다.</p>
+
+<p>여러 모듈들을 클릭해 보면 빨간색들이 있는데, 이는 좋지 않다는 의미입니다.</p>
+
+<p>커버리지가 낮다면 공개적으로 커버리지를 높이는 작업중이라고 선언합시다. 그럼 많은 개발자들에게서 원기옥을 모을 수 있습니다.</p>
+
+<h2 id="249-playing-the-game-of-test-coverage">24.9 Playing the Game of Test Coverage</h2>
+
+<p>테스트 범위 게임 시작하기</p>
+
+<p>이 게임은 한 가지 룰을 가지고 있습니다.</p>
+
+<p><strong>“테스트 커버리지를 낮추는 그 어떤 커밋도 허용하지 않기”</strong></p>
+
+<p>커버리지 숫자가 늘어난다는 것은 의미 없는 가짜 테스트를 넣지 않고 있다는 것과 동시에 프로젝트의 품질이 상승하고 잇다는 것을 의미합니다.</p>
+
+<h2 id="2410-alternatives-to-unittest">24.10 Alternatives to unittest</h2>
+
+<p>unittest 의 대안</p>
+
+<ul>
+  <li><a href="https://pypi.org/project/pytest-django/">https://pypi.org/project/pytest-django/</a></li>
+</ul>
+
+<p>약간의 추가적인 셋업으로 unittest 기반의 테스트뿐만 아니라 어떤 함수(클래스, 디렉터리, 모듈 포함)든지  <code class="language-plaintext highlighter-rouge">test_</code>  가 붙은 것은 모두 테스트할 수 있습니다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># test_models.py
+</span><span class="kn">from</span> <span class="nn">pytest</span> <span class="kn">import</span> <span class="n">raises</span>
+<span class="kn">from</span> <span class="nn">cones.models</span> <span class="kn">import</span> <span class="n">Cone</span>
+
+<span class="k">def</span> <span class="nf">test_good_choice</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">Cone</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="nb">filter</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s">'sugar'</span><span class="p">).</span><span class="n">count</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">test_bad_cone_choice</span><span class="p">():</span>
+    <span class="k">with</span> <span class="n">raises</span><span class="p">(</span><span class="n">Cone</span><span class="p">.</span><span class="n">DoesNotExist</span><span class="p">):</span>
+        <span class="n">Cone</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s">'spaghetti'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">nose.tools.raises</code> 데코레이션으로 nose를 이용한 비슷한 기능을 구현할 수도 있습니다.</p>
+
+<p>이런 함수 기반의 단순화된 테스트는 테스트간 상속이 불가능하다는 단점이 있습니다.</p>
+
+<p>프로젝트의 많은 테스트들이 비슷한 동작을 하는 경우 이런 방식은 지양해야 합니다.</p>
+:ET
