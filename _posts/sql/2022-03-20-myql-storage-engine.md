@@ -281,3 +281,4 @@ CREATE TABLE mytable (
 
 참조
 - MySQL 성능 최적화
+
