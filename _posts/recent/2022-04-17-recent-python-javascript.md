@@ -15,7 +15,9 @@ Node.js는 본격적으로 해본 적이 없기 때문에 걱정이 많이 되�
 
 1. JavaScript와 다시 친해지기
 2. Node.js와 친해지기
-    - Express.js
+    - Framework
+        - Express.js
+        - Next.js
     - REST API
     - DB
         - Migration
