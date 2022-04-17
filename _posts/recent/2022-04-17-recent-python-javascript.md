@@ -6,8 +6,6 @@ category: recent
 tags: [ 'recent' ]
 ---
 
-![]({{ site.url }}/img/post/book/jsew.jpg)
-
 개발자로서 첫 번째 둥지를 떠나 다음 둥지로 떠나게 되었습니다.  
 하지만 걱정되는 부분은 Python, Django 스택에서 JavaScript, Node.js으로 넘어가야 한다는 것이였습니다.  
 
