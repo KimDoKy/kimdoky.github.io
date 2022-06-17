@@ -24,6 +24,13 @@ footer_right: "&lt;/&gt; on <a href=\"https://github.com/KimDoKy/\">Github</a> &
 # Build settings
 markdown: kramdown
 
+# Analytics
+analytics:
+  provider      : "google-gtag"
+  google:
+    tracking_id : "G-582L0ZQS27"
+    anonymize_ip: true
+
 kramdown:
   input: GFM
   syntax_highlighter: rouge
