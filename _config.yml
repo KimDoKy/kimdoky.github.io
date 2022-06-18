@@ -12,6 +12,10 @@ github_repository: https://github.com/KimDoKy/
 post_limit: 10
 comments: True
 
+# Analytics
+google_analytics:
+  tracking_id : "G-582L0ZQS27"
+
 # Social usernames/URLs
 github_username:  KimDoKy
 instagram_username: makingfunk
@@ -23,13 +27,6 @@ footer_right: "&lt;/&gt; on <a href=\"https://github.com/KimDoKy/\">Github</a> &
 
 # Build settings
 markdown: kramdown
-
-# Analytics
-analytics:
-  provider      : "google-gtag"
-  google:
-    tracking_id : "G-582L0ZQS27"
-    anonymize_ip: true
 
 kramdown:
   input: GFM
