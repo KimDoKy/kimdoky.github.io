@@ -98,7 +98,7 @@ Executed_Gtid_Set:
 CALL mysql.az_replication_change_master('master_host', 'master_user', 'master_password', master_port, 'master_log_file', master_log_pos, '');
 
 # ex
-CALL mysql.az_replication_change_master('sdp.us-east-1.rds.amazonaws.com', 'syncuser', 'userpassword', 3306, 'mysql-bin-changelog. 020557', 157, '');
+CALL mysql.az_replication_change_master('abcd.rds.amazonaws.com', 'syncuser', 'userpassword', 3306, 'mysql-bin-changelog. 020557', 157, '');
 
 # 설정 적용
 CALL mysql.az_replication_start;
