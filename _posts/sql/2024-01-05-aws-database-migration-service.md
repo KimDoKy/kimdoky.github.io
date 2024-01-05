@@ -2,8 +2,8 @@
 layout: post
 section-type: post
 title: AWS - Database Migration Service
-category: aws
-tags: [ 'aws', 'migration' ]
+category: sql
+tags: [ 'sql' ]
 ---
 
 > (target RDS를 생성하고, VPN이 설정되어 있다는 전제하에 진행)
