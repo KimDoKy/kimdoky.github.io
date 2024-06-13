@@ -6,6 +6,8 @@ category: sql
 tags: [ 'sql' ]
 ---
 
+I simply ran MySQL as a container and implemented replicas.
+
 ## 1. Write Docker Compose File
 
 ```yaml
@@ -189,12 +191,12 @@ mysql> SELECT * FROM test_table;
 ---
 
 ### Issue
-- Last_IO_Error: Error connecting to source 'replica_user@master:3306'. This was attempt 2/86400, with a delay of 60 seconds between attempts. Message: Authentication plugin 'caching_sha2_password' reported error: Authentication requires secure connection.
+- `Last_IO_Error: Error connecting to source 'replica_user@master:3306'. This was attempt 2/86400, with a delay of 60 seconds between attempts. Message: Authentication plugin 'caching_sha2_password' reported error: Authentication requires secure connection.`
     - MySQL 8.0에서 기본 인증 플러그인 'caching_sha2_password'를 사용시 보안 연결을 요구하여 발생  
     - SSL을 사용한 보안 연결을 설정하여 해결
     - 여기서는 로컬에서 간단한 실습을 위해 `mysql_native_password`를 사용
 
-- Last_IO_Error: Fatal error: The replica I/O thread stops because source and replica have equal MySQL server ids; these ids must be different for replication to work (or the --replicate-same-server-id option must be used on replica but this does not always make sense; please check the manual before using it).
+- `Last_IO_Error: Fatal error: The replica I/O thread stops because source and replica have equal MySQL server ids; these ids must be different for replication to work (or the --replicate-same-server-id option must be used on replica but this does not always make sense; please check the manual before using it).`
     - Master와 Slave의 MySQL 서버 ID가 동일하여 발생
     - 각 서버가 고유한 서버 ID를 가져야 함
     - docker compose에서 각 서버에 고유한 서버ID를 할당
