@@ -1,0 +1,53 @@
+네, 명령어를 포함하여 더 자세히 정리해 드리겠습니다:
+
+1. Ruby 버전 관리 (rbenv 사용)
+   - rbenv 설치: `brew install rbenv`
+   - rbenv 초기화: `rbenv init`
+   - Ruby 설치: `rbenv install 3.2.2`
+   - 전역 Ruby 설정: `rbenv global 3.2.2`
+   - 로컬 프로젝트 Ruby 설정: `rbenv local 3.2.2`
+   - Ruby 버전 확인: `ruby -v`
+
+2. 의존성 관리
+   - Gemfile 수정: `nano Gemfile` 또는 원하는 텍스트 에디터로 열기
+   - 의존성 설치: `bundle install`
+   - 의존성 업데이트: `bundle update`
+   - 특정 gem 업데이트: `bundle update [gem-name]`
+
+3. Jekyll 관련
+   - Jekyll 설치: `gem install jekyll bundler`
+   - Jekyll 프로젝트 생성: `jekyll new my-site`
+   - Jekyll 서버 실행: `bundle exec jekyll serve`
+   - Jekyll 빌드: `bundle exec jekyll build`
+
+4. 문제 해결 단계
+   - gem 환경 확인: `gem env`
+   - gem 캐시 삭제: `gem cleanup`
+   - Bundler 캐시 삭제: `bundle clean --force`
+   - Gemfile.lock 삭제: `rm Gemfile.lock`
+   - rbenv 재해시: `rbenv rehash`
+
+5. 호환성 이슈 해결
+   - webrick 추가 (Ruby 3.0+): Gemfile에 `gem "webrick"` 추가
+   - 특정 버전 gem 설치: Gemfile에 `gem "jekyll", "~> 4.2.0"` 형식으로 추가
+
+6. 권한 및 경로 설정
+   - 실행 권한 부여: `chmod +x [파일명]`
+   - PATH 설정 확인: `echo $PATH`
+   - rbenv PATH 설정 (~/.zshrc 또는 ~/.bash_profile에 추가):
+     ```
+     export PATH="$HOME/.rbenv/bin:$PATH"
+     eval "$(rbenv init -)"
+     ```
+
+7. 디버깅
+   - rbenv 설정 검사: `rbenv doctor`
+   - Jekyll 버전 확인: `bundle exec jekyll --version`
+   - Bundler 버전 확인: `bundle version`
+
+8. 기타 유용한 명령어
+   - gem 목록 확인: `gem list`
+   - 특정 gem 정보 확인: `bundle info [gem-name]`
+   - Jekyll 새 포스트 생성: `bundle exec jekyll post "My New Post"`
+
+이 명령어들을 상황에 맞게 사용하시면 Ruby와 Jekyll 환경 설정 및 문제 해결에 도움이 될 것입니다.
