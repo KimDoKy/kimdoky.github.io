@@ -136,8 +136,7 @@ PORT=8000
 ISSUER_BASE_URL=http://localhost:8080/realms/test-realm
 CLIENT_ID=test-client
 CLIENT_SECRET=<your_client_secret>
-BASE_URL=http://localhost:8000
-SECRET=some-long-random-string
+BASE_URL=http://localhost:8000 SECRET=some-long-random-string
 ```
 
 ```js
@@ -218,7 +217,6 @@ npm i
 node app.js
 ```
 
-![]({{ site.url }}/img/post/oidc/12.png)
 ![]({{ site.url }}/img/post/oidc/12.png)
 ![]({{ site.url }}/img/post/oidc/13.png)
 ![]({{ site.url }}/img/post/oidc/14.png)
