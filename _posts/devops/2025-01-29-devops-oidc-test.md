@@ -128,6 +128,7 @@ Set test user password
 - Temporary: off
 
 ## Test client application
+- https://github.com/KimDoKy/oidc-test-client
 
 ### Writing `.env`
 ```
