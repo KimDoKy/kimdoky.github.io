@@ -42,21 +42,21 @@ ip a
 
 ### **2. Setting Up the Control Plane (Mini PC)**
 
-1. **Install K3s**:
+- **Install K3s**:
 
 ```bash
 # This installs the K3s control plane and starts the Kubernetes API server.
 curl -sfL https://get.k3s.io | sh -
 ```
 
-2. **Retrieve Cluster Token**:
+- **Retrieve Cluster Token**:
 
 ```bash
 # Save this token; it will be used to join worker nodes.
 sudo cat /var/lib/rancher/k3s/server/node-token
 ```
 
-3. **Configure Firewall**:
+- **Configure Firewall**:
 
 ```bash
 sudo ufw allow 6443/tcp
@@ -89,14 +89,14 @@ sudo apt install iptables iptables-persistent
 
 #### **Set Hostnames to Avoid Conflicts**
 
-1. For Worker Node 1:
+- For Worker Node 1:
 
 ```bash
 sudo hostnamectl set-hostname worker1
 sudo nano /etc/hosts
 ```
 
-2. For Worker Node 2:
+- For Worker Node 2:
 
 ```bash
 sudo hostnamectl set-hostname worker2
@@ -105,13 +105,13 @@ sudo nano /etc/hosts
 
 #### **Join Worker Nodes to the Cluster**
 
-1. Worker Node 1:
+- Worker Node 1:
 
 ```bash
 curl -sfL https://get.k3s.io | K3S_URL=https://<master-node-ip>:6443 K3S_TOKEN=<your_token> sh -
 ```
 
-2. Worker Node 2:
+- Worker Node 2:
 
 ```bash
 curl -sfL https://get.k3s.io | K3S_URL=https://<master-node-ip>:6443 K3S_TOKEN=<your_token> sh -
@@ -137,19 +137,19 @@ brew install kubectl
 
 #### **Copy kubeconfig File**
 
-1. Copy `k3s.yaml` from the control plane to your macOS machine:
+- Copy `k3s.yaml` from the control plane to your macOS machine:
 
 ```bash
 scp ubuntu@<master-node-ip>:/etc/rancher/k3s/k3s.yaml ~/.kube/config
 ```
 
-2. Update the `server` field in `~/.kube/config` to point to the control plane's IP address:
+- Update the `server` field in `~/.kube/config` to point to the control plane's IP address:
 
 ```yaml
 server: https://<master-node-ip>:6443
 ```
 
-3. Set proper permissions for the file:
+- Set proper permissions for the file:
 
 ```bash
 chmod 600 ~/.kube/config
