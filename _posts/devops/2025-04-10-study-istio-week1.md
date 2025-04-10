@@ -495,7 +495,7 @@ $ tree /istiobook/ -L 1
 |-- ch7
 |-- ch8
 |-- ch9
-`-- services
+|-- services
 
 # istioctl 설치
 $ export ISTIOV=1.17.8
@@ -507,12 +507,12 @@ istio-1.17.8
 |-- LICENSE
 |-- README.md
 |-- bin
-|   `-- istioctl
+|   -- istioctl
 |-- manifest.yaml
 |-- manifests
 |   |-- charts
 |   |-- examples
-|   `-- profiles
+|   -- profiles
 |-- samples
 |   |-- README.md
 |   |-- addons
@@ -536,11 +536,11 @@ istio-1.17.8
 |   |-- sleep
 |   |-- tcp-echo
 |   |-- wasm_modules
-|   `-- websockets
-`-- tools
+|   -- websockets
+|-- tools
     |-- _istioctl
     |-- certs
-    `-- istioctl.bash
+    -- istioctl.bash
 
 $ cp istio-$ISTIOV/bin/istioctl /usr/local/bin/istioctl
 $ istioctl version --remote=false
@@ -1106,14 +1106,14 @@ cat /etc/kubernetes/admin.conf
 
 ```
 
-`./chaos.sh 500 100`
-![]({{ site.url }}/img/post/devops/study/istio/1/20.png)
-![]({{ site.url }}/img/post/devops/study/istio/1/21.png)
-![]({{ site.url }}/img/post/devops/study/istio/1/22.png)
+- `./chaos.sh 500 100`
+  ![]({{ site.url }}/img/post/devops/study/istio/1/20.png)
+  ![]({{ site.url }}/img/post/devops/study/istio/1/21.png)
+  ![]({{ site.url }}/img/post/devops/study/istio/1/22.png)
 
-`./chaos.sh 500 50`
-![]({{ site.url }}/img/post/devops/study/istio/1/23.png)
-![]({{ site.url }}/img/post/devops/study/istio/1/24.png)
+- `./chaos.sh 500 50`
+  ![]({{ site.url }}/img/post/devops/study/istio/1/23.png)
+  ![]({{ site.url }}/img/post/devops/study/istio/1/24.png)
 
 ![]({{ site.url }}/img/post/devops/study/istio/1/25.png)
 
