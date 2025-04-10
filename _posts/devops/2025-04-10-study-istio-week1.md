@@ -8,7 +8,7 @@ tags: ["k8s", "istio", "servicemesh"]
 
 Book for Istio study : ['Istio in action'](https://product.kyobobook.co.kr/detail/S000031741439)
 
-![]({{ site.url }}/img/post/devops/study/istio/1/book.jpg)
+![]({{ site.url }}/img/post/devops/study/istio/1/book.jpg){: width="50%"}
 
 > 표지는 그라셋 드 생소보르 컬렉션 중 아이슬란드 여인(Icelandic woman)이다.
 
