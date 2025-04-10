@@ -3,7 +3,7 @@ layout: post
 section-type: post
 title: ServiceMesh - Istio - Week1
 category: devops
-tags: [ 'k8s', 'istio', 'servicemesh' ]
+tags: ["k8s", "istio", "servicemesh"]
 ---
 
 Book for Istio study : ['Istio in action'](https://product.kyobobook.co.kr/detail/S000031741439)
@@ -13,75 +13,89 @@ Book for Istio study : ['Istio in action'](https://product.kyobobook.co.kr/detai
 > 표지는 그라셋 드 생소보르 컬렉션 중 아이슬란드 여인(Icelandic woman)이다.
 
 ## 1. 서비스 메시 소개하기
+
 서비스 메시란?
 서비스 메시(Service Mesh)는 분산 애플리케이션 네트워크 인프라로, 애플리케이션 간의 통신을 안전하고 복원력 있게 만들며 관찰 가능성과 제어 능력을 제공한다.  
 Data Plane과 Control Plane으로 구성된 아키텍처를 통해 네트워크 트래픽을 관리하고 정책을 구현할 수 있다.  
-이를 통해 특정 프로그래밍 언어나 프레임워크에 의존하지 않고도 중요한 네트워킹 기능을 애플리케이션 외부에서 구축할 수 있다.  
+이를 통해 특정 프로그래밍 언어나 프레임워크에 의존하지 않고도 중요한 네트워킹 기능을 애플리케이션 외부에서 구축할 수 있다.
 
 ![]({{ site.url }}/img/post/devops/study/istio/1/1.png)
 
 ### 서비스 메시는 왜 필요한가?
-클라우드 네이티브 환경에서는 자주 다음과 같은 문제들이 발생한다.
+
+#### 클라우드 네이티브 환경의 문제들
+
 - 불규칙한 요청 처리 시간
-    - 서비스 간 통신에서 성능 저하가 발생하면 연쇄 장애를 일으킬 수 있다.
+  - 서비스 간 통신에서 성능 저하가 발생하면 연쇄 장애를 일으킬 수 있다.
 - 배포 자동화의 위험성
-    - 테스트 자동화로 잡히지 않는 버그가 배포되거나, 블루-그린 배포 접근법이 오히려 '빅뱅' 릴리스로 이어질 수 있다.
+  - 테스트 자동화로 잡히지 않는 버그가 배포되거나, 블루-그린 배포 접근법이 오히려 '빅뱅' 릴리스로 이어질 수 있다.
 - 보안의 일관성 부족
-    - 팀마다 다른 보안 접근법을 사용해 혼란이 야기된다. 서비스 메시는 이러한 문제를 해결할 수 있다. 
-    - 특히 복원력, 보안, 메트릭 수집 등의 기능을 애플리케이션 외부에서 해결하여 효율성을 높이고(비싼 자원 == 개발자) 운영을 단순화한다.
+  - 팀마다 다른 보안 접근법을 사용해 혼란이 야기된다.
+
+서비스메시는 복원력, 보안, 메트릭 수집 등의 기능을 애플리케이션 외부에서 해결  
+효율성을 높이고(비싼 자원 == 개발자) 운영을 단순화
 
 이스티오는 서비스 메시의 오픈소스 구현체이다.
 
 ### 주요 특징
 
-- Data Plane: Envoy 프록시를 기반으로 한 서비스 프록시를 사용해 트래픽 관리, 보안 강화, 메트릭 및 트레이싱 생성 등의 기능을 제공한다.
-- Control Plane: 운영자가 Data Plane의 동작을 제어할 수 있도록 API를 노출하며, 정책 설정과 보안 관리를 지원한다.
-이스티오는 애플리케이션 코드 변경 없이도 복원력있는 시스템 구축을 가능하게 하며, 다양한 플랫폼(K8S, VM  등)에서 사용할 수 있다.
+- Data Plane
+  - Envoy 프록시를 기반으로 한 서비스 프록시를 사용해 트래픽 관리, 보안 강화, 메트릭 및 트레이싱 생성 등의 기능을 제공한다.
+- Control Plane
+  - 운영자가 Data Plane의 동작을 제어할 수 있도록 API를 노출하며, 정책 설정과 보안 관리를 지원한다.
+
+이스티오는 애플리케이션 코드 변경 없이도 복원력있는 시스템 구축을 가능하게 하며, 다양한 플랫폼(K8S, VM 등)에서 사용할 수 있다.
+
 > [DoKy's Blog - DataPlane](https://kimdoky.github.io/devops/2024/11/30/devops-dataplane/https://kimdoky.github.io/devops/2024/11/30/devops-dataplane/)
 
 ### 주요 기능
+
 - 복원력 강화
-    - 재시도, 타임아웃, 서킷 브레이커 등을 통해 장애에 대한 대응력을 높임
+  - 재시도, 타임아웃, 서킷 브레이커 등을 통해 장애에 대한 대응력을 높임
 - 관찰 가능성
-    - 메트릭과 트레이싱 데이터를 통해 시스템 상태를 실시간으로 파악
+  - 메트릭과 트레이싱 데이터를 통해 시스템 상태를 실시간으로 파악
 - 트래픽 제어
-    - 카나리 릴리즈, 단계적 롤아웃 등 세밀한 릴리스 전략 구현 지원
+  - 카나리 릴리즈, 단계적 롤아웃 등 세밀한 릴리스 전략 구현 지원
 - 보안 강화
-    - mTLS를 통해 전송 계층 암호화를 적용하며, 정책 강제와 접근 제어를 지원
+  - mTLS를 통해 전송 계층 암호화를 적용하며, 정책 강제와 접근 제어를 지원
 
 ![]({{ site.url }}/img/post/devops/study/istio/1/2.png)
 
 ### 서비스 메시와 다른 기술 비교
+
 과거에도 서비스 메시와 유사한 서비스이 있었다.
+
 - ESB
-	- 중앙집중식 구조로 인해 병목 현상 발생 가능
-	- 비즈니스 로직과 네트워킹 문제 혼합
+  - 중앙집중식 구조로 인해 병목 현상 발생 가능
+  - 비즈니스 로직과 네트워킹 문제 혼합
     ![]({{ site.url }}/img/post/devops/study/istio/1/5.png)
 - API 게이트웨이
-	- 공개 API 관리에 초점
-	- 내부 트래픽 처리시 병목 현상 유발 가능
+  - 공개 API 관리에 초점
+  - 내부 트래픽 처리시 병목 현상 유발 가능
     ![]({{ site.url }}/img/post/devops/study/istio/1/6.png)
 - 서비스 메시
-	- 분산형 구조로 병목 지점 제거
-	- 복원력, 보안, 관찰 가능성 등 네트워킹 문제에만 집중
+  - 분산형 구조로 병목 지점 제거
+  - 복원력, 보안, 관찰 가능성 등 네트워킹 문제에만 집중
     ![]({{ site.url }}/img/post/devops/study/istio/1/7.png)
 
 ### 서비스 메시 도입시 고려사항
+
 - 복잡성 증가
-    - 요청 경로에 프록시라는 레이어가 추가되어 디버깅이 어려워짐
-	- 프록시에 익숙치 않은 이들에게는 블랙박스가 되어 디버깅이 어려워질 수 있음
+  - 요청 경로에 프록시라는 레이어가 추가되어 디버깅이 어려워짐
+  - 프록시에 익숙치 않은 이들에게는 블랙박스가 되어 디버깅이 어려워질 수 있음
 - 테넌시 관리
-    - 적절한 격리 모델 및 정책 없이는 여러 서비스 간 충돌 가능성이 존재함
+  - 적절한 격리 모델 및 정책 없이는 여러 서비스 간 충돌 가능성이 존재함
 - 운영 부담
-    - 새로운 계층으로 인해 조직 내 절차와 거버넌스를 재정비해야 할 필요가 있음
+  - 새로운 계층으로 인해 조직 내 절차와 거버넌스를 재정비해야 할 필요가 있음
 
 ![]({{ site.url }}/img/post/devops/study/istio/1/3.png)
 
-모든 기술에는 트레이드 오프가 존재한다.  
+모든 기술에는 트레이드 오프가 존재  
 서비스 메시도 마찮가지다.  
 도입 전에 조직의 요구 사항과 제약 조건을 충분히 평가하고 계획적으로 실행해야 한다.
 
 ## 2. 이스티오 첫 걸음
+
 1장에서는 서비스 메시에 대해 다루었다면, 2장에서부터 이스티오에서 다룬다.  
 자세한 부분은 스터디가 진행되면서 깊이 다루겠지만, 우선 핸즈온 형식으로 이스티오가 어떤 구조로 무엇을 할 수 있는지 전체적인 청사진을 제공한다.
 
@@ -89,92 +103,83 @@ Data Plane과 Control Plane으로 구성된 아키텍처를 통해 네트워크 
 스터디에서는 kind를 통해 클러스터를 구성하고 실습을 진행한다.
 
 ### 1. [Docker Desktop](https://docs.docker.com/desktop/setup/install/mac-install/) 설치
+
 책에서는 최소 vCPU 4, Memory 8GB 할당 권고(그 이상이면 됨)
 
 ![]({{ site.url }}/img/post/devops/study/istio/1/4.png)
+
 > 그냥 넉넉히...
 
-### 2. kind 및 툴 설치
+### 2. kind 및 utils 설치
+
 #### 필수
+
+- kind
+- kubectl
+- helm
+
 ```bash
-# Install Kind 
-brew install kind 
-kind --version 
+# Install Kind
+brew install kind
+kind --version
 
-# Install kubectl 
-brew install kubernetes-cli 
-kubectl version --client=true 
+# Install kubectl
+brew install kubernetes-cli
+kubectl version --client=true
 
-## kubectl -> k 단축키 설정 
-echo "alias k=kubectl" >> ~/.zshrc 
+## kubectl -> k 단축키 설정
+echo "alias k=kubectl" >> ~/.zshrc
 
-# Install Helm 
-brew install helm 
+# Install Helm
+brew install helm
 helm version
 ```
+
 #### 유틸
+
+- krew
+- kube-ps1
+- kubectx
+- kubecolor
+- neat
+- stern
+
 ```bash
-# Utils 설치 
-brew install krew 
-brew install kube-ps1 
-brew install kubectx 
+# Utils 설치
+brew install krew
+brew install kube-ps1
+brew install kubectx
 
-# kubectl 출력 시 하이라이트 처리 
-brew install kubecolor 
-echo "alias kubectl=kubecolor" >> ~/.zshrc 
-echo "compdef kubecolor=kubectl" >> ~/.zshrc 
+# kubectl 출력 시 하이라이트 처리
+brew install kubecolor
+echo "alias kubectl=kubecolor" >> ~/.zshrc
+echo "compdef kubecolor=kubectl" >> ~/.zshrc
 
-# krew 플러그인 설치 
+# krew 플러그인 설치
 kubectl krew install neat stern
 ```
 
 #### kind 기본 사용
+
 ```bash
-# 클러스터 배포 전 확인 
-docker ps 
+# Create a cluster with kind
+kind create cluster
 
-# Create a cluster with kind 
-kind create cluster 
+# 클러스터 배포 확인
+kind get clusters
+kind get nodes
+kubectl cluster-info
 
-# 클러스터 배포 확인 
-kind get clusters 
-kind get nodes 
-kubectl cluster-info 
+# 노드 정보 확인
+kubectl get node -o wide
 
-# 노드 정보 확인 
-kubectl get node -o wide 
-
-# 파드 정보 확인 
-kubectl get pod -A 
-kubectl get componentstatuses 
-
-# 컨트롤플레인 (컨테이너) 노드 1대가 실행 
-docker ps 
-docker images 
-
-# kube config 파일 확인 
-cat ~/.kube/config
-혹은
-cat $KUBECONFIG # KUBECONFIG 변수 지정 사용 시 
-
-# nginx 파드 배포 및 확인 : 컨트롤플레인 노드인데 파드가 배포 될까요? 
-kubectl run nginx --image=nginx:alpine 
-kubectl get pod -owide 
-
-# 노드에 Taints 정보 확인 
-kubectl describe node | grep Taints 
-Taints: <none> 
-
-# 클러스터 삭제 
-kind delete cluster 
-
-# kube config 삭제 확인 
-cat ~/.kube/config
-혹은 
-cat $KUBECONFIG # KUBECONFIG 변수 지정 사용 시
+# 파드 정보 확인
+kubectl get pod -A
+kubectl get componentstatuses
 ```
 
 ### kind로 k8s 배포
+
 ```bash
 # 클러스터 배포 전 확인
 docker ps
@@ -218,6 +223,7 @@ EOF
 # 확인
 $ kind get nodes --name myk8s
 myk8s-control-plane
+
 $ kubens default
 Context "kind-myk8s" modified.
 Active namespace is "default".
@@ -371,7 +377,7 @@ NOTES:
   export NODE_PORT=$(kubectl get --namespace kube-system -o jsonpath="{.spec.ports[0].nodePort}" services kube-ops-view)
   export NODE_IP=$(kubectl get nodes --namespace kube-system -o jsonpath="{.items[0].status.addresses[0].address}")
   echo http://$NODE_IP:$NODE_PORT
-  
+
 # 설치 확인
 $ kubectl get deploy,pod,svc,ep -n kube-system -l app.kubernetes.io/instance=kube-ops-view
 NAME                            READY   UP-TO-DATE   AVAILABLE   AGE
@@ -386,8 +392,7 @@ service/kube-ops-view   NodePort   10.96.47.104   <none>        8080:30000/TCP  
 NAME                      ENDPOINTS         AGE
 endpoints/kube-ops-view   10.244.0.5:8080   59s
 
-# kube-ops-view 접속 URL 확인 (1.5 , 2 배율)
-$ open "http://127.0.0.1:30000/#scale=1.5"
+# kube-ops-view 접속 URL 확인 (2 배율)
 $ open "http://127.0.0.1:30000/#scale=2"
 ```
 
@@ -404,13 +409,15 @@ unset KUBECONFIG
 ```
 
 ## 실습!!
+
 ### 실습 환경 준비
+
 ```bash
 #
 git clone https://github.com/AcornPublishing/istio-in-action
 cd istio-in-action/book-source-code-master
 
-# 
+#
 kind create cluster --name myk8s --image kindest/node:v1.23.17 --config - <<EOF
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -458,11 +465,13 @@ helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
 helm install metrics-server metrics-server/metrics-server --set 'args[0]=--kubelet-insecure-tls' -n kube-system
 kubectl get all -n kube-system -l app.kubernetes.io/instance=metrics-server
 ```
+
 ### 2.2 이스티오 컨트롤 플레인 알아보기
+
 - ref
-	- [Docs](https://istio.io/v1.17/docs/)
-	- [Install](https://istio.io/v1.17/docs/setup/install/istioctl/)
-	- [profile](https://istio.io/v1.17/docs/setup/additional-setup/config-profiles/)
+  - [Docs](https://istio.io/v1.17/docs/)
+  - [Install](https://istio.io/v1.17/docs/setup/install/istioctl/)
+  - [profile](https://istio.io/v1.17/docs/setup/additional-setup/config-profiles/)
 
 ```bash
 # myk8s-control-plane 진입 후 설치 진행
@@ -542,7 +551,7 @@ $ istioctl version --remote=false
 $ istioctl x precheck # 설치 전 k8s 조건 충족 검사
 ✔ No issues found when checking the cluster. Istio is safe to install or upgrade!
   To get started, check out https://istio.io/latest/docs/setup/getting-started/
-  
+
 $ istioctl profile list
 Istio configuration profiles:
     ambient
@@ -674,9 +683,9 @@ metadata:
   name: istio
   namespace: istio-system
 ```
+
 ![]({{ site.url }}/img/post/devops/study/istio/1/9.png)
 ![]({{ site.url }}/img/post/devops/study/istio/1/10.png)
-
 
 ![]({{ site.url }}/img/post/devops/study/istio/1/11.png)
 
@@ -728,12 +737,12 @@ default              Active   12m     kubernetes.io/metadata.name=default
 istioinaction        Active   67s     istio-injection=enabled,kubernetes.io/metadata.name=istioinaction
 ...
 
-# 
+#
 $ kubectl get mutatingwebhookconfiguration
 NAME                         WEBHOOKS   AGE
 istio-revision-tag-default   4          7m59s # 특정 revision의 사이드카 주입 설정 관리
 istio-sidecar-injector       4          8m25s # Istio는 각 애플리케이션 Pod에 Envoy 사이드카 프록시를 자동으로 주입
-                                              ## 네임스페이스나 Pod에 istio-injection=enabled 라벨이 있어야 작동 
+                                              ## 네임스페이스나 Pod에 istio-injection=enabled 라벨이 있어야 작동
 
 $ kubectl get mutatingwebhookconfiguration istio-sidecar-injector -o yaml
 
@@ -752,7 +761,7 @@ serviceaccount/catalog created
 service/catalog created
 deployment.apps/catalog created
 
-$ cat services/webapp/kubernetes/webapp.yaml 
+$ cat services/webapp/kubernetes/webapp.yaml
 $ kubectl apply -f services/webapp/kubernetes/webapp.yaml -n istioinaction
 serviceaccount/webapp created
 service/webapp created
@@ -802,7 +811,6 @@ kubectl exec -it netshoot -- curl -s http://webapp.istioinaction/api/catalog/ite
 ```
 
 ![]({{ site.url }}/img/post/devops/study/istio/1/13.png)
-
 
 ```bash
 # 아래 방법 대신 임시 사용
@@ -998,7 +1006,9 @@ while true; do curl -s http://127.0.0.1:30000/api/catalog -I | head -n 1 ; date 
 while true; do curl -s http://127.0.0.1:30000/api/catalog -I | head -n 1 ; date "+%Y-%m-%d %H:%M:%S" ; sleep 0.5; echo; done
 
 ```
+
 #### 2.4.1 이스티오 관찰 가능성
+
 ```bash
 # NodePort 변경 및 nodeport 30001~30003으로 변경 : prometheus(30001), grafana(30002), kiali(30003), tracing(30004)
 $ kubectl patch svc -n istio-system prometheus -p '{"spec": {"type": "NodePort", "ports": [{"port": 9090, "targetPort": 9090, "nodePort": 30001}]}}'
@@ -1028,18 +1038,20 @@ open http://127.0.0.1:30004
 ```
 
 그라파나 확인: 대시보드 - Istio Service Dashboard -> 상단 Service(webapp 선택)
-	트래픽 반복 접속 해둥 상태
+트래픽 반복 접속 해둥 상태
 ![]({{ site.url }}/img/post/devops/study/istio/1/17.png)
 
 오픈 트레이싱을 통한 분산 트레이싱: Jaeger 트레이싱 대시보드 확인
 ![]({{ site.url }}/img/post/devops/study/istio/1/18.png)
 
 Kiali 확인
+
 - Namespace를 istioinaction으로 선택 후 Graph(Traffic, Versioned app graph)에서 Display 옵션 중 'Traffic Distribution', 'Traffic Animation' 활성화!
 - Service nodes, Security 체크(last 1m, Evety 10s)
-![]({{ site.url }}/img/post/devops/study/istio/1/19.png)
+  ![]({{ site.url }}/img/post/devops/study/istio/1/19.png)
 
 #### 2.4.2 복원력을 위한 이스티오
+
 catalog에 의도적으로 500 에러를 재현하고 retry로 복원력 높이기
 먄약 '간혈적/일시전 네트워크 오류'가 발생하여 webapp은 catalog 요청이 실패하는 경우, 애플리케이션 코드 수정 없이 복원력을 높여보자!
 
@@ -1079,7 +1091,7 @@ $ kubectl config set-context $(kubectl config current-context) --namespace=istio
 Context "kubernetes-admin@myk8s" modified.
 $ cat /etc/kubernetes/admin.conf
 
-$ cd /istiobook/bin/ 
+$ cd /istiobook/bin/
 $ chmod +x chaos.sh
 $ ./chaos.sh 500 100 # 모니터링 : kiali, grafana, tracing
 catalog-6cf4b97d-qx8ln
@@ -1111,6 +1123,7 @@ cat /etc/kubernetes/admin.conf
 
 에러 발생 시 reslience 하게 retry 하도록 애플리케이션 코드 수정 없이 해보기!
 Resiliency하게 해보자 -> Proxy(envoy)에 endpoint(catalog) 5xx 에러시 retry 적용
+
 ```bash
 (on myk8s-control-plane)
 # catalog 3번까지 요청 재시도 할 수 있고, 각 시도에는 2초의 제한 시간이 있음.
@@ -1146,7 +1159,9 @@ webapp-virtualservice   ["outfitters-gateway"]   ["*"]         43m
 ![]({{ site.url }}/img/post/devops/study/istio/1/30.png)
 
 #### 2.4.3 트래픽 라우팅을 위한 이스티오
-특정 사용자 그룹만 타겟으로 새 버전을 라우팅하고, 릴리즈에 단계적 접근:  catalog v2에 imageUrl 핃드 추가
+
+특정 사용자 그룹만 타겟으로 새 버전을 라우팅하고, 릴리즈에 단계적 접근: catalog v2에 imageUrl 핃드 추가
+
 ```bash
 (x myk8s-control-plane)
 # catalog v2 배포
@@ -1297,6 +1312,7 @@ while true; do curl -s http://127.0.0.1:30000/api/catalog | jq; date "+%Y-%m-%d 
 
 헤더에 따라 라우팅
 특정 헤더는 v2, 나머지는 v1 접속 설정
+
 ```bash
 # 라우팅 VS 수정(업데이트)
 cat <<EOF | kubectl -n istioinaction apply -f -
@@ -1405,18 +1421,22 @@ $ while true; do curl -s http://127.0.0.1:30000/api/catalog -H "x-dark-launch: v
 ]
 
 ```
+
 #### 실습 완료 후 자원 정리하기
+
 ```bash
 kubectl delete deploy,svc,gw,vs,dr --all -n istioinaction && kind delete cluster --name myk8s
 ```
 
 ---
+
 시간이 지난만큼 앞으로의 실습은 현시점(25.4.6 기준) 최신 버전으로 진행한다.
+
 - 실습 환경: docker (kind - k8s 1.32.2), istio 1.25.1
 - kind
 
 ```bash
-# 
+#
 kind create cluster --name myk8s --image kindest/node:v1.32.2 --config - <<EOF
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -1468,7 +1488,7 @@ curl -s -L https://istio.io/downloadIstio | ISTIO_VERSION=$ISTIOV sh -
 cd istio-$ISTIOV
 
 # default 프로파일 배포
-cat <<EOF | istioctl install -y -f - 
+cat <<EOF | istioctl install -y -f -
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
@@ -1482,6 +1502,7 @@ spec:
       enabled: false
 EOF
 ```
+
 - addon 설치
 
 ```bash
@@ -1535,7 +1556,7 @@ open http://127.0.0.1:30004
 ```
 
 - Bookinfo sample application 배포 - [Docs](https://istio.io/latest/docs/setup/getting-started/#bookinfo)
-![]({{ site.url }}/img/post/devops/study/istio/1/35.png)
+  ![]({{ site.url }}/img/post/devops/study/istio/1/35.png)
 
 ```bash
 # Bookinfo Application 배포
@@ -1562,8 +1583,6 @@ kind: Gateway
 metadata:
   name: bookinfo-gateway
 spec:
-  # The selector matches the ingress gateway pod labels.
-  # If you installed Istio using Helm following the standard documentation, this would be "istio=ingress"
   selector:
     istio: ingressgateway # use istio default controller
   servers:
@@ -1600,7 +1619,7 @@ spec:
         host: productpage
         port:
           number: 9080
-          
+
 kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
 
 # Istio Gateway/VirtualService 설정 확인
@@ -1616,20 +1635,19 @@ open http://127.0.0.1:30000/productpage
 curl -v -s http://127.0.0.1:30000/productpage | grep -o "<title>.*</title>"
 
 # 반복 접속
-for i in {1..10};  do curl -s http://127.0.0.1:30000/productpage | grep -o "<title>.*</title>" ; done
 for i in {1..100}; do curl -s http://127.0.0.1:30000/productpage | grep -o "<title>.*</title>" ; done
 
-while true; do curl -s http://127.0.0.1:30000/productpage | grep -o "<title>.*</title>" ; echo "--------------" ; sleep 1; done
 while true; do curl -s http://127.0.0.1:30000/productpage | grep -o "<title>.*</title>" ; echo "--------------" ; sleep 0.5; done
-while true; do curl -s http://127.0.0.1:30000/productpage | grep -o "<title>.*</title>" ; echo "--------------" ; sleep 0.1; done
 ```
+
 새로 고침할 때마다 트래픽이 다른 버전으로 라우팅된다.
+
 - v1
-![]({{ site.url }}/img/post/devops/study/istio/1/36.png)
+  ![]({{ site.url }}/img/post/devops/study/istio/1/36.png)
 - v2
-![]({{ site.url }}/img/post/devops/study/istio/1/37.png)
+  ![]({{ site.url }}/img/post/devops/study/istio/1/37.png)
 - v3
-![]({{ site.url }}/img/post/devops/study/istio/1/38.png)
+  ![]({{ site.url }}/img/post/devops/study/istio/1/38.png)
 
 ![]({{ site.url }}/img/post/devops/study/istio/1/39.png)
 (트래픽 흐름을 istio를 통해 사각화하여 볼 수 있다.)
@@ -1655,16 +1673,17 @@ open http://localhost:15000
 ```
 
 ---
+
 ## 도전해보자!
+
 - 과제 1. Istio 관리(설정, 업그레이드 등)에 편리성을 제공하는 Sail Operator 설치 및 사용
-	- Sail Operator 1.0.0 released: manage Istio with an operator - [Blog](https://istio.io/latest/blog/2025/sail-operator-ga/)
-	- Introducing the Sail Operator: a new way to manage Istio - [Blog](https://istio.io/latest/blog/2024/introducing-sail-operator/)
-	- Istio has deprecated its In-Cluster Operator - [Blog](https://istio.io/latest/blog/2024/in-cluster-operator-deprecation-announcement/)
+  - Sail Operator 1.0.0 released: manage Istio with an operator - [Blog](https://istio.io/latest/blog/2025/sail-operator-ga/)
+  - Introducing the Sail Operator: a new way to manage Istio - [Blog](https://istio.io/latest/blog/2024/introducing-sail-operator/)
+  - Istio has deprecated its In-Cluster Operator - [Blog](https://istio.io/latest/blog/2024/in-cluster-operator-deprecation-announcement/)
 - 과제 2. Istio IngressGW를 Gateway API(구현체는 무엇이든 상관X)를 통한 실습 환경 구성 및 사용 - [Docs](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/)
-	- Gateway API Mesh Support Promoted To Stable - [Blog](https://istio.io/latest/blog/2024/gateway-mesh-ga/)
-	- Getting started with Kubernetes Gateway API - [Blog](https://istio.io/latest/blog/2022/getting-started-gtwapi/)
-	- Extending Gateway API support in Istio - [Blog](https://istio.io/latest/blog/2022/gateway-api-beta/)
-- 과제 3. Istio Proxy를 K8S Native Sidecars로 구성 및 사용 - [blog](https://istio.io/latest/blog/2023/native-sidecars/), [k8s-docs](https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/), [k8s-blog](https://kubernetes.io/blog/2023/08/25/native-sidecar-containers/)
-	- 쿠버네티스 네이티브 사이드카 컨테이너(Sidecar Containers) - [Youtube](https://www.youtube.com/watch?v=r3CezY82EJY)
-> 
+  - Gateway API Mesh Support Promoted To Stable - [Blog](https://istio.io/latest/blog/2024/gateway-mesh-ga/)
+  - Getting started with Kubernetes Gateway API - [Blog](https://istio.io/latest/blog/2022/getting-started-gtwapi/)
+  - Extending Gateway API support in Istio - [Blog](https://istio.io/latest/blog/2022/gateway-api-beta/)
+- 과제 3. Istio Proxy를 K8S Native Sidecars로 구성 및 사용 - [blog](https://istio.io/latest/blog/2023/native-sidecars/), [k8s-docs](https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/), [k8s-blog](https://kubernetes.io/blog/2023/08/25/native-sidecar-containers/) - 쿠버네티스 네이티브 사이드카 컨테이너(Sidecar Containers) - [Youtube](https://www.youtube.com/watch?v=r3CezY82EJY)
+
 > 도전과제까지 진행하기에는 너무나도 빠듯한 일정이다... 하지만 너무나도 차고 넘치도록 유익한 스터디인 것은 분명하다.
