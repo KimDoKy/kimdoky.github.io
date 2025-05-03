@@ -1,4 +1,5 @@
 # -*- mode: gitignore; -*-
+.jekyll-cache
 *~
 \#*\#
 /.emacs.desktop
