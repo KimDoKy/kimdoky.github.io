@@ -1,7 +1,7 @@
 ---
 layout: post
 section-type: post
-title: ServiceMesh - Istio - Week2 - Envoy, IstioGateway
+title: ServiceMesh - Istio - Week2
 category: devops
 tags: [ 'k8s', 'istio', 'servicemesh', 'envoy', 'istiogateway' ]
 ---
