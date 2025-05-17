@@ -620,6 +620,7 @@ sort_desc(sum(irate(istio_requests_total{reporter="destination", destination_ser
 # chap11. 컨트롤 플레인 성능 튜닝하기
 - 컨트롤 플레인의 성능에 영향을 미치는 요소들
 - 컨트롤 플레인 최적화 방법 및 핵심 메트릭 이해
+
 ## 컨트롤 플레인의 주요 목표
 - 서비스 메시의 **두뇌 역할** 수행
 - API를 통해 서비스 프록시 설정
