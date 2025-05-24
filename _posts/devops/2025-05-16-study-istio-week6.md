@@ -642,6 +642,7 @@ sort_desc(sum(irate(istio_requests_total{reporter="destination", destination_ser
 1. 지연 시간이 만료되면, DiscoveryServer가 병합된 이벤트를 푸시 대기열에 추가한다. 푸시 대기열은 처리 대기 중인 푸시 목록을 유지한다.
 2. istiod 서버는 동시에 처리되는 푸시 요청 개수를 제한하는데, 이는 처리 중인 항목이 더 빨리 처리되도록 보장하고 CPU 시간이 작업 간 콘텐스트 스위칭에 낭비되는 것을 방지한다.
 3. 처리된 항목은 엔보이 설정으로 변환돼 워크로드로 푸시된다.
+
 ###  성능을 결정짓는 요소
 - 변경 속도
 	- 빠를수록 처리량 증가
