@@ -629,7 +629,7 @@ sort_desc(sum(irate(istio_requests_total{reporter="destination", destination_ser
 	- 재시도
 	- 이상값 감지
 
-!![]({{ site.url }}/img/post/devops/study/istio/6/20250504135136.png)
+![]({{ site.url }}/img/post/devops/study/istio/6/20250504135136.png)
 
 ### 데이터 플레인 동기화 단계 이해하기
 
