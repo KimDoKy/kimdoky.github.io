@@ -558,6 +558,7 @@ for in in {1..9999}; do curl http://catalog.istioinaction.io:30000/items -w "\nS
 - Synchronization(SYN): 커넥션을 새로 수립하는데 사용
 - Acknowledgement(ACK): 패킷 수신이 성공했음을 확인하는데 사용
 - Finish(FIN): 커넥션 종료를 요청하는데 사용
+
 ## 엔보이 텔레메트리로 자신의 애플리케이션 이해하기
 ### 그라파나에서 실패한 요청 비율 찾기
 - Grafana - Istio Service Dashboard -> Service(catalog.istioinaction.svc.cluster.local) / Reporter(source)
